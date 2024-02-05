@@ -1,0 +1,13 @@
+# cros-bazel.eclass does not support bzlmod yet.
+# Disable it to avoid generating MODULE.bazel file.
+common --noexperimental_enable_bzlmod
+
+# Required by TensorFlow.
+common --experimental_repo_remote_exec
+
+# Use --config=host_clang to build things with clang on host.
+build:host_clang --cxxopt=-std=gnu++20
+build:host_clang --repo_env=CC=clang
+
+# Ignore warnings from dependencies.
+build:host_clang --per_file_copt=external/.*@-Wno-everything

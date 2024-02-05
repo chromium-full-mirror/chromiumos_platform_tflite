@@ -1,0 +1,7 @@
+# Compilation database for clangd
+/compile_commands.json
+
+# Artifacts from bazel
+/.cache
+/bazel-*
+/external
