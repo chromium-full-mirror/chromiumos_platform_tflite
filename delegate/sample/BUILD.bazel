@@ -6,6 +6,43 @@ load("@org_tensorflow//tensorflow/lite:build_def.bzl", "tflite_cc_shared_object"
 load("@org_tensorflow//tensorflow/lite/core/shims:cc_library_with_tflite.bzl", "cc_library_with_tflite")
 
 cc_library_with_tflite(
+    name = "kernel",
+    srcs = [
+        "kernel.cc",
+    ],
+    hdrs = [
+        "kernel.h",
+    ],
+    copts = tflite_copts(),
+    generate_opaque_delegate_target = True,
+    tflite_deps = [
+        "@org_tensorflow//tensorflow/lite/c:c_api",
+        "@org_tensorflow//tensorflow/lite/c:c_api_experimental",
+        "@org_tensorflow//tensorflow/lite/c:common",
+        "@org_tensorflow//tensorflow/lite/delegates/utils:simple_opaque_delegate",
+    ],
+)
+
+cc_library_with_tflite(
+    name = "delegate",
+    srcs = [
+        "delegate.cc",
+    ],
+    hdrs = [
+        "delegate.h",
+    ],
+    copts = tflite_copts(),
+    generate_opaque_delegate_target = True,
+    tflite_deps = [
+        ":kernel",
+        "@org_tensorflow//tensorflow/lite/c:c_api",
+        "@org_tensorflow//tensorflow/lite/c:c_api_experimental",
+        "@org_tensorflow//tensorflow/lite/c:common",
+        "@org_tensorflow//tensorflow/lite/delegates/utils:simple_opaque_delegate",
+    ],
+)
+
+cc_library_with_tflite(
     name = "external",
     srcs = [
         "external.cc",
@@ -13,6 +50,7 @@ cc_library_with_tflite(
     copts = tflite_copts(),
     generate_opaque_delegate_target = True,
     tflite_deps = [
+        ":delegate",
         "@org_tensorflow//tensorflow/lite/acceleration/configuration/c:delegate_plugin",
         "@org_tensorflow//tensorflow/lite/acceleration/configuration/c:stable_delegate",
         "@org_tensorflow//tensorflow/lite/c:common",
@@ -31,4 +69,5 @@ tflite_cc_shared_object(
         ":external_opaque_delegate",
         "@org_tensorflow//tensorflow/lite/delegates/utils/experimental/stable_delegate:version_script.lds",
     ],
+    visibility = ["//:__pkg__"],
 )

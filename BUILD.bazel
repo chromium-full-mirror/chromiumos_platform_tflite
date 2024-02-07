@@ -2,5 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-# We don't have a root level rule yet. This is currently just an empty package
-# marker file.
+alias(
+    name = "cros_sample_delegate",
+    actual = "//delegate/sample:tensorflowlite_cros_sample_delegate",
+)

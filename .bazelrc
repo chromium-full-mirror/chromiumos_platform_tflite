@@ -3,7 +3,12 @@
 common --noexperimental_enable_bzlmod
 
 # Required by TensorFlow.
+# TODO(shik): Consider copying and importing the bazelrc from TensorFlow
+# directly, instead of porting options we needed. We will revisit this when we
+# are migrating TensorFlow to build from here directly.
 common --experimental_repo_remote_exec
+build --noincompatible_remove_legacy_whole_archive
+build --features=-force_no_whole_archive
 
 # Use --config=host_clang to build things with clang on host.
 build:host_clang --cxxopt=-std=gnu++20

@@ -4,6 +4,10 @@
  * found in the LICENSE file.
  */
 
+#include <memory>
+
+#include "delegate/sample/delegate.h"
+
 #include "tensorflow/lite/core/acceleration/configuration/c/delegate_plugin.h"
 #include "tensorflow/lite/core/acceleration/configuration/c/stable_delegate.h"
 #include "tensorflow/lite/core/c/common.h"
@@ -14,12 +18,12 @@ namespace tflite::cros {
 namespace {
 
 TfLiteOpaqueDelegate* CreateFunc(const void* tflite_settings) {
-  // TODO(shik): Implement this.
-  return nullptr;
+  auto delegate = std::make_unique<CrosSampleDelegate>();
+  return TfLiteOpaqueDelegateFactory::CreateSimpleDelegate(std::move(delegate));
 }
 
 void DestroyFunc(TfLiteOpaqueDelegate* delegate) {
-  // TODO(shik): Implement this.
+  TfLiteOpaqueDelegateFactory::DeleteSimpleDelegate(delegate);
 }
 
 int ErrnoFunc(TfLiteOpaqueDelegate* delegate) {
@@ -35,8 +39,8 @@ constexpr TfLiteOpaqueDelegatePlugin plugin = {
 
 constexpr TfLiteStableDelegate cros_sample_delegate = {
     .delegate_abi_version = TFL_STABLE_DELEGATE_ABI_VERSION,
-    .delegate_name = "cros_sample_delegate",
-    .delegate_version = "0.0.1",
+    .delegate_name = CrosSampleDelegate::kName,
+    .delegate_version = CrosSampleDelegate::kVersion,
     .delegate_plugin = &plugin,
 };
 
