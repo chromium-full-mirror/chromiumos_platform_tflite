@@ -2,17 +2,78 @@
 # Disable it to avoid generating MODULE.bazel file.
 common --noexperimental_enable_bzlmod
 
-# Required by TensorFlow.
-# TODO(shik): Consider copying and importing the bazelrc from TensorFlow
-# directly, instead of porting options we needed. We will revisit this when we
-# are migrating TensorFlow to build from here directly.
+# Ignore warnings from dependencies.
+build --per_file_copt=external/.*@-Wno-everything
+
+# Use C++20.
+build --cxxopt=-std=gnu++20
+
+# Default options borrowed from TensorFlow:
+# https://github.com/tensorflow/tensorflow/blob/master/.bazelrc
 common --experimental_repo_remote_exec
+
 build --noincompatible_remove_legacy_whole_archive
 build --features=-force_no_whole_archive
 
+build --define=framework_shared_object=true
+build --define=tsl_protobuf_header_only=true
+
+build --define=use_fast_cpp_protos=true
+build --define=allow_oversize_protos=true
+
+build --define=no_aws_support=true
+build --define=no_hdfs_support=true
+
 # Use --config=host_clang to build things with clang on host.
-build:host_clang --cxxopt=-std=gnu++20
 build:host_clang --repo_env=CC=clang
 
-# Ignore warnings from dependencies.
-build:host_clang --per_file_copt=external/.*@-Wno-everything
+# Use --config=cros to build things in cros_sdk chroot.
+build:cros --auto_output_filter=packages
+
+build:cros --copt=-DEGL_NO_X11
+build:cros --copt=-DFORCE_ENABLE_GPU_DELEGATE
+
+build:cros --define=tensorflow_mkldnn_contraction_kernel=0
+build:cros --define=tflite_keep_symbols=true
+build:cros --define=with_xla_support=false
+
+build:cros --repo_env=TF_PYTHON_VERSION=3.9
+
+build:cros --action_env=TF_SYSTEM_LIBS="           \
+  absl_py,                                         \
+  astor_archive,                                   \
+  astunparse_archive,                              \
+  boringssl,                                       \
+  com_github_googlecloudplatform_google_cloud_cpp, \
+  com_github_grpc_grpc,                            \
+  com_google_absl,                                 \
+  com_google_protobuf,                             \
+  com_googlesource_code_re2,                       \
+  curl,                                            \
+  cython,                                          \
+  dill_archive,                                    \
+  double_conversion,                               \
+  flatbuffers,                                     \
+  functools32_archive,                             \
+  gast_archive,                                    \
+  gif,                                             \
+  hwloc,                                           \
+  icu,                                             \
+  jsoncpp_git,                                     \
+  libjpeg_turbo,                                   \
+  nasm,                                            \
+  nsync,                                           \
+  opt_einsum_archive,                              \
+  org_sqlite,                                      \
+  pasta,                                           \
+  png,                                             \
+  pybind11,                                        \
+  six_archive,                                     \
+  snappy,                                          \
+  tblib_archive,                                   \
+  termcolor_archive,                               \
+  typing_extensions_archive,                       \
+  wrapt,                                           \
+  zlib                                             \
+"
+
