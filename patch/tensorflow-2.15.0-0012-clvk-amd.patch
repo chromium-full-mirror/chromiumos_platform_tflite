@@ -1,0 +1,51 @@
+diff --git a/tensorflow/lite/delegates/gpu/cl/inference_context.cc b/tensorflow/lite/delegates/gpu/cl/inference_context.cc
+index 684ed5c5107..93982f5c556 100644
+--- a/tensorflow/lite/delegates/gpu/cl/inference_context.cc
++++ b/tensorflow/lite/delegates/gpu/cl/inference_context.cc
+@@ -238,6 +238,12 @@ void InferenceContext::ExecutionHints::Init(const GpuInfo& gpu_info) {
+     flush_periodically = true;
+     flush_period = 16;
+   }
++  // clvk has inside to know when to flush, do not do it at the application
++  // level.
++  if (gpu_info.IsApiOpenCl() && gpu_info.opencl_info.IsCLVK()) {
++    need_flush = false;
++    flush_periodically = false;
++  }
+ }
+ 
+ absl::Status InferenceContext::InitFromGraph(
+diff --git a/tensorflow/lite/delegates/gpu/common/gpu_info.cc b/tensorflow/lite/delegates/gpu/common/gpu_info.cc
+index 8f41a9ef1a7..b31f0f2d4e3 100644
+--- a/tensorflow/lite/delegates/gpu/common/gpu_info.cc
++++ b/tensorflow/lite/delegates/gpu/common/gpu_info.cc
+@@ -625,15 +625,6 @@ void GetGpuInfoFromDeviceDescription(const std::string& gpu_description,
+   absl::AsciiStrToLower(&lowered);
+   gpu_info->vendor = GetGpuVendor(lowered);
+ 
+-  // Because clvk is an OpenCL layer on top of vulkan, it does not react to CL
+-  // optimisation as native CL implementation does.
+-  // AMD is particularly affected, thus let's manage it differently to get the
+-  // best performances out of it.
+-  if (gpu_info->IsApiOpenCl() && gpu_info->opencl_info.IsCLVK() &&
+-      gpu_info->IsAMD()) {
+-    gpu_info->vendor = GpuVendor::kUnknown;
+-  }
+-
+   if (gpu_info->IsAdreno()) {
+     gpu_info->adreno_info = AdrenoInfo(lowered);
+   } else if (gpu_info->IsApple()) {
+diff --git a/tensorflow/lite/delegates/gpu/common/tasks/conv_generic.cc b/tensorflow/lite/delegates/gpu/common/tasks/conv_generic.cc
+index 72e54dd21c9..f09606d67f6 100644
+--- a/tensorflow/lite/delegates/gpu/common/tasks/conv_generic.cc
++++ b/tensorflow/lite/delegates/gpu/common/tasks/conv_generic.cc
+@@ -1748,8 +1748,7 @@ ConvGeneric::ConvParams ConvGeneric::GuessBestParams(
+     conv_params.fixed_work_group_size = false;
+     conv_params.src_depth_loop_size = 1;
+     conv_params.weights_upload_type = WeightsUploadType::TEXTURES_MEM_X4;
+-  } else if (gpu_info.IsIntel() ||
+-             (gpu_info.IsApiOpenCl() && gpu_info.opencl_info.IsCLVK())) {
++  } else if (gpu_info.IsIntel()) {
+     if (different_weights_for_height) {
+       work_group_size_ = int3(16, 1, 1);
+       work_group_launch_order_ = int3(0, 1, 2);

@@ -1,0 +1,24 @@
+diff --git a/tensorflow/lite/delegates/gpu/cl/cl_program.cc b/tensorflow/lite/delegates/gpu/cl/cl_program.cc
+index 856896b667b..63e1837d170 100644
+--- a/tensorflow/lite/delegates/gpu/cl/cl_program.cc
++++ b/tensorflow/lite/delegates/gpu/cl/cl_program.cc
+@@ -79,6 +79,9 @@ std::string CompilerOptionToString(const GpuInfo& gpu_info,
+                                    CompilerOptions option) {
+   switch (option) {
+     case CompilerOptions::kAdrenoFullSimd:
++      if (gpu_info.opencl_info.IsCLVK()) {
++        return "";
++      }
+       if (gpu_info.IsAdreno()) {
+         if (gpu_info.adreno_info.IsAdreno3xx() ||
+             gpu_info.adreno_info.IsAdreno4xx()) {
+@@ -90,6 +93,9 @@ std::string CompilerOptionToString(const GpuInfo& gpu_info,
+         return "unsupported";
+       }
+     case CompilerOptions::kAdrenoMoreWaves:
++      if (gpu_info.opencl_info.IsCLVK()) {
++        return "";
++      }
+       if (gpu_info.IsAdreno()) {
+         if (!(gpu_info.adreno_info.IsAdreno3xx() ||
+               gpu_info.adreno_info.IsAdreno4xx())) {

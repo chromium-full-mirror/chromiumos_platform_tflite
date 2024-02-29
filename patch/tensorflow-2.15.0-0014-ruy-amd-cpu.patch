@@ -1,0 +1,37 @@
+diff --git a/tensorflow/workspace2.bzl b/tensorflow/workspace2.bzl
+index 8601192edf7..ab832b1175f 100644
+--- a/tensorflow/workspace2.bzl
++++ b/tensorflow/workspace2.bzl
+@@ -173,6 +173,7 @@ def _tf_repositories():
+     tf_http_archive(
+         name = "cpuinfo",
+         strip_prefix = "cpuinfo-959002f82d7962a473d8bf301845f2af720e0aa4",
++        patch_file = ["//third_party:cpuinfo.patch"],
+         sha256 = "a0f53ccfb477c57753c595df02bf79ed67bf092fd9a5c61ec5b8992b81bc1e65",
+         urls = tf_mirror_urls("https://github.com/pytorch/cpuinfo/archive/959002f82d7962a473d8bf301845f2af720e0aa4.zip"),
+     )
+diff --git a/third_party/cpuinfo.patch b/third_party/cpuinfo.patch
+new file mode 100644
+index 00000000000..290947ed64d
+--- /dev/null
++++ b/third_party/cpuinfo.patch
+@@ -0,0 +1,16 @@
++diff --git a/src/x86/init.c b/src/x86/init.c
++index 244359c..653f1ee 100644
++--- a/src/x86/init.c
+++++ b/src/x86/init.c
++@@ -38,8 +38,10 @@ void cpuinfo_x86_init_processor(struct cpuinfo_x86_processor* processor) {
++ 		/*
++ 		 * Topology extensions support:
++ 		 * - AMD: ecx[bit 22] in extended info (reserved bit on Intel CPUs).
+++		 * Relax the condition a bit for Excavator, see b/305999585#comment11 for more details.
++ 		 */
++-		const bool amd_topology_extensions = !!(leaf0x80000001.ecx & UINT32_C(0x00400000));
+++		const bool amd_topology_extensions =
+++			!!(leaf0x80000001.ecx & UINT32_C(0x00400000)) || uarch == cpuinfo_uarch_excavator;
++ 
++ 		cpuinfo_x86_detect_cache(
++ 			max_base_index, max_extended_index, amd_topology_extensions, vendor, &model_info,
+diff --git a/third_party/ruy/amd-cpu.patch b/third_party/ruy/amd-cpu.patch
+new file mode 100644
+index 00000000000..e69de29bb2d

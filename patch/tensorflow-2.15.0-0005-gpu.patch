@@ -1,0 +1,127 @@
+diff --git a/tensorflow/lite/BUILD b/tensorflow/lite/BUILD
+index bb2de515da9..a6adde96cd9 100644
+--- a/tensorflow/lite/BUILD
++++ b/tensorflow/lite/BUILD
+@@ -1341,6 +1341,7 @@ tflite_cc_shared_object(
+         ":tflite_exported_symbols.lds",
+         ":tflite_version_script.lds",
+         "//tensorflow/lite/kernels:builtin_ops_all_linked",
++        "//tensorflow/lite/delegates/gpu:delegate",
+     ],
+ )
+ 
+diff --git a/tensorflow/lite/acceleration/configuration/gpu_plugin.h b/tensorflow/lite/acceleration/configuration/gpu_plugin.h
+index a45c44d8ca3..048795eab47 100644
+--- a/tensorflow/lite/acceleration/configuration/gpu_plugin.h
++++ b/tensorflow/lite/acceleration/configuration/gpu_plugin.h
+@@ -18,7 +18,7 @@ limitations under the License.
+ // This file provides the GpuPlugin class, which implements the
+ // TFLite Delegate Plugin for the GPU Delegate.
+ 
+-#if defined(__ANDROID__) || defined(CL_DELEGATE_NO_GL)
++#if defined(__ANDROID__) || defined(CL_DELEGATE_NO_GL) || defined(FORCE_ENABLE_GPU_DELEGATE)
+ #define TFLITE_SUPPORTS_GPU_DELEGATE 1
+ #endif
+ 
+diff --git a/tensorflow/lite/core/kernels/BUILD b/tensorflow/lite/core/kernels/BUILD
+index 81d643a6759..981c41a54d6 100644
+--- a/tensorflow/lite/core/kernels/BUILD
++++ b/tensorflow/lite/core/kernels/BUILD
+@@ -28,25 +28,14 @@ cc_test(
+     ],
+ )
+ 
+-cc_library(
++# Make this an alias to avoid ODR violation with GPU delegate.
++alias(
+     name = "builtin_ops",
+-    srcs = ["register.cc"],
+-    hdrs = [
+-        "builtin_op_kernels.h",
+-        "register.h",
+-    ],
++    actual = "builtin_ops_all_linked",
+     compatible_with = get_compatible_with_portable(),
+     visibility = [
+         "//tensorflow/lite:__subpackages__",
+     ] + builtin_ops_visibility_allowlist(),
+-    deps = [
+-        "//tensorflow/lite:mutable_op_resolver",
+-        "//tensorflow/lite:tflite_with_xnnpack_optional",
+-        "//tensorflow/lite/core:cc_api_stable",
+-        "//tensorflow/lite/core/c:common",
+-        "//tensorflow/lite/kernels:builtin_op_kernels",
+-        "//tensorflow/lite/schema:schema_fbs",
+-    ],
+ )
+ 
+ # For internal usage by shared libraries only.
+diff --git a/tensorflow/lite/delegates/gpu/BUILD b/tensorflow/lite/delegates/gpu/BUILD
+index 6e767beb635..8f13fa59e5d 100644
+--- a/tensorflow/lite/delegates/gpu/BUILD
++++ b/tensorflow/lite/delegates/gpu/BUILD
+@@ -46,6 +46,11 @@ config_setting(
+ # )
+ # copybara:uncomment_end
+ 
++config_setting(
++    name = "force_enable_gpu_delegate",
++    values = {"copt": "-DFORCE_ENABLE_GPU_DELEGATE"},
++)
++
+ cc_library(
+     name = "gl_delegate",
+     srcs = ["gl_delegate.cc"],
+@@ -228,6 +233,7 @@ selects.config_setting_group(
+     name = "supports_gpu_delegate",
+     match_any = [
+         "//tensorflow:android",
++        "//tensorflow/lite/delegates/gpu:force_enable_gpu_delegate",
+         "//tensorflow/lite/delegates/gpu/cl:opencl_delegate_no_gl",
+     ],
+ )
+diff --git a/tensorflow/lite/delegates/gpu/build_defs.bzl b/tensorflow/lite/delegates/gpu/build_defs.bzl
+index 462ec7c2218..b2b03b74139 100644
+--- a/tensorflow/lite/delegates/gpu/build_defs.bzl
++++ b/tensorflow/lite/delegates/gpu/build_defs.bzl
+@@ -15,7 +15,7 @@ def nativewindow_linkopts():
+ def gpu_delegate_linkopts():
+     """Additional link options needed when linking in the GPU Delegate."""
+     return select({
+-        "//tensorflow:android": [
++        "//tensorflow/lite/delegates/gpu:force_enable_gpu_delegate": [
+             "-lEGL",
+             # We don't need to link libGLESv3, because if it exists,
+             # it is a symlink to libGLESv2.
+@@ -24,4 +24,4 @@ def gpu_delegate_linkopts():
+             "-lGLESv2",
+         ],
+         "//conditions:default": [],
+-    }) + nativewindow_linkopts()
++    })
+diff --git a/tensorflow/lite/delegates/gpu/cl/BUILD b/tensorflow/lite/delegates/gpu/cl/BUILD
+index 760f401bdc6..5ae7300cea3 100644
+--- a/tensorflow/lite/delegates/gpu/cl/BUILD
++++ b/tensorflow/lite/delegates/gpu/cl/BUILD
+@@ -349,7 +349,7 @@ cc_library(
+     srcs = ["gpu_api_delegate.cc"],
+     hdrs = ["gpu_api_delegate.h"],
+     linkopts = select({
+-        "//tensorflow:android": [
++        "//tensorflow/lite/delegates/gpu:force_enable_gpu_delegate": [
+             "-lEGL",
+             "-lGLESv3",
+         ],
+diff --git a/tensorflow/lite/tools/evaluation/utils.h b/tensorflow/lite/tools/evaluation/utils.h
+index c598b89bc2b..db27bf2e2b4 100644
+--- a/tensorflow/lite/tools/evaluation/utils.h
++++ b/tensorflow/lite/tools/evaluation/utils.h
+@@ -23,7 +23,7 @@ limitations under the License.
+ 
+ #if !TFLITE_WITH_STABLE_ABI
+ // TODO(b/240438534): enable nnapi.
+-#if defined(__ANDROID__)
++#if defined(__ANDROID__) || defined(FORCE_ENABLE_GPU_DELEGATE)
+ #define TFLITE_SUPPORTS_NNAPI_DELEGATE 1
+ #define TFLITE_SUPPORTS_GPU_DELEGATE 1
+ #elif defined(CL_DELEGATE_NO_GL)

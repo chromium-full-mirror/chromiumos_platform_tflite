@@ -1,0 +1,15 @@
+diff --git a/third_party/absl/system.absl.functional.BUILD b/third_party/absl/system.absl.functional.BUILD
+index a4f70acf35c..9439bd0ba22 100644
+--- a/third_party/absl/system.absl.functional.BUILD
++++ b/third_party/absl/system.absl.functional.BUILD
+@@ -2,6 +2,10 @@ load("@rules_cc//cc:defs.bzl", "cc_library")
+ 
+ package(default_visibility = ["//visibility:public"])
+ 
++cc_library(
++    name = "any_invocable",
++)
++
+ cc_library(
+     name = "bind_front",
+ )
