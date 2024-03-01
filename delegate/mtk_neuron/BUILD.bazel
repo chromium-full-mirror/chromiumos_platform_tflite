@@ -1,0 +1,82 @@
+# Copyright 2024 The ChromiumOS Authors
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+load("@org_tensorflow//tensorflow/lite:build_def.bzl", "tflite_cc_shared_object")
+load("@org_tensorflow//tensorflow/lite/core/shims:cc_library_with_tflite.bzl", "cc_library_with_tflite")
+
+cc_library_with_tflite(
+    name = "neuron_implementation",
+    srcs = [
+        "neuron_implementation.cc",
+        "neuron_types.h",
+    ],
+    generate_opaque_delegate_target = True,
+    hdrs = [
+        "neuron_implementation.h",
+    ],
+)
+
+cc_library_with_tflite(
+    name = "neuron_delegate",
+    srcs = [
+        "mtk/mtk_minimal_logging.h",
+        "mtk/mtk_utils.cc",
+        "mtk/mtk_utils.h",
+        "mtk/mtkext_ops.h",
+        "neuron_delegate.cc",
+        "neuron_delegate_builder.h",
+        "neuron_delegate_kernel.cc",
+        "neuron_delegate_kernel.h",
+        "neuron_delegate_options.h",
+        "neuron_delegate_utils.h",
+        "neuron_delegate_validation.cc",
+        "neuron_delegate_validation.h",
+        "neuron_types.h",
+        "neuron_version.h",
+    ],
+    hdrs = [
+        "neuron_delegate.h",
+    ],
+    generate_opaque_delegate_target = True,
+    tflite_deps = [
+        "@org_tensorflow//tensorflow/lite/c:common",
+        "@org_tensorflow//tensorflow/lite/c:c_api",
+        "@org_tensorflow//tensorflow/lite/c:c_api_experimental",
+        "@org_tensorflow//tensorflow/lite/c:c_api_types",
+        "@org_tensorflow//tensorflow/lite/delegates/utils:simple_opaque_delegate",
+    ],
+    deps = [
+        ":neuron_implementation",
+        "@farmhash_archive//:farmhash",
+    ],
+)
+
+cc_library_with_tflite(
+    name = "neuron_delegate_external",
+    srcs = [
+        "neuron_delegate_external.cc",
+    ],
+    generate_opaque_delegate_target = True,
+    tflite_deps = [
+        ":neuron_delegate",
+        "@org_tensorflow//tensorflow/lite/acceleration/configuration/c:delegate_plugin",
+        "@org_tensorflow//tensorflow/lite/acceleration/configuration/c:stable_delegate",
+        "@org_tensorflow//tensorflow/lite/c:common",
+        "@org_tensorflow//tensorflow/lite/delegates/utils/experimental/stable_delegate:stable_delegate_interface",
+    ],
+)
+
+tflite_cc_shared_object(
+    name = "tensorflowlite_mtk_neuron_delegate",
+    linkopts = [
+        "-Wl,--no-undefined",
+        # Expose necessary symbols only.
+        "-Wl,--version-script,$(location @org_tensorflow//tensorflow/lite/delegates/utils/experimental/stable_delegate:version_script.lds)",
+    ],
+    visibility = ["//:__pkg__"],
+    deps = [
+        ":neuron_delegate_external_opaque_delegate",
+        "@org_tensorflow//tensorflow/lite/delegates/utils/experimental/stable_delegate:version_script.lds",
+    ],
+)

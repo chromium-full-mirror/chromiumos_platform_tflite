@@ -47,6 +47,11 @@ maybe(
     url = "https://github.com/tensorflow/tensorflow/archive/v{}.tar.gz".format(TENSORFLOW_VERSION),
 )
 
+# Ensure that we have farmhash available under the name @farmhash_archive.
+load("@org_tensorflow//third_party/farmhash:workspace.bzl", farmhash = "repo")
+
+farmhash()
+
 # Python is required before initializing TensorFlow.
 http_archive(
     name = "rules_python",

@@ -8,6 +8,11 @@ alias(
 )
 
 alias(
+    name = "mtk_neuron_delegate",
+    actual = "//delegate/mtk_neuron:tensorflowlite_mtk_neuron_delegate",
+)
+
+alias(
     name = "libnativewindow.so",
     actual = "//android:libnativewindow.so",
 )
@@ -16,3 +21,4 @@ alias(
     name = "async_delegate_test",
     actual = "//common:async_delegate_test",
 )
+
