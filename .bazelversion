@@ -1,0 +1,9 @@
+6.2.0
+# Ideally, this version should be same as the Bazel version used to build
+# TFLite in chroot. See
+# https://chromium.googlesource.com/chromiumos/overlays/chromiumos-overlay/+/main/dev-util/bazel/
+# for the available bazel versions in chroot, and check the BAZEL_BINARY
+# variable defined in tensorflow-9999.ebuild to know which LTS version is used.
+#
+# If BAZEL_BINARY="bazel-6", you can easily get the exact version by running
+# `bazel-6 --version` in chroot.
