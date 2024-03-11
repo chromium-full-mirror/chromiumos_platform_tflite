@@ -13,14 +13,14 @@
 #include <map>
 #include <vector>
 
+#include "common/simple_async_delegate.h"
 #include "tensorflow/lite/core/c/c_api_opaque.h"
-#include "tensorflow/lite/delegates/utils/simple_opaque_delegate.h"
 
 namespace tflite::cros {
 
 // A simple delegate kernel that implement the computation of addition and
 // subtraction operations.
-class CrosSampleDelegateKernel : public SimpleOpaqueDelegateKernelInterface {
+class CrosSampleDelegateKernel : public SimpleAsyncDelegateKernelInterface {
  public:
   // Initializes the kernel by extracting necessary information into
   // `node_infos_` and deriving internal tensors.
@@ -36,6 +36,12 @@ class CrosSampleDelegateKernel : public SimpleOpaqueDelegateKernelInterface {
   // tensors may change for every inference.
   TfLiteStatus Eval(TfLiteOpaqueContext* context,
                     TfLiteOpaqueNode* node) override;
+
+  // Retrieves the async kernel.
+  // Returns nullptr for now, since the delegate does not support asynchronous
+  // execution yet.
+  virtual TfLiteAsyncKernel* AsyncKernel(TfLiteOpaqueContext* context,
+                                         TfLiteOpaqueNode* node) override;
 
  private:
   struct NodeInfo {

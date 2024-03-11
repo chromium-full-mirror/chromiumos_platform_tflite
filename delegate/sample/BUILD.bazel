@@ -16,10 +16,10 @@ cc_library_with_tflite(
     copts = tflite_copts(),
     generate_opaque_delegate_target = True,
     tflite_deps = [
+        "//common:simple_async_delegate",
         "@org_tensorflow//tensorflow/lite/c:c_api",
         "@org_tensorflow//tensorflow/lite/c:c_api_experimental",
         "@org_tensorflow//tensorflow/lite/c:common",
-        "@org_tensorflow//tensorflow/lite/delegates/utils:simple_opaque_delegate",
     ],
 )
 
@@ -35,10 +35,10 @@ cc_library_with_tflite(
     generate_opaque_delegate_target = True,
     tflite_deps = [
         ":kernel",
+        "//common:simple_async_delegate",
         "@org_tensorflow//tensorflow/lite/c:c_api",
         "@org_tensorflow//tensorflow/lite/c:c_api_experimental",
         "@org_tensorflow//tensorflow/lite/c:common",
-        "@org_tensorflow//tensorflow/lite/delegates/utils:simple_opaque_delegate",
     ],
 )
 

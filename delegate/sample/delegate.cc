@@ -8,12 +8,12 @@
 
 #include <memory>
 
+#include "common/simple_async_delegate.h"
 #include "delegate/sample/kernel.h"
 #include "tensorflow/lite/core/c/builtin_op_data.h"
 #include "tensorflow/lite/core/c/c_api.h"
 #include "tensorflow/lite/core/c/c_api_opaque.h"
 #include "tensorflow/lite/core/c/common.h"
-#include "tensorflow/lite/delegates/utils/simple_opaque_delegate.h"
 
 namespace tflite::cros {
 
@@ -81,7 +81,7 @@ const char* CrosSampleDelegate::Name() const {
   return kName;
 }
 
-std::unique_ptr<SimpleOpaqueDelegateKernelInterface>
+std::unique_ptr<SimpleAsyncDelegateKernelInterface>
 CrosSampleDelegate::CreateDelegateKernelInterface() {
   return std::make_unique<CrosSampleDelegateKernel>();
 }

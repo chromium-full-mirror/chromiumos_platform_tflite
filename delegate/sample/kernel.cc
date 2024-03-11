@@ -111,4 +111,10 @@ TfLiteStatus CrosSampleDelegateKernel::Eval(TfLiteOpaqueContext* context,
   return kTfLiteOk;
 }
 
+TfLiteAsyncKernel* CrosSampleDelegateKernel::AsyncKernel(
+    TfLiteOpaqueContext* context,
+    TfLiteOpaqueNode* node) {
+  return nullptr;
+}
+
 }  // namespace tflite::cros

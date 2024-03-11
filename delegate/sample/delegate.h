@@ -9,19 +9,19 @@
 
 #include <memory>
 
+#include "common/simple_async_delegate.h"
 #include "tensorflow/lite/core/c/common.h"
-#include "tensorflow/lite/delegates/utils/simple_opaque_delegate.h"
 
 namespace tflite::cros {
 
 // A simple delegate that supports only addition and subtraction operations.
-// Implements SimpleOpaqueDelegateInterface, and therefore the delegate can be
+// Implements SimpleAsyncDelegateInterface, and therefore the delegate can be
 // easily be adapted to work with the stable TFLite delegate API via
 // TfLiteOpaqueDelegateFactory.
-class CrosSampleDelegate : public SimpleOpaqueDelegateInterface {
+class CrosSampleDelegate : public SimpleAsyncDelegateInterface {
  public:
   static constexpr char kName[] = "cros_sample_delegate";
-  static constexpr char kVersion[] = "0.1.0";
+  static constexpr char kVersion[] = "0.1.1";
 
   // CrosSampleDelegate supports float32 input type only. Returns true if the
   // inputs of 'node' are two tensors of float32 with the same shape and the
@@ -39,10 +39,10 @@ class CrosSampleDelegate : public SimpleOpaqueDelegateInterface {
   const char* Name() const override;
 
   // Returns an instance of CrosSampleDelegateKernel that implements
-  // SimpleOpaqueDelegateKernelInterface. CrosSampleDelegateKernel describes
+  // SimpleAsyncDelegateKernelInterface. CrosSampleDelegateKernel describes
   // how a subgraph is delegated and the concrete evaluation of both addition
   // and subtraction operations to be performed by the delegate.
-  std::unique_ptr<SimpleOpaqueDelegateKernelInterface>
+  std::unique_ptr<SimpleAsyncDelegateKernelInterface>
   CreateDelegateKernelInterface() override;
 };
 

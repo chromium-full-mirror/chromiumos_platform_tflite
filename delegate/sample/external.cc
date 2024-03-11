@@ -19,11 +19,11 @@ namespace {
 
 TfLiteOpaqueDelegate* CreateFunc(const void* tflite_settings) {
   auto delegate = std::make_unique<CrosSampleDelegate>();
-  return TfLiteOpaqueDelegateFactory::CreateSimpleDelegate(std::move(delegate));
+  return SimpleAsyncDelegateFactory::CreateAsyncDelegate(std::move(delegate));
 }
 
 void DestroyFunc(TfLiteOpaqueDelegate* delegate) {
-  TfLiteOpaqueDelegateFactory::DeleteSimpleDelegate(delegate);
+  SimpleAsyncDelegateFactory::DeleteAsyncDelegate(delegate);
 }
 
 int ErrnoFunc(TfLiteOpaqueDelegate* delegate) {
