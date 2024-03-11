@@ -3,9 +3,16 @@
 # found in the LICENSE file.
 
 load("@org_tensorflow//tensorflow/lite/core/shims:cc_library_with_tflite.bzl", "cc_library_with_tflite")
+load("@rules_cc//cc:defs.bzl", "cc_library")
 
 package(
     default_visibility = ["//:__subpackages__"],
+)
+
+cc_library(
+    name = "android_hardware_buffer",
+    srcs = ["android_hardware_buffer.cc"],
+    hdrs = ["android_hardware_buffer.h"],
 )
 
 cc_library_with_tflite(
