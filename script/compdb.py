@@ -3,6 +3,8 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+"""A helper script to generate compile_commands.json."""
+
 import argparse
 import functools
 import json
@@ -28,12 +30,12 @@ def shell_join(cmd: List[str]) -> str:
 
 
 def run(args: List[str]):
-    logging.debug(f"$ {shell_join(args)}")
+    logging.debug("$ %s", shell_join(args))
     subprocess.check_call(args, cwd=get_workspace_root())
 
 
 def check_output(args: List[str]) -> str:
-    logging.debug(f"$ {shell_join(args)}")
+    logging.debug("$ %s", shell_join(args))
     return subprocess.check_output(args, text=True, cwd=get_workspace_root())
 
 

@@ -4,11 +4,12 @@
  * found in the LICENSE file.
  */
 
-#ifndef COMMON_SIMPLE_ASYNC_DELEGATE_H
-#define COMMON_SIMPLE_ASYNC_DELEGATE_H
+#ifndef COMMON_SIMPLE_ASYNC_DELEGATE_H_
+#define COMMON_SIMPLE_ASYNC_DELEGATE_H_
 
 #include <cstdint>
 #include <memory>
+#include <utility>
 
 #include "tensorflow/lite/core/c/c_api_types.h"
 #include "tensorflow/lite/core/c/common.h"
@@ -114,4 +115,4 @@ class SimpleAsyncDelegateFactory {
 
 }  // namespace tflite::cros
 
-#endif  // COMMON_SIMPLE_ASYNC_DELEGATE_H
+#endif  // COMMON_SIMPLE_ASYNC_DELEGATE_H_

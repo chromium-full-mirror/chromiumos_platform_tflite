@@ -40,8 +40,8 @@ class CrosSampleDelegateKernel : public SimpleAsyncDelegateKernelInterface {
   // Retrieves the async kernel.
   // Returns nullptr for now, since the delegate does not support asynchronous
   // execution yet.
-  virtual TfLiteAsyncKernel* AsyncKernel(TfLiteOpaqueContext* context,
-                                         TfLiteOpaqueNode* node) override;
+  TfLiteAsyncKernel* AsyncKernel(TfLiteOpaqueContext* context,
+                                 TfLiteOpaqueNode* node) override;
 
  private:
   struct NodeInfo {

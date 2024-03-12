@@ -4,8 +4,8 @@
  * found in the LICENSE file.
  */
 
-#ifndef COMMON_ANDROID_HARDWARE_BUFFER_H
-#define COMMON_ANDROID_HARDWARE_BUFFER_H
+#ifndef COMMON_ANDROID_HARDWARE_BUFFER_H_
+#define COMMON_ANDROID_HARDWARE_BUFFER_H_
 
 #include <stdint.h>
 #include <sys/cdefs.h>
@@ -305,4 +305,4 @@ int AHardwareBuffer_createFromHandle(
 
 __END_DECLS
 
-#endif  // COMMON_ANDROID_HARDWARE_BUFFER_H
+#endif  // COMMON_ANDROID_HARDWARE_BUFFER_H_
