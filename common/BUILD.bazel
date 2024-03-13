@@ -41,6 +41,20 @@ cc_binary(
     ],
 )
 
+cc_library(
+    name = "async_driver",
+    srcs = ["async_driver.cc"],
+    hdrs = ["async_driver.h"],
+    deps = [
+        ":android_hardware_buffer",
+        "@com_google_absl//absl/cleanup",
+        "@org_tensorflow//tensorflow/lite:framework",
+        "@org_tensorflow//tensorflow/lite/core/async/c:task",
+        "@org_tensorflow//tensorflow/lite/delegates/utils:async_type_helpers",
+        "@org_tensorflow//tensorflow/lite/kernels:builtin_ops",
+    ],
+)
+
 cc_library_with_tflite(
     name = "simple_async_delegate",
     srcs = ["simple_async_delegate.cc"],
