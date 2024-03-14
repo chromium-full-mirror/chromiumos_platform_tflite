@@ -11,14 +11,30 @@ package(
 
 cc_library(
     name = "android_hardware_buffer",
-    srcs = ["android_hardware_buffer.cc"],
     hdrs = ["android_hardware_buffer.h"],
+)
+
+cc_binary(
+    name = "libnativewindow.so",
+    srcs = ["android_hardware_buffer.cc"],
+    linkopts = [
+        # Expose necessary symbols only.
+        "-Wl,--version-script=$(location :libnativewindow.lds)",
+    ],
+    linkshared = True,
+    deps = [
+        ":android_hardware_buffer",
+        ":libnativewindow.lds",
+    ],
 )
 
 cc_binary(
     name = "android_hardware_buffer_test",
     testonly = True,
-    srcs = ["android_hardware_buffer_test.cc"],
+    srcs = [
+        "android_hardware_buffer_test.cc",
+        "libnativewindow.so",
+    ],
     deps = [
         ":android_hardware_buffer",
         "@com_google_googletest//:gtest",

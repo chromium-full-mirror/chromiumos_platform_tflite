@@ -6,3 +6,8 @@ alias(
     name = "cros_sample_delegate",
     actual = "//delegate/sample:tensorflowlite_cros_sample_delegate",
 )
+
+alias(
+    name = "libnativewindow.so",
+    actual = "//common:libnativewindow.so",
+)
