@@ -10,6 +10,24 @@ package(
 )
 
 cc_library(
+    name = "dbg",
+    hdrs = ["dbg.h"],
+    # Uncomment this to enable DBG() macro for debugging.
+    # defines = ["DBG_FORCE_ENABLE"],
+)
+
+cc_binary(
+    name = "dbg_test",
+    testonly = True,
+    srcs = ["dbg_test.cc"],
+    local_defines = ["DBG_FORCE_ENABLE"],
+    deps = [
+        ":dbg",
+        "@com_google_googletest//:gtest",
+    ],
+)
+
+cc_library(
     name = "android_hardware_buffer",
     hdrs = ["android_hardware_buffer.h"],
 )
