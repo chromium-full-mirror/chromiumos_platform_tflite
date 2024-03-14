@@ -6,9 +6,14 @@
 
 #include "delegate/sample/kernel.h"
 
+#include <memory>
+
 #include "tensorflow/lite/core/c/c_api_opaque.h"
 
 namespace tflite::cros {
+
+CrosSampleDelegateKernel::CrosSampleDelegateKernel()
+    : async_kernel_(std::make_unique<CrosSampleDelegateAsyncKernel>(&core_)) {}
 
 TfLiteStatus CrosSampleDelegateKernel::Init(
     TfLiteOpaqueContext* context,
@@ -43,7 +48,7 @@ TfLiteStatus CrosSampleDelegateKernel::Eval(TfLiteOpaqueContext* context,
 TfLiteAsyncKernel* CrosSampleDelegateKernel::AsyncKernel(
     TfLiteOpaqueContext* context,
     TfLiteOpaqueNode* node) {
-  return nullptr;
+  return async_kernel_->kernel();
 }
 
 }  // namespace tflite::cros

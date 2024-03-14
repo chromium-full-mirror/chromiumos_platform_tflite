@@ -23,6 +23,32 @@ cc_library_with_tflite(
 )
 
 cc_library_with_tflite(
+    name = "async_kernel",
+    srcs = [
+        "async_kernel.cc",
+    ],
+    hdrs = [
+        "async_kernel.h",
+    ],
+    copts = tflite_copts(),
+    generate_opaque_delegate_target = True,
+    tflite_deps = [
+        ":core",
+        "@org_tensorflow//tensorflow/lite/c:c_api",
+        "@org_tensorflow//tensorflow/lite/c:c_api_experimental",
+        "@org_tensorflow//tensorflow/lite/c:common",
+    ],
+    deps = [
+        "//common:android_hardware_buffer",
+        "@com_google_absl//absl/cleanup",
+        "@org_tensorflow//tensorflow/lite/async:backend_async_kernel_interface",
+        "@org_tensorflow//tensorflow/lite/async/interop/c:constants",
+        "@org_tensorflow//tensorflow/lite/core/async/c:task",
+        "@org_tensorflow//tensorflow/lite/delegates/utils:async_type_helpers",
+    ],
+)
+
+cc_library_with_tflite(
     name = "kernel",
     srcs = [
         "kernel.cc",
@@ -33,6 +59,7 @@ cc_library_with_tflite(
     copts = tflite_copts(),
     generate_opaque_delegate_target = True,
     tflite_deps = [
+        ":async_kernel",
         ":core",
         "//common:simple_async_delegate",
         "@org_tensorflow//tensorflow/lite/c:c_api",
@@ -78,6 +105,7 @@ cc_library_with_tflite(
 
 tflite_cc_shared_object(
     name = "tensorflowlite_cros_sample_delegate",
+    srcs = ["//common:libnativewindow.so"],
     linkopts = [
         "-Wl,--no-undefined",
         # Expose necessary symbols only.

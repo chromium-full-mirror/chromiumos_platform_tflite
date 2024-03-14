@@ -7,13 +7,10 @@
 #ifndef DELEGATE_SAMPLE_KERNEL_H_
 #define DELEGATE_SAMPLE_KERNEL_H_
 
-// TODO(shik): Note that the upstream sample delegate use flat_hash_{map,set}
-// from absl/container. We haven't decided whether we would like to allow
-// absl/libchrome usage here.
-#include <map>
-#include <vector>
+#include <memory>
 
 #include "common/simple_async_delegate.h"
+#include "delegate/sample/async_kernel.h"
 #include "delegate/sample/core.h"
 #include "tensorflow/lite/core/c/c_api_opaque.h"
 
@@ -23,8 +20,9 @@ namespace tflite::cros {
 // subtraction operations. This class is thread-compatible.
 class CrosSampleDelegateKernel : public SimpleAsyncDelegateKernelInterface {
  public:
+  CrosSampleDelegateKernel();
+
   // Move-only.
-  CrosSampleDelegateKernel() = default;
   CrosSampleDelegateKernel(CrosSampleDelegateKernel&& other) = default;
   CrosSampleDelegateKernel& operator=(CrosSampleDelegateKernel&& other) =
       default;
@@ -45,6 +43,7 @@ class CrosSampleDelegateKernel : public SimpleAsyncDelegateKernelInterface {
 
  private:
   CrosSampleDelegateCore core_;
+  std::unique_ptr<CrosSampleDelegateAsyncKernel> async_kernel_;
 };
 
 }  // namespace tflite::cros
