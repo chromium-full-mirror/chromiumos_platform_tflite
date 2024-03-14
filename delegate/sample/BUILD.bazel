@@ -6,6 +6,23 @@ load("@org_tensorflow//tensorflow/lite:build_def.bzl", "tflite_cc_shared_object"
 load("@org_tensorflow//tensorflow/lite/core/shims:cc_library_with_tflite.bzl", "cc_library_with_tflite")
 
 cc_library_with_tflite(
+    name = "core",
+    srcs = [
+        "core.cc",
+    ],
+    hdrs = [
+        "core.h",
+    ],
+    copts = tflite_copts(),
+    generate_opaque_delegate_target = True,
+    tflite_deps = [
+        "@org_tensorflow//tensorflow/lite/c:c_api",
+        "@org_tensorflow//tensorflow/lite/c:c_api_experimental",
+        "@org_tensorflow//tensorflow/lite/c:common",
+    ],
+)
+
+cc_library_with_tflite(
     name = "kernel",
     srcs = [
         "kernel.cc",
@@ -16,6 +33,7 @@ cc_library_with_tflite(
     copts = tflite_copts(),
     generate_opaque_delegate_target = True,
     tflite_deps = [
+        ":core",
         "//common:simple_async_delegate",
         "@org_tensorflow//tensorflow/lite/c:c_api",
         "@org_tensorflow//tensorflow/lite/c:c_api_experimental",

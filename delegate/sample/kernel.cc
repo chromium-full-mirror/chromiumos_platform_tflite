@@ -6,109 +6,38 @@
 
 #include "delegate/sample/kernel.h"
 
-#include <algorithm>
-#include <map>
-#include <set>
-#include <vector>
-
 #include "tensorflow/lite/core/c/c_api_opaque.h"
 
 namespace tflite::cros {
 
-namespace {
-
-float AddImpl(float a, float b) {
-  return a + b;
-}
-
-float SubImpl(float a, float b) {
-  return a - b;
-}
-
-int CalculateNumElements(const TfLiteOpaqueTensor* tensor) {
-  int num_elements = 1;
-  int num_dims = TfLiteOpaqueTensorNumDims(tensor);
-  for (int i = 0; i < num_dims; ++i) {
-    num_elements *= TfLiteOpaqueTensorDim(tensor, i);
-  }
-  return num_elements;
-}
-
-}  // namespace
-
 TfLiteStatus CrosSampleDelegateKernel::Init(
     TfLiteOpaqueContext* context,
     const TfLiteOpaqueDelegateParams* params) {
-  int num_nodes = params->nodes_to_replace->size;
-  node_infos_.reserve(num_nodes);
-  for (int i = 0; i < num_nodes; ++i) {
-    TfLiteOpaqueNode* node = nullptr;
-    TfLiteRegistrationExternal* registration = nullptr;
-    int node_index = params->nodes_to_replace->data[i];
-    TfLiteOpaqueContextGetNodeAndRegistration(context, node_index, &node,
-                                              &registration);
-
-    NodeInfo info = {
-        .op = TfLiteRegistrationExternalGetBuiltInCode(registration),
-        .input1 = TfLiteOpaqueNodeGetInput(context, node, 0),
-        .input2 = TfLiteOpaqueNodeGetInput(context, node, 1),
-        .output = TfLiteOpaqueNodeGetOutput(context, node, 0),
-    };
-    node_infos_.push_back(info);
-  }
-
-  using TensorSet = std::set<const TfLiteOpaqueTensor*>;
-  TensorSet all_inputs;
-  TensorSet all_outputs;
-  for (const auto& info : node_infos_) {
-    all_inputs.insert(info.input1);
-    all_inputs.insert(info.input2);
-    all_outputs.insert(info.output);
-  }
-  // If the input of some node is an output of some node in the same delegated
-  // subgraph, it's an internal tensor for us.
-  std::set_intersection(all_inputs.begin(), all_inputs.end(),
-                        all_outputs.begin(), all_outputs.end(),
-                        std::back_inserter(internal_tensors_));
-
-  return kTfLiteOk;
+  return core_.Init(context, params);
 }
 
 TfLiteStatus CrosSampleDelegateKernel::Prepare(TfLiteOpaqueContext* context,
                                                TfLiteOpaqueNode* node) {
-  // The TFLite runtime takes care of external tensors.
-  // For internal tensors, we need to allocate memory for them.
-  for (const auto& tensor : internal_tensors_) {
-    int size = CalculateNumElements(tensor);
-    internal_tensors_memory_[tensor].resize(size);
-  }
-
-  return kTfLiteOk;
-}
-
-float* CrosSampleDelegateKernel::GetRawDataSource(
-    const TfLiteOpaqueTensor* tensor) {
-  auto it = internal_tensors_memory_.find(tensor);
-  if (it != internal_tensors_memory_.end()) {
-    return it->second.data();
-  } else {
-    return reinterpret_cast<float*>(TfLiteOpaqueTensorData(tensor));
-  }
+  return core_.Prepare();
 }
 
 TfLiteStatus CrosSampleDelegateKernel::Eval(TfLiteOpaqueContext* context,
                                             TfLiteOpaqueNode* node) {
-  for (const auto& info : node_infos_) {
-    float* input1 = GetRawDataSource(info.input1);
-    float* input2 = GetRawDataSource(info.input2);
-    float* output = GetRawDataSource(info.output);
-
-    // The input/output tensors have the same size.
-    int size = CalculateNumElements(info.output);
-    std::transform(input1, input1 + size, input2, output,
-                   info.op == kTfLiteBuiltinAdd ? AddImpl : SubImpl);
+  int num_inputs = TfLiteOpaqueNodeNumberOfInputs(node);
+  for (int i = 0; i < num_inputs; ++i) {
+    auto tensor = TfLiteOpaqueNodeGetInput(context, node, i);
+    auto data = TfLiteOpaqueTensorData(tensor);
+    core_.SetExternalTensorMemory(tensor, data);
   }
-  return kTfLiteOk;
+
+  int num_outputs = TfLiteOpaqueNodeNumberOfOutputs(node);
+  for (int i = 0; i < num_outputs; ++i) {
+    auto tensor = TfLiteOpaqueNodeGetOutput(context, node, i);
+    auto data = TfLiteOpaqueTensorData(tensor);
+    core_.SetExternalTensorMemory(tensor, data);
+  }
+
+  return core_.Eval();
 }
 
 TfLiteAsyncKernel* CrosSampleDelegateKernel::AsyncKernel(
