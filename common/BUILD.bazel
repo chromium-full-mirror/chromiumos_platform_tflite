@@ -100,6 +100,25 @@ cc_library(
     ],
 )
 
+cc_binary(
+    name = "async_delegate_test",
+    srcs = [
+        "async_delegate_test.cc",
+        ":libnativewindow.so",
+    ],
+    deps = [
+        ":async_driver",
+        ":simple_model_builder",
+        "@com_google_absl//absl/random",
+        "@com_google_googletest//:gtest",
+        "@org_tensorflow//tensorflow/lite:framework",
+        "@org_tensorflow//tensorflow/lite/core/async/interop/c:attribute_map",
+        "@org_tensorflow//tensorflow/lite/kernels:builtin_ops",
+        "@org_tensorflow//tensorflow/lite/tools/delegates:delegate_provider_lib",
+        "@org_tensorflow//tensorflow/lite/tools/delegates/experimental/stable_delegate:delegate_provider",
+    ],
+)
+
 cc_library_with_tflite(
     name = "simple_async_delegate",
     srcs = ["simple_async_delegate.cc"],

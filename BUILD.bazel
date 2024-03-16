@@ -11,3 +11,8 @@ alias(
     name = "libnativewindow.so",
     actual = "//common:libnativewindow.so",
 )
+
+alias(
+    name = "async_delegate_test",
+    actual = "//common:async_delegate_test",
+)

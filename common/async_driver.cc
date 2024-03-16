@@ -95,7 +95,7 @@ TfLiteStatus AsyncDriver::Prepare() {
 }
 
 TfLiteStatus AsyncDriver::SetInputTensor(const std::string& name,
-                                         std::span<uint8_t> data) {
+                                         std::span<const uint8_t> data) {
   auto it = tensor_buffer_ahwb_map_.find({kTfLiteIoTypeInput, name});
   if (it == tensor_buffer_ahwb_map_.end()) {
     return kTfLiteError;
@@ -113,6 +113,7 @@ TfLiteStatus AsyncDriver::SetInputTensor(const std::string& name,
   if (AHardwareBuffer_unlock(buffer, /*fence=*/nullptr) != 0) {
     return kTfLiteError;
   }
+
   return kTfLiteOk;
 }
 

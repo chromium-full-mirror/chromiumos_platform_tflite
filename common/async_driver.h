@@ -49,22 +49,45 @@ class AsyncDriver {
 
   ~AsyncDriver();
 
+  // Move-only.
+  AsyncDriver(AsyncDriver&& other) = default;
+  AsyncDriver& operator=(AsyncDriver&& other) = default;
+  AsyncDriver(const AsyncDriver&) = delete;
+  AsyncDriver& operator=(const AsyncDriver&) = delete;
+
   // Reconciles with the delegate to decide the buffer/sync attributes, and
   // allocates the buffers accordingly.
   TfLiteStatus Prepare();
 
   // Copies the provided data to the input tensor buffer.
   // TODO(shik): Add an API to allow providing AHardwareBuffer directly.
-  TfLiteStatus SetInputTensor(const std::string& name, std::span<uint8_t> data);
+  TfLiteStatus SetInputTensor(const std::string& name,
+                              std::span<const uint8_t> data);
+
+  template <typename T>
+  TfLiteStatus SetInputTensor(const std::string& name,
+                              const std::vector<T>& data) {
+    auto begin = reinterpret_cast<const uint8_t*>(data.data());
+    auto end = reinterpret_cast<const uint8_t*>(data.data() + data.size());
+    return SetInputTensor(name, std::span(begin, end));
+  }
 
   // Runs model inference and wait until it's finished.
   TfLiteStatus Invoke();
 
-  // TODO(shik): Consider using absl::StatusOr to signal error in a less
-  // error-prone way.
   // Copies the data from the output tensor buffer. Returns an empty vector if
   // there is any error.
+  // TODO(shik): Consider using absl::StatusOr to signal error in a less
+  // error-prone way.
   std::vector<uint8_t> GetOutputTensor(const std::string& name);
+
+  template <typename T>
+  std::vector<T> GetOutputTensor(const std::string& name) {
+    auto raw_data = GetOutputTensor(name);
+    std::vector<T> data(raw_data.size() / sizeof(T));
+    memcpy(data.data(), raw_data.data(), raw_data.size());
+    return data;
+  }
 
  private:
   // The private constructor used in the factory function.
