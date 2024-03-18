@@ -22,6 +22,8 @@ namespace tflite::cros {
 // manipulate raw FlatBuffer types. This class is thread-compatible.
 class SimpleModelBuilder {
  public:
+  static constexpr char kSignatureKey[] = "serving_default";
+
   struct TensorArgs {
     // TODO(shik): Generate SignatureDef using the tensor names. It's not
     // supported by the ModelWriter we are using now so we have to do it

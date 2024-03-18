@@ -40,6 +40,40 @@ class OwnedMemoryAllocation : public Allocation {
   size_t size_;
 };
 
+std::unique_ptr<FlatBufferModel> FixupSignatureDef(
+    std::unique_ptr<FlatBufferModel> fb_model) {
+  std::unique_ptr<ModelT> model(fb_model->GetModel()->UnPack());
+
+  auto def = std::make_unique<SignatureDefT>();
+  def->subgraph_index = 0;
+  def->signature_key = SimpleModelBuilder::kSignatureKey;
+
+  auto& graph = model->subgraphs[0];
+  for (int i : graph->inputs) {
+    auto map = std::make_unique<TensorMapT>();
+    map->name = graph->tensors[i]->name;
+    map->tensor_index = i;
+    def->inputs.push_back(std::move(map));
+  }
+  for (int i : graph->outputs) {
+    auto map = std::make_unique<TensorMapT>();
+    map->name = graph->tensors[i]->name;
+    map->tensor_index = i;
+    def->outputs.push_back(std::move(map));
+  }
+
+  model->signature_defs.push_back(std::move(def));
+
+  flatbuffers::FlatBufferBuilder fbb;
+  flatbuffers::Offset<Model> packed_model = Model::Pack(fbb, model.get());
+  FinishModelBuffer(fbb, packed_model);
+  auto data = std::make_unique<uint8_t[]>(fbb.GetSize());
+  memcpy(data.get(), fbb.GetBufferPointer(), fbb.GetSize());
+  auto allocation =
+      std::make_unique<OwnedMemoryAllocation>(std::move(data), fbb.GetSize());
+  return FlatBufferModel::VerifyAndBuildFromAllocation(std::move(allocation));
+}
+
 }  // namespace
 
 SimpleModelBuilder::SimpleModelBuilder() {
@@ -136,7 +170,13 @@ std::unique_ptr<FlatBufferModel> SimpleModelBuilder::Build() {
 
   auto allocation =
       std::make_unique<OwnedMemoryAllocation>(std::move(buffer), size);
-  return FlatBufferModel::VerifyAndBuildFromAllocation(std::move(allocation));
+  std::unique_ptr<FlatBufferModel> model =
+      FlatBufferModel::VerifyAndBuildFromAllocation(std::move(allocation));
+  if (model == nullptr) {
+    return nullptr;
+  }
+
+  return FixupSignatureDef(std::move(model));
 }
 
 void SimpleModelBuilder::AddOperatorImpl(OperatorArgs<ScopedBuiltinData> args) {

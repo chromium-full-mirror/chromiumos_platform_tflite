@@ -6,6 +6,7 @@
 
 #include "common/simple_model_builder.h"
 
+#include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
 #include "absl/random/random.h"
@@ -14,8 +15,12 @@
 
 namespace tflite::cros {
 
-using TensorArgs = SimpleModelBuilder::TensorArgs;
+using ::testing::ElementsAre;
+using ::testing::Eq;
+using ::testing::Pair;
+using ::testing::Pointee;
 using BuiltinOpResolver = ops::builtin::BuiltinOpResolver;
+using TensorArgs = SimpleModelBuilder::TensorArgs;
 
 // Build a "d = a + b - c" model and verify the result.
 TEST(Builder, AddSubModel) {
@@ -67,6 +72,16 @@ TEST(Builder, AddSubModel) {
   const std::vector<int>& outputs = interpreter->outputs();
   ASSERT_EQ(outputs.size(), 1);
   EXPECT_STREQ(interpreter->GetOutputName(0), "d");
+
+  // Check signature definition is filled correctly.
+  const char* key = SimpleModelBuilder::kSignatureKey;
+  ASSERT_THAT(interpreter->signature_keys(), ElementsAre(Pointee(Eq(key))));
+  EXPECT_NE(interpreter->GetSignatureRunner(key), nullptr);
+  EXPECT_THAT(interpreter->signature_inputs(key),
+              ElementsAre(Pair("a", inputs[0]), Pair("b", inputs[1]),
+                          Pair("c", inputs[2])));
+  EXPECT_THAT(interpreter->signature_outputs(key),
+              ElementsAre(Pair("d", outputs[0])));
 
   // Check all tensors have the expected type and shape.
   ASSERT_EQ(interpreter->tensors_size(), 5);
