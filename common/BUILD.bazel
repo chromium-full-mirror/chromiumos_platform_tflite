@@ -60,6 +60,30 @@ cc_binary(
 )
 
 cc_library(
+    name = "simple_model_builder",
+    srcs = ["simple_model_builder.cc"],
+    hdrs = ["simple_model_builder.h"],
+    deps = [
+        "@org_tensorflow//tensorflow/lite/c:c_api",
+        "@org_tensorflow//tensorflow/lite/c:c_api_experimental",
+        "@org_tensorflow//tensorflow/lite/c:c_api_types",
+        "@org_tensorflow//tensorflow/lite/c:common",
+        "@org_tensorflow//tensorflow/lite/tools/serialization:writer_lib",
+    ],
+)
+
+cc_binary(
+    name = "simple_model_builder_test",
+    testonly = True,
+    srcs = ["simple_model_builder_test.cc"],
+    deps = [
+        ":simple_model_builder",
+        "@com_google_absl//absl/random",
+        "@com_google_googletest//:gtest",
+    ],
+)
+
+cc_library(
     name = "async_driver",
     srcs = ["async_driver.cc"],
     hdrs = ["async_driver.h"],
