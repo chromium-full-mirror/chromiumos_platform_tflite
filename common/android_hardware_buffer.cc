@@ -51,7 +51,7 @@ class ScopedFd {
   bool is_valid() { return fd_ != kInvalidFd; }
 
  private:
-  int fd_;
+  int fd_ = kInvalidFd;
 };
 
 class Allocator {
