@@ -23,16 +23,20 @@
 #ifndef DELEGATE_MTK_NEURON_NEURON_DELEGATE_KERNEL_H_
 #define DELEGATE_MTK_NEURON_NEURON_DELEGATE_KERNEL_H_
 
+#include <map>
 #include <memory>
 #include <string>
 #include <tuple>
 #include <utility>
 #include <vector>
 
+#include "common/simple_async_delegate.h"
+#include "delegate/mtk_neuron/neuron_async_kernel.h"
 #include "delegate/mtk_neuron/neuron_delegate.h"
 #include "delegate/mtk_neuron/neuron_delegate_builder.h"
 #include "delegate/mtk_neuron/neuron_implementation.h"
 #include "tensorflow/lite/c/c_api_opaque.h"
+#include "tensorflow/lite/core/async/c/task.h"
 #include "tensorflow/lite/delegates/utils/simple_opaque_delegate.h"
 
 #define NEURON_REUSABLE_EXECUTION
@@ -40,6 +44,7 @@
 namespace tflite {
 namespace neuron {
 
+class DelegateAsyncKernel;
 // The kernel that represents the node sub set of TFLite being run on Neuron
 // API.
 struct NeuronOpMappingArgs {
@@ -166,13 +171,14 @@ enum DelegateSpecificMode {
 };
 
 // Neuron delegate kernel.
-class NeuronStableDelegateKernel : public SimpleOpaqueDelegateKernelInterface {
+class NeuronStableDelegateKernel
+    : public cros::SimpleAsyncDelegateKernelInterface {
  public:
   static TfLiteStatus Map(TfLiteOpaqueContext* context, int builtin_code,
                           int version, int neuron_platform_version,
                           const NeuronOpMappingArgs& mapping_args,
                           NeuronOperationType* nn_op_type);
-
+  NeuronStableDelegateKernel();
   explicit NeuronStableDelegateKernel(const NeuronApi* neuronapi,
                                       const NeuronDelegateOptions& options)
       : neuronapi_(neuronapi),
@@ -183,7 +189,8 @@ class NeuronStableDelegateKernel : public SimpleOpaqueDelegateKernelInterface {
         ,
         nn_execution_(nullptr, NNFreeExecution(neuronapi_))
 #endif
-  {
+        ,
+        async_kernel_(std::make_unique<DelegateAsyncKernel>(this)) {
   }
 
   virtual ~NeuronStableDelegateKernel() = default;
@@ -193,10 +200,12 @@ class NeuronStableDelegateKernel : public SimpleOpaqueDelegateKernelInterface {
 
   TfLiteStatus Prepare(TfLiteOpaqueContext* context,
                        TfLiteOpaqueNode* node) override;
-
   TfLiteStatus Eval(TfLiteOpaqueContext* context,
                     TfLiteOpaqueNode* node) override;
-
+  TfLiteStatus Eval(TfLiteOpaqueContext* context, TfLiteOpaqueNode* node,
+                    TfLiteExecutionTask* task);
+  TfLiteAsyncKernel* AsyncKernel(TfLiteOpaqueContext* context,
+                                 TfLiteOpaqueNode* node) override;
   TfLiteStatus GetSupportedOperationsForOneNode(
       TfLiteOpaqueContext* context, TfLiteOpaqueNode* node,
       TfLiteRegistrationExternal* registration, bool* is_supported);
@@ -206,8 +215,12 @@ class NeuronStableDelegateKernel : public SimpleOpaqueDelegateKernelInterface {
                                       const TfLiteIntArray* input_tensors,
                                       const TfLiteIntArray* output_tensors,
                                       bool* is_supported);
+  TfLiteStatus RegisterBuffer(TfLiteBufferHandle buf_handle, int buf_fd,
+                              size_t buf_size);
+  TfLiteStatus UnregisterBuffer(TfLiteBufferHandle buf_handle);
 
  private:
+  std::unique_ptr<DelegateAsyncKernel> async_kernel_;
   const NeuronApi* neuronapi_;
   NeuronDelegateOptions options_;
   // True if initialization has been completed successfully
@@ -223,6 +236,8 @@ class NeuronStableDelegateKernel : public SimpleOpaqueDelegateKernelInterface {
   // Track indices we use
   OperandMapping operand_mapping_;
 
+  std::map<TfLiteBufferHandle, NeuronMemory*> tensor_memory_map_kernel_;
+
   std::vector<int> model_state_outputs_;
   std::vector<int> model_state_tfl_inputs_;
   // This is the equivalent of the pair model_state_outputs_,
@@ -236,7 +251,7 @@ class NeuronStableDelegateKernel : public SimpleOpaqueDelegateKernelInterface {
   std::vector<uint8_t> nn_compilation_cache_token_;
 
   // Prevent set memory multi-times when we use ahwb
-  bool need_set_memory = true;
+  bool need_set_memory_ = true;
 
   // Number of the ops in NeuronModel
   int total_op_num_ = 0;

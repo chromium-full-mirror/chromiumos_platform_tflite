@@ -1171,7 +1171,7 @@ TfLiteStatus NeuronStableDelegateKernel::Init(
                                      params->output_tensors));
   }
 
-  need_set_memory = true;
+  need_set_memory_ = true;
   initialised_ = true;
   return kTfLiteOk;
 }
@@ -1330,6 +1330,12 @@ TfLiteStatus NeuronStableDelegateKernel::Prepare(TfLiteOpaqueContext* context,
 
 TfLiteStatus NeuronStableDelegateKernel::Eval(TfLiteOpaqueContext* context,
                                               TfLiteOpaqueNode* node) {
+  return this->Eval(context, node, nullptr);
+}
+
+TfLiteStatus NeuronStableDelegateKernel::Eval(TfLiteOpaqueContext* context,
+                                              TfLiteOpaqueNode* node,
+                                              TfLiteExecutionTask* task) {
   // MTK_ATRACE_CALL();
 #ifdef NEURON_REUSABLE_EXECUTION
   NeuronExecution* execution = nn_execution_.get();
@@ -1368,10 +1374,27 @@ TfLiteStatus NeuronStableDelegateKernel::Eval(TfLiteOpaqueContext* context,
     NeuronOperandType* input_nn_operand_type_ptr = nullptr;
     TfLiteOpaqueTensor* tensor =
         TfLiteOpaqueContextGetOpaqueTensor(context, absolute_input_index);
+    TfLiteBufferHandle buffer_handle =
+        TfLiteExecutionTaskGetBufferByIndex(task, absolute_input_index);
     if (TfLiteOpaqueTensorGetAllocationType(tensor) != kTfLiteMmapRo) {
       TfLiteType nn_type_equivalent =
           operand_mapping_.lite_index_to_neuron_type_conversion(
               absolute_input_index);
+      if (buffer_handle != kTfLiteNullBufferHandle &&
+          tensor_memory_map_kernel_.find(buffer_handle) !=
+              tensor_memory_map_kernel_.end()) {
+        if (need_set_memory_) {
+          RETURN_TFLITE_ERROR_IF_NEURON_ERROR(
+            context,
+            neuronapi_->NeuronExecution_setInputFromMemory(
+              execution, relative_input_index, input_nn_operand_type_ptr,
+              tensor_memory_map_kernel_.at(buffer_handle), 0,
+              TfLiteOpaqueTensorByteSize(tensor)),
+            "associating Neuron execution input with a memory object");
+        }
+        relative_input_index++;
+        continue;
+      }
       int tensor_size = 0;
       if (nn_type_equivalent != kTfLiteNoType) {
         const auto num_elements = NumElements(tensor);
@@ -1410,13 +1433,13 @@ TfLiteStatus NeuronStableDelegateKernel::Eval(TfLiteOpaqueContext* context,
                               context, nn_type_equivalent, &type_size));
         tensor_size = NumElements(tensor) * type_size;
         if (options_.use_ahwb) {
-          if (need_set_memory) {
+          if (need_set_memory_) {
             RETURN_TFLITE_ERROR_IF_NEURON_ERROR(
                 context,
                 neuronapi_->NeuronExecution_setInputFromMemory(
                     execution, relative_input_index, input_nn_operand_type_ptr,
                     nn_input_memory_->get_handle(), input_offset, tensor_size),
-                "associating NNAPI execution input with a memory object");
+                "Associating the execution input with a memory object");
           }
         } else {
           RETURN_TFLITE_ERROR_IF_NEURON_ERROR(
@@ -1424,7 +1447,7 @@ TfLiteStatus NeuronStableDelegateKernel::Eval(TfLiteOpaqueContext* context,
               neuronapi_->NeuronExecution_setInput(
                   execution, relative_input_index, input_nn_operand_type_ptr,
                   input_ptr, tensor_size),
-              "associating NNAPI execution input with a memory object");
+              "Associating the execution input with a memory object");
         }
       } else {
         // copy data to pre-allocated shared memory.
@@ -1432,14 +1455,14 @@ TfLiteStatus NeuronStableDelegateKernel::Eval(TfLiteOpaqueContext* context,
                TfLiteOpaqueTensorData(tensor),
                TfLiteOpaqueTensorByteSize(tensor));
         if (options_.use_ahwb) {
-          if (need_set_memory) {
+          if (need_set_memory_) {
             RETURN_TFLITE_ERROR_IF_NEURON_ERROR(
                 context,
                 neuronapi_->NeuronExecution_setInputFromMemory(
                     execution, relative_input_index, input_nn_operand_type_ptr,
                     nn_input_memory_->get_handle(), input_offset,
                     TfLiteOpaqueTensorByteSize(tensor)),
-                "associating NNAPI execution input with a memory object");
+                "Associating the execution input with a memory object");
           }
         } else {
           RETURN_TFLITE_ERROR_IF_NEURON_ERROR(
@@ -1448,7 +1471,7 @@ TfLiteStatus NeuronStableDelegateKernel::Eval(TfLiteOpaqueContext* context,
                   execution, relative_input_index, input_nn_operand_type_ptr,
                   nn_input_memory_->get_data_ptr() + input_offset,
                   TfLiteOpaqueTensorByteSize(tensor)),
-              "associating NNAPI execution input with a memory object");
+              "Associating the execution input with a memory object");
         }
         tensor_size = TfLiteOpaqueTensorByteSize(tensor);
       }
@@ -1477,29 +1500,44 @@ TfLiteStatus NeuronStableDelegateKernel::Eval(TfLiteOpaqueContext* context,
     NeuronOperandType* output_nn_operand_type_ptr = nullptr;
     TfLiteOpaqueTensor* tensor =
         TfLiteOpaqueContextGetOpaqueTensor(context, output_index);
-    if (options_.use_ahwb) {
-      if (need_set_memory) {
+    TfLiteBufferHandle buffer_handle =
+        TfLiteExecutionTaskGetBufferByIndex(task, output_index);
+    if (buffer_handle != kTfLiteNullBufferHandle &&
+      tensor_memory_map_kernel_.find(buffer_handle) !=
+              tensor_memory_map_kernel_.end()) {
+      if (need_set_memory_) {
         RETURN_TFLITE_ERROR_IF_NEURON_ERROR(
             context,
             neuronapi_->NeuronExecution_setOutputFromMemory(
-                execution, relative_output_index, output_nn_operand_type_ptr,
-                nn_output_memory_->get_handle(), output_offset,
-                TfLiteOpaqueTensorByteSize(tensor)),
+              execution, relative_output_index, output_nn_operand_type_ptr,
+              tensor_memory_map_kernel_.at(buffer_handle), 0,
+              TfLiteOpaqueTensorByteSize(tensor)),
             "associating NNAPI execution output to a memory object");
       }
     } else {
-      RETURN_TFLITE_ERROR_IF_NEURON_ERROR(
-          context,
-          neuronapi_->NeuronExecution_setOutput(
-              execution, relative_output_index, output_nn_operand_type_ptr,
-              nn_output_memory_->get_data_ptr() + output_offset,
-              TfLiteOpaqueTensorByteSize(tensor)),
-          "associating NNAPI execution output to a memory object");
+      if (options_.use_ahwb) {
+        if (need_set_memory_) {
+          RETURN_TFLITE_ERROR_IF_NEURON_ERROR(
+              context,
+              neuronapi_->NeuronExecution_setOutputFromMemory(
+                  execution, relative_output_index, output_nn_operand_type_ptr,
+                  nn_output_memory_->get_handle(), output_offset,
+                  TfLiteOpaqueTensorByteSize(tensor)),
+              "associating NNAPI execution output to a memory object");
+        }
+      } else {
+        RETURN_TFLITE_ERROR_IF_NEURON_ERROR(
+            context,
+            neuronapi_->NeuronExecution_setOutput(
+                execution, relative_output_index, output_nn_operand_type_ptr,
+                nn_output_memory_->get_data_ptr() + output_offset,
+                TfLiteOpaqueTensorByteSize(tensor)),
+            "associating NNAPI execution output to a memory object");
+      }
+
+      output_offset += TfLiteOpaqueTensorByteSize(tensor);
+      output_offset += getNumPaddingBytes(TfLiteOpaqueTensorByteSize(tensor));
     }
-
-    output_offset += TfLiteOpaqueTensorByteSize(tensor);
-    output_offset += getNumPaddingBytes(TfLiteOpaqueTensorByteSize(tensor));
-
     relative_output_index++;
   }
 
@@ -1510,7 +1548,7 @@ TfLiteStatus NeuronStableDelegateKernel::Eval(TfLiteOpaqueContext* context,
     TfLiteOpaqueTensor* tensor =
         TfLiteOpaqueContextGetOpaqueTensor(context, state_tensor_idx);
     if (options_.use_ahwb) {
-      if (need_set_memory) {
+      if (need_set_memory_) {
         RETURN_TFLITE_ERROR_IF_NEURON_ERROR(
             context,
             neuronapi_->NeuronExecution_setOutputFromMemory(
@@ -1555,7 +1593,11 @@ TfLiteStatus NeuronStableDelegateKernel::Eval(TfLiteOpaqueContext* context,
     int output_index = outputs[i];
     TfLiteOpaqueTensor* tensor =
         TfLiteOpaqueContextGetOpaqueTensor(context, output_index);
-    // TODO(MTK): Temporary remove buffer_handle
+    TfLiteBufferHandle buffer_handle =
+        TfLiteExecutionTaskGetBufferByIndex(task, output_index);
+    if (buffer_handle != kTfLiteNullBufferHandle) {
+      continue;
+    }
     TfLiteType nn_type_equivalent =
         operand_mapping_.lite_index_to_neuron_type_conversion(output_index);
     if (TfLiteOpaqueTensorType(tensor) == kTfLiteInt8 &&
@@ -1575,7 +1617,7 @@ TfLiteStatus NeuronStableDelegateKernel::Eval(TfLiteOpaqueContext* context,
     output_offset += TfLiteOpaqueTensorByteSize(tensor);
     output_offset += getNumPaddingBytes(TfLiteOpaqueTensorByteSize(tensor));
   }
-  need_set_memory = false;
+  need_set_memory_ = false;
 
   // copy output of all output tensors in feedback_loops_ into the
   // associated input
@@ -1593,6 +1635,12 @@ TfLiteStatus NeuronStableDelegateKernel::Eval(TfLiteOpaqueContext* context,
   }
 
   return kTfLiteOk;
+}
+
+TfLiteAsyncKernel* NeuronStableDelegateKernel::AsyncKernel(
+    TfLiteOpaqueContext* context,
+    TfLiteOpaqueNode* node) {
+  return async_kernel_->kernel();
 }
 
 void NeuronStableDelegateKernel::AddDequantizeOperatorsWhereNeeded(
@@ -2081,7 +2129,6 @@ TfLiteStatus NeuronStableDelegateKernel::BuildGraph(
         // happen if one tensor is split in several ones)
         operand_mapping_.lite_index_to_neuron(i) != -1) {
       inputs.push_back(operand_mapping_.lite_index_to_neuron(i));
-      // TODO(MTK): Temporary remove buffer_handle
       const TfLiteType nn_type_conversion =
           operand_mapping_.lite_index_to_neuron_type_conversion(i);
       int tensor_size = 0;
@@ -2112,7 +2159,6 @@ TfLiteStatus NeuronStableDelegateKernel::BuildGraph(
     if (output_tensor_neuron_index != -1) {
       outputs.push_back(output_tensor_neuron_index);
     }
-    // TODO(MTK): Temporary remove buffer_handle
     total_output_byte_size += TfLiteOpaqueTensorByteSize(
         TfLiteOpaqueContextGetOpaqueTensor(context, i));
     total_output_byte_size += getNumPaddingBytes(TfLiteOpaqueTensorByteSize(
@@ -2340,6 +2386,31 @@ TfLiteStatus NeuronStableDelegateKernel::GetSupportedOperationsForWholeGraph(
   if (output_tensors) {
     TfLiteIntArrayFree(output_tensors);
   }
+  return kTfLiteOk;
+}
+
+TfLiteStatus NeuronStableDelegateKernel::RegisterBuffer(
+    TfLiteBufferHandle buf_handle, int buf_fd, size_t buf_size) {
+  NeuronMemory* memory = nullptr;
+  neuronapi_->NeuronMemory_createFromFd(buf_size, PROT_READ | PROT_WRITE,
+                                                  buf_fd, 0, &memory);
+  if (memory == nullptr) {
+    TFLITE_LOG_PROD(tflite::TFLITE_LOG_ERROR,
+     "RegisterBuffer called with unknown memory");
+    return kTfLiteError;
+  }
+  tensor_memory_map_kernel_.emplace(buf_handle, memory);
+  return kTfLiteOk;
+}
+
+TfLiteStatus NeuronStableDelegateKernel::UnregisterBuffer(
+    TfLiteBufferHandle buf_handle) {
+  auto it = tensor_memory_map_kernel_.find(buf_handle);
+  if (it == tensor_memory_map_kernel_.end()) {
+    return kTfLiteError;
+  }
+  neuronapi_->NeuronMemory_free(it->second);
+  tensor_memory_map_kernel_.erase(it);
   return kTfLiteOk;
 }
 

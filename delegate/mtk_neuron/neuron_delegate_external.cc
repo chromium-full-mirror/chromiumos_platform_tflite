@@ -26,6 +26,7 @@
 
 #include "common/minimal_logging.h"
 #include "delegate/mtk_neuron/neuron_delegate.h"
+
 #include "tensorflow/lite/acceleration/configuration/c/delegate_plugin.h"
 #include "tensorflow/lite/acceleration/configuration/c/stable_delegate.h"
 #include "tensorflow/lite/acceleration/configuration/configuration_generated.h"
@@ -192,13 +193,13 @@ TfLiteOpaqueDelegate* NeuronStableDelegateCreateFunc(const void* settings) {
 
   auto delegate =
       std::make_unique<tflite::neuron::NeuronStableDelegate>(options);
-  return tflite::TfLiteOpaqueDelegateFactory::CreateSimpleDelegate(
+  return tflite::cros::SimpleAsyncDelegateFactory::CreateAsyncDelegate(
       std::move(delegate));
 }
 
 void NeuronStableDelegateDestroyFunc(
     TfLiteOpaqueDelegate* neuron_stable_delegate) {
-  tflite::TfLiteOpaqueDelegateFactory::DeleteSimpleDelegate(
+  tflite::cros::SimpleAsyncDelegateFactory::DeleteAsyncDelegate(
       neuron_stable_delegate);
 }
 

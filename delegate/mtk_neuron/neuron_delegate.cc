@@ -28,6 +28,7 @@
 #include <vector>
 
 #include "common/minimal_logging.h"
+#include "common/simple_async_delegate.h"
 #include "delegate/mtk_neuron/mtk/mtk_minimal_logging.h"
 #include "delegate/mtk_neuron/neuron_delegate_kernel.h"
 #include "delegate/mtk_neuron/neuron_delegate_utils.h"
@@ -127,7 +128,7 @@ const char* NeuronStableDelegate::Name() const {
   return kNeuronStableDelegateName;
 }
 
-std::unique_ptr<SimpleOpaqueDelegateKernelInterface>
+std::unique_ptr<cros::SimpleAsyncDelegateKernelInterface>
 NeuronStableDelegate::CreateDelegateKernelInterface() {
   return std::make_unique<NeuronStableDelegateKernel>(neuron_, options_);
 }

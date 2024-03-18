@@ -30,6 +30,7 @@
 #include <vector>
 
 #include "common/minimal_logging.h"
+#include "common/simple_async_delegate.h"
 #include "delegate/mtk_neuron/neuron_delegate_options.h"
 #include "delegate/mtk_neuron/neuron_implementation.h"
 #include "tensorflow/lite/builtin_ops.h"
@@ -50,9 +51,9 @@ static const char kNeuronStableDelegateVersion[] = "1.0.0";
 // Returns a structure with the default delegate options.
 NeuronDelegateOptions TfLiteNeuronDelegateOptionsDefault();
 
-class NeuronStableDelegate : public SimpleOpaqueDelegateInterface {
+class NeuronStableDelegate : public cros::SimpleAsyncDelegateInterface {
  public:
-  explicit NeuronStableDelegate(const NeuronDelegateOptions& options)
+  explicit NeuronStableDelegate(const NeuronDelegateOptions &options)
       : options_(options) {}
 
   bool IsNodeSupportedByDelegate(const TfLiteRegistrationExternal* registration,
@@ -63,7 +64,7 @@ class NeuronStableDelegate : public SimpleOpaqueDelegateInterface {
 
   const char* Name() const override;
 
-  std::unique_ptr<SimpleOpaqueDelegateKernelInterface>
+  std::unique_ptr<cros::SimpleAsyncDelegateKernelInterface>
   CreateDelegateKernelInterface() override;
 
  private:
