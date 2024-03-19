@@ -4,11 +4,15 @@
  * found in the LICENSE file.
  */
 
+#include "common/dbg.h"
+
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
-#include <string>
 
-#include "common/dbg.h"
+#include <set>
+#include <string>
+#include <string_view>
+#include <vector>
 
 namespace {
 
@@ -47,12 +51,20 @@ TEST_F(DbgTest, Location) {
 TEST_F(DbgTest, BasicTypes) {
   const int num = 42;
   const std::string str = "foo";
+  const char* c_str = "hey\napple";
+  const std::string_view sv = "string_view";
 
   DBG(num);
   EXPECT_THAT(ConsumeOutput(), HasSubstr("num = 42"));
 
   DBG(str);
-  EXPECT_THAT(ConsumeOutput(), HasSubstr("str = foo"));
+  EXPECT_THAT(ConsumeOutput(), HasSubstr("str = \"foo\""));
+
+  DBG(c_str);
+  EXPECT_THAT(ConsumeOutput(), HasSubstr("c_str = \"hey\\napple\""));
+
+  DBG(sv);
+  EXPECT_THAT(ConsumeOutput(), HasSubstr("sv = \"string_view\""));
 }
 
 TEST_F(DbgTest, MultipleArgs) {
@@ -61,7 +73,7 @@ TEST_F(DbgTest, MultipleArgs) {
 
   DBG(num, str);
   EXPECT_THAT(ConsumeOutput(),
-              AllOf(HasSubstr("num = 42"), HasSubstr("str = foo")));
+              AllOf(HasSubstr("num = 42"), HasSubstr("str = \"foo\"")));
 
   // Should support at least 16 arguments.
   DBG(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16);
@@ -71,6 +83,17 @@ TEST_F(DbgTest, MultipleArgs) {
 TEST_F(DbgTest, Expression) {
   DBG(1 + 2);
   EXPECT_THAT(ConsumeOutput(), HasSubstr("1 + 2 = 3"));
+}
+
+TEST_F(DbgTest, Containers) {
+  std::vector<int> vec = {1, 2, 3};
+  std::set<std::string> set = {"a", "b", "c"};
+
+  DBG(vec);
+  EXPECT_THAT(ConsumeOutput(), HasSubstr("vec = [1, 2, 3]"));
+
+  DBG(set);
+  EXPECT_THAT(ConsumeOutput(), HasSubstr("set = [\"a\", \"b\", \"c\"]"));
 }
 
 // The example used in the file comment of dbg.h.
@@ -83,7 +106,7 @@ std::string GetNameById(int id) {
 TEST_F(DbgTest, Example) {
   GetNameById(42);
   EXPECT_THAT(ConsumeOutput(),
-              AllOf(HasSubstr("id = 42"), HasSubstr("name = apple")));
+              AllOf(HasSubstr("id = 42"), HasSubstr("name = \"apple\"")));
 }
 
 }  // namespace

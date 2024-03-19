@@ -22,7 +22,7 @@
 //
 // The above code will print (assuming DBG() is located at line 10):
 // [example.cc:10:GetNameById] id = 42
-// [example.cc:10:GetNameById] name = apple
+// [example.cc:10:GetNameById] name = "apple"
 //
 // This macro MUST NOT be used in production. Uncomment the `defines` line in
 // BUILD.bazel to enable it for local debugging.
@@ -32,11 +32,87 @@
 #endif
 
 #include <iostream>
+#include <ranges>  // NOLINT(build/include_order) - C++20 header is not recognized yet
 #include <sstream>
 #include <string>
 #include <string_view>
+#include <utility>
+
+#include "absl/strings/escaping.h"
 
 namespace dbg {
+
+namespace impl {
+
+template <int N>
+struct priority_tag : priority_tag<N - 1> {};
+
+template <>
+struct priority_tag<0> {};
+
+class DebugPrinter {
+ public:
+  template <typename T>
+  static std::string Stringify(T&& value) {
+    DebugPrinter printer;
+    printer.Print(std::forward<T>(value));
+    return printer.GetString();
+  }
+
+ private:
+  std::string GetString() { return stream_.str(); }
+
+  template <typename T>
+  void Print(T&& value) {
+    Print(std::forward<T>(value), priority_tag<2>());
+  }
+
+  // TODO(shik): Support pointers.
+  // TODO(shik): Support pairs and tuples.
+  // TODO(shik): Support characters with single quoted format.
+  // TODO(shik): Support bytes with hex output.
+  // TODO(shik): Support bool with "true" / "false".
+  // TODO(shik): Be more careful with char*, which may not have null terminator
+  // and we should limit the printing length.
+
+  // string-like value is quoted and escaped as "foo\nbar".
+  template <typename T>
+    requires std::convertible_to<T, std::string_view>
+  void Print(T&& str, priority_tag<2>) {
+    auto view = static_cast<std::string_view>(str);
+    stream_ << '"' << absl::Utf8SafeCEscape(view) << '"';
+  }
+
+  // container-like range value is printed as [v1, v2, ...].
+  template <typename T>
+    requires std::ranges::range<T>
+  void Print(T&& range, priority_tag<1>) {
+    auto begin = std::ranges::begin(range);
+    auto end = std::ranges::end(range);
+    stream_ << "[";
+    for (auto it = begin; it != end; ++it) {
+      if (it != begin) {
+        stream_ << ", ";
+      }
+      Print(*it);
+    }
+    stream_ << "]";
+  }
+
+  template <typename T>
+  void Print(T&& value, priority_tag<0>) {
+    stream_ << value;
+  }
+
+  std::stringstream stream_;
+};
+
+};  // namespace impl
+
+template <typename T>
+std::string Stringify(T&& value) {
+  return impl::DebugPrinter::Stringify(std::forward<T>(value));
+}
 
 template <typename... T>
 void DebugPrint(std::string_view file,
@@ -44,9 +120,7 @@ void DebugPrint(std::string_view file,
                 std::string_view func,
                 std::initializer_list<std::string_view> names,
                 T&&... values) {
-  // TODO(shik): Support more types automatically, such as containers.
-  auto value_strings = std::initializer_list<std::string>{
-      ((std::stringstream() << values).str())...};
+  auto value_strings = std::initializer_list<std::string>{Stringify(values)...};
   auto name_it = names.begin();
   auto value_it = value_strings.begin();
   for (size_t i = 0; i < names.size(); ++i) {
