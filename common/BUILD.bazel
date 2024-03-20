@@ -10,6 +10,28 @@ package(
 )
 
 cc_library(
+    name = "log",
+    srcs = ["log.cc"],
+    hdrs = ["log.h"],
+    # For program_invocation_short_name in <errno.h>
+    local_defines = ["_GNU_SOURCE"],
+    deps = [
+        "@com_google_absl//absl/log:absl_log",
+        "@com_google_absl//absl/strings:str_format",
+    ],
+)
+
+cc_binary(
+    name = "log_test",
+    testonly = True,
+    srcs = ["log_test.cc"],
+    deps = [
+        ":log",
+        "@com_google_googletest//:gtest",
+    ],
+)
+
+cc_library(
     name = "dbg",
     hdrs = ["dbg.h"],
     # Uncomment this to enable DBG() macro for debugging.

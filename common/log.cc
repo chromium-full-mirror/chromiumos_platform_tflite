@@ -1,0 +1,81 @@
+/*
+ * Copyright 2024 The ChromiumOS Authors
+ * Use of this source code is governed by a BSD-style license that can be
+ * found in the LICENSE file.
+ */
+
+#include "common/log.h"
+
+#include <errno.h>
+#include <syslog.h>
+
+#include <string>
+
+#include "absl/strings/str_format.h"
+
+namespace tflite::cros::log_internal {
+
+namespace {
+
+const char* GetProgramName() {
+  // This is defined in <errno.h>.
+  const char* name = program_invocation_short_name;
+  return name != nullptr ? name : "";
+}
+
+int GetSyslogLevel(const absl::LogEntry& entry) {
+  if (entry.verbosity() != absl::LogEntry::kNoVerbosityLevel) {
+    return LOG_DEBUG;
+  }
+
+  switch (entry.log_severity()) {
+    case absl::LogSeverity::kInfo:
+      return LOG_INFO;
+    case absl::LogSeverity::kWarning:
+      return LOG_WARNING;
+    case absl::LogSeverity::kError:
+      return LOG_ERR;
+    case absl::LogSeverity::kFatal:
+      return LOG_CRIT;
+  }
+
+  // Safe fallback. Should not happen normally.
+  return LOG_DEBUG;
+}
+
+}  // namespace
+
+SyslogStderrSink* SyslogStderrSink::GetInstance() {
+  // Leaky singleton.
+  using Self = SyslogStderrSink;
+  alignas(Self) static uint8_t storage[sizeof(Self)];
+  static Self* instance = new (storage) Self();
+  return instance;
+}
+
+void SyslogStderrSink::Send(const absl::LogEntry& entry) {
+  syslog(GetSyslogLevel(entry), "%s",
+         entry.text_message_with_prefix_and_newline_c_str());
+
+  std::string timestamp = absl::FormatTime(
+      "%Y-%m-%d%ET%H:%M:%E6SZ", entry.timestamp(), absl::UTCTimeZone());
+  const char* severity = absl::LogSeverityName(entry.log_severity());
+
+  // A syslog compatible format used on ChromeOS. Reference:
+  // https://source.chromium.org/chromium/chromium/src/+/main:base/logging_chromeos.cc
+  //
+  // We don't provide control knobs for simplicity. The format looks like:
+  // <timestamp> <severity> <program>[<pid>:<tid>]: [<file>(<line>)] <message>
+  //
+  // TODO(shik): Only print thread id when it's different from the process id.
+  // TODO(shik): Only log to stderr if stdin is a tty.
+  std::string body = absl::StrFormat(
+      "%v %s %s[%d:%d]: [%v(%d)] %v", timestamp, severity, GetProgramName(),
+      getpid(), entry.tid(), entry.source_basename(), entry.source_line(),
+      entry.text_message_with_newline());
+  fwrite(body.data(), body.size(), 1, stderr);
+
+  // TODO(shik): Print stacktrace if available.
+}
+
+}  // namespace tflite::cros::log_internal
