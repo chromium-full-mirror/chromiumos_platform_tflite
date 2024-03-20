@@ -24,6 +24,12 @@ build --define=allow_oversize_protos=true
 build --define=no_aws_support=true
 build --define=no_hdfs_support=true
 
+# Ensure that libm is linked to avoid undefined symbols error. This is also set
+# in the upstream Tensorflow repo in some configurations. See
+# https://github.com/bazelbuild/bazel/issues/12023 for more details.
+build --linkopt="-lm"
+build --host_linkopt="-lm"
+
 # Use --config=host_clang to build things with clang on host.
 build:host_clang --repo_env=CC=clang
 
