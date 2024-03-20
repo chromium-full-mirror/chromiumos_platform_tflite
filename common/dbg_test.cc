@@ -50,12 +50,16 @@ TEST_F(DbgTest, Location) {
 
 TEST_F(DbgTest, BasicTypes) {
   const int num = 42;
+  const char ch = 'A';
   const std::string str = "foo";
   const char* c_str = "hey\napple";
   const std::string_view sv = "string_view";
 
   DBG(num);
   EXPECT_THAT(ConsumeOutput(), HasSubstr("num = 42"));
+
+  DBG(ch);
+  EXPECT_THAT(ConsumeOutput(), HasSubstr("ch = 'A'"));
 
   DBG(str);
   EXPECT_THAT(ConsumeOutput(), HasSubstr("str = \"foo\""));

@@ -64,16 +64,24 @@ class DebugPrinter {
 
   template <typename T>
   void Print(T&& value) {
-    Print(std::forward<T>(value), priority_tag<2>());
+    Print(std::forward<T>(value), priority_tag<3>());
   }
 
   // TODO(shik): Support pointers.
   // TODO(shik): Support pairs and tuples.
-  // TODO(shik): Support characters with single quoted format.
   // TODO(shik): Support bytes with hex output.
   // TODO(shik): Support bool with "true" / "false".
   // TODO(shik): Be more careful with char*, which may not have null terminator
   // and we should limit the printing length.
+
+  // char-like value is quoted and escaped as 'x' and '\n'.
+  template <typename T>
+    requires std::same_as<std::decay_t<T>, char>
+  void Print(T&& value, priority_tag<3>) {
+    std::decay_t<T> ch = value;
+    std::string_view view(&ch, 1);
+    stream_ << "'" << absl::Utf8SafeCEscape(view) << "'";
+  }
 
   // string-like value is quoted and escaped as "foo\nbar".
   template <typename T>
