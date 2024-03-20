@@ -13,11 +13,13 @@
 #include <cerrno>
 #include <cstdint>
 #include <map>
+#include <memory>
 #include <new>
 #include <utility>
 
 namespace {
 
+// TODO(shik): Move this into its own file.
 class ScopedFd {
  public:
   static const int kInvalidFd = -1;
@@ -34,6 +36,7 @@ class ScopedFd {
 
   ~ScopedFd() { reset(); }
 
+  // Move-only.
   ScopedFd(const ScopedFd&) = delete;
   ScopedFd& operator=(const ScopedFd&) = delete;
 
@@ -53,6 +56,40 @@ class ScopedFd {
  private:
   int fd_ = kInvalidFd;
 };
+
+std::unique_ptr<native_handle_t> CreateNativeHandle(int fd) {
+  size_t size = sizeof(native_handle_t) + sizeof(int);
+  auto* handle = static_cast<native_handle_t*>(operator new(size));
+  *handle = {
+      .version = sizeof(native_handle_t),
+      .numFds = 1,
+      .numInts = 0,
+  };
+  handle->data[0] = fd;
+  return std::unique_ptr<native_handle_t>(handle);
+}
+
+std::unique_ptr<native_handle_t> CloneNativeHandle(
+    const native_handle_t* handle) {
+  if (handle == nullptr) {
+    return nullptr;
+  }
+
+  size_t size = sizeof(native_handle_t) +
+                sizeof(int) * (handle->numFds + handle->numInts);
+  auto* cloned = static_cast<native_handle_t*>(operator new(size));
+
+  *cloned = {
+      .version = sizeof(native_handle_t),
+      .numFds = handle->numFds,
+      .numInts = handle->numInts,
+  };
+  for (int i = 0; i < handle->numFds + handle->numInts; ++i) {
+    cloned->data[i] = handle->data[i];
+  }
+
+  return std::unique_ptr<native_handle_t>(cloned);
+}
 
 class Allocator {
  public:
@@ -86,12 +123,14 @@ class Allocator {
       return -errno;
     }
 
+    auto handle = CreateNativeHandle(fd);
     Buffer buffer = {
         .fd = std::move(fd),
         .data = data,
         .size = size,
         .ref_count = 1,
         .desc = *desc,
+        .handle = std::move(handle),
     };
     *out_buffer = reinterpret_cast<AHardwareBuffer*>(data);
     buffers_.emplace(*out_buffer, std::move(buffer));
@@ -158,16 +197,61 @@ class Allocator {
   }
 
   const native_handle_t* GetNativeHandle(const AHardwareBuffer* buffer) {
-    // TODO(shik): Implement this.
-    return nullptr;
+    auto it = buffers_.find(buffer);
+    if (it == buffers_.end()) {
+      return nullptr;
+    }
+    return it->second.handle.get();
   }
 
   int CreateFromHandle(const AHardwareBuffer_Desc* _Nonnull desc,
                        const native_handle_t* _Nonnull handle,
                        int32_t method,
                        AHardwareBuffer* _Nullable* _Nonnull out_buffer) {
-    // TODO(shik): Implement this.
-    return -ENOSYS;
+    // Although we have _Nonnull annotation, this nullptr checking behavior is
+    // clearly specified in the header comment.
+    if (desc == nullptr || handle == nullptr || out_buffer == nullptr) {
+      return -EINVAL;
+    }
+
+    if (method != AHARDWAREBUFFER_CREATE_FROM_HANDLE_METHOD_REGISTER &&
+        method != AHARDWAREBUFFER_CREATE_FROM_HANDLE_METHOD_CLONE) {
+      return -EINVAL;
+    }
+
+    if (!IsSupported(desc) || handle->version != sizeof(native_handle_t) ||
+        handle->numFds != 1) {
+      return -EINVAL;
+    }
+
+    int fd = handle->data[0];
+    auto owned_handle = CloneNativeHandle(handle);
+    if (method == AHARDWAREBUFFER_CREATE_FROM_HANDLE_METHOD_CLONE) {
+      // TODO(shik): Handle EINTR and set CLOEXEC.
+      fd = dup(fd);
+      if (fd == -1) {
+        return -errno;
+      }
+      owned_handle->data[0] = fd;
+    }
+
+    uint32_t size = desc->width;
+    void* data = mmap(nullptr, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+    if (data == MAP_FAILED) {
+      return -errno;
+    }
+
+    Buffer buffer = {
+        .fd = ScopedFd(fd),
+        .data = data,
+        .size = size,
+        .ref_count = 1,
+        .desc = *desc,
+        .handle = std::move(owned_handle),
+    };
+    *out_buffer = reinterpret_cast<AHardwareBuffer*>(data);
+    buffers_.emplace(*out_buffer, std::move(buffer));
+    return 0;
   }
 
  private:
@@ -177,6 +261,11 @@ class Allocator {
     uint32_t size;
     int ref_count;
     AHardwareBuffer_Desc desc;
+
+    // The file descriptor (fd) in native_handle_t is the same one owned by
+    // ScopedFd. Therefore, we don't need to close it separately when releasing
+    // native_handle_t, nor do we need to duplicate it (dup) when cloning.
+    std::unique_ptr<native_handle_t> handle;
   };
 
   std::map<const AHardwareBuffer*, Buffer> buffers_;
