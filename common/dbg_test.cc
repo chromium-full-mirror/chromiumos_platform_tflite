@@ -50,6 +50,7 @@ TEST_F(DbgTest, Location) {
 
 TEST_F(DbgTest, BasicTypes) {
   const int num = 42;
+  const bool ok = true;
   const char ch = 'A';
   const std::string str = "foo";
   const char* c_str = "hey\napple";
@@ -57,6 +58,9 @@ TEST_F(DbgTest, BasicTypes) {
 
   DBG(num);
   EXPECT_THAT(ConsumeOutput(), HasSubstr("num = 42"));
+
+  DBG(ok);
+  EXPECT_THAT(ConsumeOutput(), HasSubstr("ok = true"));
 
   DBG(ch);
   EXPECT_THAT(ConsumeOutput(), HasSubstr("ch = 'A'"));
