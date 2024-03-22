@@ -9,9 +9,12 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include <array>
+#include <map>
 #include <set>
 #include <string>
 #include <string_view>
+#include <tuple>
 #include <vector>
 
 namespace {
@@ -49,12 +52,16 @@ TEST_F(DbgTest, Location) {
 }
 
 TEST_F(DbgTest, BasicTypes) {
-  const int num = 42;
-  const bool ok = true;
-  const char ch = 'A';
-  const std::string str = "foo";
+  int num = 42;
+  bool ok = true;
+  char ch = 'A';
+
+  std::string str = "foo";
   const char* c_str = "hey\napple";
-  const std::string_view sv = "string_view";
+  std::string_view sv = "string_view";
+
+  std::pair<int, int> pair = {5, 14};
+  std::tuple<int, bool, char> tuple = {42, true, 'A'};
 
   DBG(num);
   EXPECT_THAT(ConsumeOutput(), HasSubstr("num = 42"));
@@ -69,15 +76,21 @@ TEST_F(DbgTest, BasicTypes) {
   EXPECT_THAT(ConsumeOutput(), HasSubstr("str = \"foo\""));
 
   DBG(c_str);
-  EXPECT_THAT(ConsumeOutput(), HasSubstr("c_str = \"hey\\napple\""));
+  EXPECT_THAT(ConsumeOutput(), HasSubstr(R"(c_str = "hey\napple")"));
 
   DBG(sv);
   EXPECT_THAT(ConsumeOutput(), HasSubstr("sv = \"string_view\""));
+
+  DBG(pair);
+  EXPECT_THAT(ConsumeOutput(), HasSubstr("pair = (5, 14)"));
+
+  DBG(tuple);
+  EXPECT_THAT(ConsumeOutput(), HasSubstr("tuple = (42, true, 'A')"));
 }
 
 TEST_F(DbgTest, MultipleArgs) {
-  const int num = 42;
-  const std::string str = "foo";
+  int num = 42;
+  std::string str = "foo";
 
   DBG(num, str);
   EXPECT_THAT(ConsumeOutput(),
@@ -94,14 +107,26 @@ TEST_F(DbgTest, Expression) {
 }
 
 TEST_F(DbgTest, Containers) {
+  int c_arr[] = {1, 2, 3};
+  std::array<int, 3> arr = {1, 2, 3};
   std::vector<int> vec = {1, 2, 3};
   std::set<std::string> set = {"a", "b", "c"};
+  std::map<int, std::string> map = {{1, "a"}, {2, "b"}};
+
+  DBG(c_arr);
+  EXPECT_THAT(ConsumeOutput(), HasSubstr("c_arr = [1, 2, 3]"));
+
+  DBG(arr);
+  EXPECT_THAT(ConsumeOutput(), HasSubstr("arr = [1, 2, 3]"));
 
   DBG(vec);
   EXPECT_THAT(ConsumeOutput(), HasSubstr("vec = [1, 2, 3]"));
 
   DBG(set);
-  EXPECT_THAT(ConsumeOutput(), HasSubstr("set = [\"a\", \"b\", \"c\"]"));
+  EXPECT_THAT(ConsumeOutput(), HasSubstr(R"(set = ["a", "b", "c"])"));
+
+  DBG(map);
+  EXPECT_THAT(ConsumeOutput(), HasSubstr(R"(map = [(1, "a"), (2, "b")])"));
 }
 
 // The example used in the file comment of dbg.h.

@@ -64,43 +64,42 @@ class DebugPrinter {
 
   template <typename T>
   void Print(T&& value) {
-    Print(std::forward<T>(value), priority_tag<4>());
+    Print(std::forward<T>(value), priority_tag<5>());
   }
 
   // TODO(shik): Support pointers.
-  // TODO(shik): Support pairs and tuples.
   // TODO(shik): Support bytes with hex output.
   // TODO(shik): Be more careful with char*, which may not have null terminator
   // and we should limit the printing length.
 
-  // boolean value is printed as "true" or "false".
+  // Boolean value is printed as "true" or "false".
   template <typename T>
     requires std::same_as<std::decay_t<T>, bool>
-  void Print(T&& value, priority_tag<4>) {
+  void Print(T&& value, priority_tag<5>) {
     stream_ << (value ? "true" : "false");
   }
 
-  // char-like value is quoted and escaped as 'x' and '\n'.
+  // Char-like value is quoted and escaped as 'x' and '\n'.
   template <typename T>
     requires std::same_as<std::decay_t<T>, char>
-  void Print(T&& value, priority_tag<3>) {
+  void Print(T&& value, priority_tag<4>) {
     std::decay_t<T> ch = value;
     std::string_view view(&ch, 1);
     stream_ << "'" << absl::Utf8SafeCEscape(view) << "'";
   }
 
-  // string-like value is quoted and escaped as "foo\nbar".
+  // String-like value is quoted and escaped as "foo\nbar".
   template <typename T>
     requires std::convertible_to<T, std::string_view>
-  void Print(T&& str, priority_tag<2>) {
+  void Print(T&& str, priority_tag<3>) {
     auto view = static_cast<std::string_view>(str);
     stream_ << '"' << absl::Utf8SafeCEscape(view) << '"';
   }
 
-  // container-like range value is printed as [v1, v2, ...].
+  // Container-like range value is printed as [v1, v2, ...].
   template <typename T>
     requires std::ranges::range<T>
-  void Print(T&& range, priority_tag<1>) {
+  void Print(T&& range, priority_tag<2>) {
     auto begin = std::ranges::begin(range);
     auto end = std::ranges::end(range);
     stream_ << "[";
@@ -113,7 +112,28 @@ class DebugPrinter {
     stream_ << "]";
   }
 
+  // Tuple-like value is printed as (v1, v2, ...).
+  // This is put after container overload to match std::array as a container.
   template <typename T>
+    requires requires { typename std::tuple_size<std::decay_t<T>>::type; }
+  void Print(T&& tuple, priority_tag<1>) {
+    stream_ << "(";
+    std::apply(
+        [&](const auto&... element) {
+          size_t idx = 0;
+          ((stream_ << (idx++ > 0 ? ", " : ""), Print(element)), ...);
+        },
+        std::forward<T>(tuple));
+    stream_ << ")";
+  }
+
+  // Use operator<< if it's not specialized above. The requires statement is
+  // added to make the error message more readable, otherwise compiler will list
+  // all possible candidate overloads of operator<<.
+  template <typename T>
+    requires requires(std::ostream& os, T value) {
+      { os << value } -> std::convertible_to<std::ostream&>;
+    }
   void Print(T&& value, priority_tag<0>) {
     stream_ << value;
   }
