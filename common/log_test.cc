@@ -79,6 +79,28 @@ TEST_F(LogTest, LOG) {
   EXPECT_DEATH({ LOG(FATAL) << "oops"; }, "oops");
 }
 
+TEST_F(LogTest, PLOG) {
+  errno = EINVAL;
+  PLOG(INFO) << "Failed to do something";
+  int after_errno = errno;
+  errno = 0;
+
+  EXPECT_THAT(ConsumeOutput(),
+              HasSubstr("Failed to do something: Invalid argument [22]\n"));
+  EXPECT_EQ(after_errno, EINVAL);
+}
+
+TEST_F(LogTest, FunctionName) {
+  const char* fn_name = __FUNCTION__;
+  EXPECT_STREQ(fn_name, "TestBody");
+
+  LOGF(INFO) << "dog";
+  EXPECT_THAT(ConsumeOutput(), HasSubstr("TestBody: dog"));
+
+  PLOGF(INFO) << "egg";
+  EXPECT_THAT(ConsumeOutput(), HasSubstr("TestBody: egg: Success [0]"));
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {

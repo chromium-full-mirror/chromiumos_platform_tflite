@@ -13,7 +13,7 @@
 
 #include "absl/strings/str_format.h"
 
-namespace tflite::cros::log_internal {
+namespace tflite::cros::log_impl {
 
 namespace {
 
@@ -78,4 +78,4 @@ void SyslogStderrSink::Send(const absl::LogEntry& entry) {
   // TODO(shik): Print stacktrace if available.
 }
 
-}  // namespace tflite::cros::log_internal
+}  // namespace tflite::cros::log_impl
