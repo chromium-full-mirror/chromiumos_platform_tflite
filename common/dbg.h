@@ -44,11 +44,12 @@ namespace dbg {
 
 namespace impl {
 
+// A helper type for templated overloads resolution.
 template <int N>
-struct priority_tag : priority_tag<N - 1> {};
+struct PriorityTag : PriorityTag<N - 1> {};
 
 template <>
-struct priority_tag<0> {};
+struct PriorityTag<0> {};
 
 class DebugPrinter {
  public:
@@ -64,7 +65,7 @@ class DebugPrinter {
 
   template <typename T>
   void Print(T&& value) {
-    Print(std::forward<T>(value), priority_tag<5>());
+    Print(std::forward<T>(value), PriorityTag<5>());
   }
 
   // TODO(shik): Support pointers.
@@ -75,14 +76,14 @@ class DebugPrinter {
   // Boolean value is printed as "true" or "false".
   template <typename T>
     requires std::same_as<std::decay_t<T>, bool>
-  void Print(T&& value, priority_tag<5>) {
+  void Print(T&& value, PriorityTag<5>) {
     stream_ << (value ? "true" : "false");
   }
 
   // Char-like value is quoted and escaped as 'x' and '\n'.
   template <typename T>
     requires std::same_as<std::decay_t<T>, char>
-  void Print(T&& value, priority_tag<4>) {
+  void Print(T&& value, PriorityTag<4>) {
     std::decay_t<T> ch = value;
     std::string_view view(&ch, 1);
     stream_ << "'" << absl::Utf8SafeCEscape(view) << "'";
@@ -91,7 +92,7 @@ class DebugPrinter {
   // String-like value is quoted and escaped as "foo\nbar".
   template <typename T>
     requires std::convertible_to<T, std::string_view>
-  void Print(T&& str, priority_tag<3>) {
+  void Print(T&& str, PriorityTag<3>) {
     auto view = static_cast<std::string_view>(str);
     stream_ << '"' << absl::Utf8SafeCEscape(view) << '"';
   }
@@ -99,7 +100,7 @@ class DebugPrinter {
   // Container-like range value is printed as [v1, v2, ...].
   template <typename T>
     requires std::ranges::range<T>
-  void Print(T&& range, priority_tag<2>) {
+  void Print(T&& range, PriorityTag<2>) {
     auto begin = std::ranges::begin(range);
     auto end = std::ranges::end(range);
     stream_ << "[";
@@ -116,7 +117,7 @@ class DebugPrinter {
   // This is put after container overload to match std::array as a container.
   template <typename T>
     requires requires { typename std::tuple_size<std::decay_t<T>>::type; }
-  void Print(T&& tuple, priority_tag<1>) {
+  void Print(T&& tuple, PriorityTag<1>) {
     stream_ << "(";
     std::apply(
         [&](const auto&... element) {
@@ -134,7 +135,7 @@ class DebugPrinter {
     requires requires(std::ostream& os, T value) {
       { os << value } -> std::convertible_to<std::ostream&>;
     }
-  void Print(T&& value, priority_tag<0>) {
+  void Print(T&& value, PriorityTag<0>) {
     stream_ << value;
   }
 
