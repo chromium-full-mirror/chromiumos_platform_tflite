@@ -129,6 +129,70 @@ TEST_F(DbgTest, Containers) {
   EXPECT_THAT(ConsumeOutput(), HasSubstr(R"(map = [(1, "a"), (2, "b")])"));
 }
 
+struct Student {
+  int id = 42;
+  std::string name = "shik";
+};
+
+struct Course {
+  int id = 514;
+  std::vector<Student> students = {Student()};
+};
+
+struct HasArr {
+  int arr[3] = {1, 2, 3};
+};
+
+struct HasRef {
+  int& lref;
+  int&& rref;
+  const int& clref;
+  const int&& crref;
+};
+
+class MoveOnly {
+ public:
+  MoveOnly() : value(42) {}
+  MoveOnly(MoveOnly&& other) = default;
+  MoveOnly& operator=(MoveOnly&& other) = default;
+  MoveOnly(const MoveOnly&) = delete;
+  MoveOnly& operator=(const MoveOnly&) = delete;
+
+  int value;
+};
+
+struct Empty {};
+
+TEST_F(DbgTest, Struct) {
+  Student student;
+  Course course;
+  HasArr has_arr;
+
+  int val = 1;
+  HasRef has_ref = {val, 2, 3, 4};
+
+  MoveOnly move_only;
+  Empty empty;
+
+  DBG(student);
+  EXPECT_THAT(ConsumeOutput(), HasSubstr(R"(student = {42, "shik"})"));
+
+  DBG(course);
+  EXPECT_THAT(ConsumeOutput(), HasSubstr(R"(course = {514, [{42, "shik"}]})"));
+
+  DBG(has_arr);
+  EXPECT_THAT(ConsumeOutput(), HasSubstr("has_arr = {[1, 2, 3]}"));
+
+  DBG(has_ref);
+  EXPECT_THAT(ConsumeOutput(), HasSubstr("has_ref = {1, 2, 3, 4}"));
+
+  DBG(move_only);
+  EXPECT_THAT(ConsumeOutput(), HasSubstr("move_only = {42}"));
+
+  DBG(empty);
+  EXPECT_THAT(ConsumeOutput(), HasSubstr("empty = {}"));
+}
+
 // The example used in the file comment of dbg.h.
 std::string GetNameById(int id) {
   std::string name = (id == 42 ? "apple" : "banana");
