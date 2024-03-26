@@ -40,6 +40,7 @@ maybe(
         # repo to work with Google internal TFLite libraries and avoid
         # potential ordinal collisions.
         "//patch:tensorflow-2.15.0-0017-mtk-neuron.patch",
+        "//patch:tensorflow-2.15.0-0018-absl-log.patch",
     ],
     sha256 = "9cec5acb0ecf2d47b16891f8bc5bc6fbfdffe1700bdadc0d9ebe27ea34f0c220",
     strip_prefix = "tensorflow-{}".format(TENSORFLOW_VERSION),
