@@ -7,6 +7,9 @@
 #include "common/android_hardware_buffer.h"
 
 #include <fcntl.h>
+#include <linux/dma-buf.h>
+#include <linux/udmabuf.h>
+#include <sys/ioctl.h>
 #include <sys/mman.h>
 #include <unistd.h>
 
@@ -17,6 +20,8 @@
 #include <new>
 #include <utility>
 
+#include "common/log.h"
+
 namespace {
 
 // TODO(shik): Move this into its own file.
@@ -24,7 +29,8 @@ class ScopedFd {
  public:
   static const int kInvalidFd = -1;
 
-  explicit ScopedFd(int fd = kInvalidFd) : fd_(fd) {}
+  ScopedFd() : ScopedFd(kInvalidFd) {}
+  explicit ScopedFd(int fd) : fd_(fd) {}
 
   ScopedFd(ScopedFd&& other) { *this = std::move(other); }
 
@@ -91,6 +97,83 @@ std::unique_ptr<native_handle_t> CloneNativeHandle(
   return std::unique_ptr<native_handle_t>(cloned);
 }
 
+bool IsDmaBuf(int fd) {
+  // Do a no-op sync intentionally.
+  dma_buf_sync sync = {.flags = 0};
+  // TODO(shik): Handle EINTR.
+  int ret = ioctl(fd, DMA_BUF_IOCTL_SYNC, &sync);
+
+  // The ioctl() will get ENOTTY when the specified request does not apply to
+  // the kind of object that the file descriptor references.
+  bool not_applicable = ret == -1 && errno == ENOTTY;
+  return !not_applicable;
+}
+
+bool IsUdmabufAvailable() {
+  static bool avail = [] {
+    ScopedFd fd(open("/dev/udmabuf", O_RDWR));
+    if (!fd.is_valid()) {
+      LOGF(INFO) << "/dev/udmabuf is not available";
+    }
+    return fd.is_valid();
+  }();
+  return avail;
+}
+
+ScopedFd AllocateWithMemfd(size_t size) {
+  // TODO(shik): Use a more descriptive name to make debugging easier.
+  ScopedFd fd(memfd_create("ahwb", MFD_CLOEXEC | MFD_ALLOW_SEALING));
+  if (!fd.is_valid()) {
+    PLOGF(ERROR) << "memfd_create() failed";
+    return {};
+  }
+
+  if (ftruncate64(fd, size) != 0) {
+    PLOGF(ERROR) << "ftruncate64() failed";
+    return {};
+  }
+
+  if (fcntl(fd, F_ADD_SEALS, F_SEAL_SHRINK | F_SEAL_GROW) != 0) {
+    PLOGF(ERROR) << "fcntl() failed";
+    return {};
+  }
+
+  if (!IsUdmabufAvailable()) {
+    return fd;
+  }
+
+  ScopedFd udmabuf(open("/dev/udmabuf", O_RDWR));
+  if (!udmabuf.is_valid()) {
+    PLOGF(ERROR) << "open /dev/udmabuf failed";
+    return {};
+  }
+
+  udmabuf_create create = {
+      .memfd = static_cast<__u32>(fd.get()),
+      .flags = UDMABUF_FLAGS_CLOEXEC,
+      .offset = 0,
+      .size = size,
+  };
+  ScopedFd dmabuf_fd(ioctl(udmabuf, UDMABUF_CREATE, &create));
+  if (!dmabuf_fd.is_valid()) {
+    PLOGF(ERROR) << "ioctl() for UDMABUF_CREATE failed";
+    return {};
+  }
+
+  return dmabuf_fd;
+}
+
+uint64_t SyncFlagsFromUsageMask(uint64_t usage) {
+  uint64_t flags = 0;
+  if (usage & AHARDWAREBUFFER_USAGE_CPU_READ_MASK) {
+    flags |= DMA_BUF_SYNC_READ;
+  }
+  if (usage & AHARDWAREBUFFER_USAGE_CPU_WRITE_MASK) {
+    flags |= DMA_BUF_SYNC_WRITE;
+  }
+  return flags;
+}
+
 class Allocator {
  public:
   static Allocator* GetInstance() {
@@ -100,37 +183,40 @@ class Allocator {
     return instance;
   }
 
-  // TODO(shik): Use dma_heap or udmabuf to create a real dmabuf.
+  // TODO(shik): Add another backend using dma_heap.
   int Allocate(const AHardwareBuffer_Desc* _Nonnull desc,
                AHardwareBuffer* _Nullable* _Nonnull out_buffer) {
     if (!IsSupported(desc)) {
+      LOGF(ERROR) << "Unsupported desc";
       return -EINVAL;
     }
-    uint32_t size = desc->width;
-    // TODO(shik): Use a more descriptive name to make debugging easier.
-    ScopedFd fd(memfd_create("ahwb", MFD_CLOEXEC | MFD_ALLOW_SEALING));
+
+    // Ensure the allocated size is page-aligned.
+    size_t page = sysconf(_SC_PAGESIZE);
+    size_t size = (desc->width + page - 1) / page * page;
+
+    ScopedFd fd = AllocateWithMemfd(size);
     if (!fd.is_valid()) {
-      return -errno;
+      return -EINVAL;
     }
-    if (ftruncate64(fd, size) != 0) {
-      return -errno;
-    }
-    if (fcntl(fd, F_ADD_SEALS, F_SEAL_SHRINK | F_SEAL_GROW) != 0) {
-      return -errno;
-    }
+
     void* data = mmap(nullptr, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
     if (data == MAP_FAILED) {
+      PLOGF(ERROR) << "mmap() failed";
       return -errno;
     }
 
     auto handle = CreateNativeHandle(fd);
+    bool is_dmabuf = IsDmaBuf(fd);
     Buffer buffer = {
         .fd = std::move(fd),
         .data = data,
         .size = size,
+        .is_dmabuf = is_dmabuf,
         .ref_count = 1,
         .desc = *desc,
         .handle = std::move(handle),
+        .locked_usage = 0,
     };
     *out_buffer = reinterpret_cast<AHardwareBuffer*>(data);
     buffers_.emplace(*out_buffer, std::move(buffer));
@@ -165,28 +251,80 @@ class Allocator {
            int32_t fence,
            const ARect* _Nullable rect,
            void* _Nullable* _Nonnull out_virtual_address) {
-    const uint64_t kNonCpuUsageMask = ~(AHARDWAREBUFFER_USAGE_CPU_READ_MASK |
-                                        AHARDWAREBUFFER_USAGE_CPU_WRITE_MASK);
+    const uint64_t kCpuUsageMask = (AHARDWAREBUFFER_USAGE_CPU_READ_MASK |
+                                    AHARDWAREBUFFER_USAGE_CPU_WRITE_MASK);
     auto it = buffers_.find(buffer);
     // TODO(shik): Support fence.
-    if (it == buffers_.end() || (usage & kNonCpuUsageMask) != 0 || fence >= 0 ||
-        rect != nullptr) {
+    if (it == buffers_.end() || fence >= 0 || rect != nullptr) {
       return -EINVAL;
     }
     auto& buf = it->second;
-    // TODO(shik): Call proper ioctl() with DMA_BUF_IOCTL_SYNC.
+
+    if (buf.locked_usage != 0) {
+      // TODO(shik): Support multiple concurrent locks if the usages are
+      // compatible. The semantic is a little bit tricky and there is no use
+      // case yet, so simply return an error for now.
+      LOGF(ERROR) << "Buffer is alerady locked";
+      return -EINVAL;
+    }
+
+    if ((usage & kCpuUsageMask) == 0 || (usage & ~kCpuUsageMask) != 0) {
+      LOGF(ERROR) << "Invalid usage mask";
+      return -EINVAL;
+    }
+
+    bool hasRead = (usage & AHARDWAREBUFFER_USAGE_CPU_READ_MASK) != 0;
+    bool canRead = (buf.desc.usage & AHARDWAREBUFFER_USAGE_CPU_READ_MASK) != 0;
+    bool hasWrite = (usage & AHARDWAREBUFFER_USAGE_CPU_WRITE_MASK) != 0;
+    bool canWrite =
+        (buf.desc.usage & AHARDWAREBUFFER_USAGE_CPU_WRITE_MASK) != 0;
+    if ((hasRead && !canRead) || (hasWrite && !canWrite)) {
+      LOGF(ERROR) << "Incompatible usage mask";
+      return -EINVAL;
+    }
+
+    if (buf.is_dmabuf) {
+      dma_buf_sync sync = {
+          .flags = DMA_BUF_SYNC_START | SyncFlagsFromUsageMask(usage),
+      };
+      // TODO(shik): Handle EINTR.
+      int ret = ioctl(buf.fd, DMA_BUF_IOCTL_SYNC, &sync);
+      if (ret != 0) {
+        PLOGF(ERROR) << "ioctl() for DMA_BUF_IOCTL_SYNC failed";
+        return -EINVAL;
+      }
+    }
+
+    buf.locked_usage = usage;
     *out_virtual_address = buf.data;
     return 0;
   }
 
   int Unlock(AHardwareBuffer* _Nonnull buffer, int32_t* _Nullable fence) {
-    if (buffers_.find(buffer) == buffers_.end()) {
+    auto it = buffers_.find(buffer);
+    if (it == buffers_.end()) {
       return -EINVAL;
     }
+    auto& buf = it->second;
+
+    // TODO(shik): Support fence.
     if (fence != nullptr) {
       *fence = -1;
     }
-    // TODO(shik): Call proper ioctl() with DMA_BUF_IOCTL_SYNC.
+
+    if (buf.is_dmabuf) {
+      dma_buf_sync sync = {
+          .flags = DMA_BUF_SYNC_END | SyncFlagsFromUsageMask(buf.locked_usage),
+      };
+      // TODO(shik): Handle EINTR.
+      int ret = ioctl(buf.fd, DMA_BUF_IOCTL_SYNC, &sync);
+      if (ret != 0) {
+        PLOGF(ERROR) << "ioctl() for DMA_BUF_IOCTL_SYNC failed";
+        return -EINVAL;
+      }
+    }
+
+    buf.locked_usage = 0;
     return 0;
   }
 
@@ -235,19 +373,22 @@ class Allocator {
       owned_handle->data[0] = fd;
     }
 
-    uint32_t size = desc->width;
+    size_t size = desc->width;
     void* data = mmap(nullptr, size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
     if (data == MAP_FAILED) {
       return -errno;
     }
 
+    bool is_dmabuf = IsDmaBuf(fd);
     Buffer buffer = {
         .fd = ScopedFd(fd),
         .data = data,
         .size = size,
+        .is_dmabuf = is_dmabuf,
         .ref_count = 1,
         .desc = *desc,
         .handle = std::move(owned_handle),
+        .locked_usage = 0,
     };
     *out_buffer = reinterpret_cast<AHardwareBuffer*>(data);
     buffers_.emplace(*out_buffer, std::move(buffer));
@@ -258,7 +399,8 @@ class Allocator {
   struct Buffer {
     ScopedFd fd;
     void* data;
-    uint32_t size;
+    size_t size;
+    bool is_dmabuf;
     int ref_count;
     AHardwareBuffer_Desc desc;
 
@@ -266,6 +408,10 @@ class Allocator {
     // ScopedFd. Therefore, we don't need to close it separately when releasing
     // native_handle_t, nor do we need to duplicate it (dup) when cloning.
     std::unique_ptr<native_handle_t> handle;
+
+    // The usage mask applied when the buffer is locked. The value would be 0
+    // when the buffer is not locked.
+    uint64_t locked_usage;
   };
 
   std::map<const AHardwareBuffer*, Buffer> buffers_;

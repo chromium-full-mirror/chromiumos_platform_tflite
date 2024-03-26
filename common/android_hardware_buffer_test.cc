@@ -244,6 +244,43 @@ TEST(AHardwareBuffer, NativeHandleClone) {
   ASSERT_EQ(addr, nullptr);
 }
 
+TEST(AHardwareBuffer, LockUsage) {
+  // Allocate a read-only buffer.
+  const AHardwareBuffer_Desc desc = {
+      .width = kSize,
+      .height = 1,
+      .layers = 1,
+      .format = AHARDWAREBUFFER_FORMAT_BLOB,
+      .usage = AHARDWAREBUFFER_USAGE_CPU_READ_OFTEN,
+      .stride = kSize,
+  };
+  AHardwareBuffer* buffer = nullptr;
+  ASSERT_EQ(AHardwareBuffer_allocate(&desc, &buffer), 0);
+  ASSERT_NE(buffer, nullptr);
+
+  // Can be locked for read.
+  void* addr = nullptr;
+  ASSERT_EQ(AHardwareBuffer_lock(buffer, AHARDWAREBUFFER_USAGE_CPU_READ_RARELY,
+                                 /*fence=*/-1, /*rect=*/nullptr, &addr),
+            0);
+  ASSERT_NE(addr, nullptr);
+  ASSERT_EQ(AHardwareBuffer_unlock(buffer, /*fence=*/nullptr), 0);
+  addr = nullptr;
+
+  // Cannot be locked for write.
+  ASSERT_NE(AHardwareBuffer_lock(buffer, AHARDWAREBUFFER_USAGE_CPU_WRITE_RARELY,
+                                 /*fence=*/-1, /*rect=*/nullptr, &addr),
+            0);
+  ASSERT_EQ(addr, nullptr);
+
+  // Release the buffer. The lock should fail.
+  AHardwareBuffer_release(buffer);
+  ASSERT_NE(AHardwareBuffer_lock(buffer, AHARDWAREBUFFER_USAGE_CPU_READ_RARELY,
+                                 /*fence=*/-1, /*rect=*/nullptr, &addr),
+            0);
+  ASSERT_EQ(addr, nullptr);
+}
+
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
