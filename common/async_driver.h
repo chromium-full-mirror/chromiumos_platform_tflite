@@ -15,7 +15,7 @@
 #include <utility>
 #include <vector>
 
-#include "common/android_hardware_buffer.h"
+#include "android/hardware_buffer.h"
 #include "tensorflow/lite/core/interpreter.h"
 #include "tensorflow/lite/core/model_builder.h"
 

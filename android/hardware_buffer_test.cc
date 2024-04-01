@@ -4,7 +4,7 @@
  * found in the LICENSE file.
  */
 
-#include "common/android_hardware_buffer.h"
+#include "android/hardware_buffer.h"
 
 #include <gtest/gtest.h>
 

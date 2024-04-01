@@ -39,7 +39,7 @@ cc_library_with_tflite(
         "@org_tensorflow//tensorflow/lite/c:common",
     ],
     deps = [
-        "//common:android_hardware_buffer",
+        "//android:hardware_buffer",
         "@com_google_absl//absl/cleanup",
         "@org_tensorflow//tensorflow/lite/async:backend_async_kernel_interface",
         "@org_tensorflow//tensorflow/lite/async/interop/c:constants",
@@ -105,7 +105,7 @@ cc_library_with_tflite(
 
 tflite_cc_shared_object(
     name = "tensorflowlite_cros_sample_delegate",
-    srcs = ["//common:libnativewindow.so"],
+    srcs = ["//android:libnativewindow.so"],
     linkopts = [
         "-Wl,--no-undefined",
         # Expose necessary symbols only.

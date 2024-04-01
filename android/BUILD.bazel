@@ -1,0 +1,42 @@
+# Copyright 2024 The ChromiumOS Authors
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library")
+
+package(
+    default_visibility = ["//:__subpackages__"],
+)
+
+cc_library(
+    name = "hardware_buffer",
+    hdrs = ["hardware_buffer.h"],
+)
+
+cc_binary(
+    name = "libnativewindow.so",
+    srcs = ["hardware_buffer.cc"],
+    linkopts = [
+        # Expose necessary symbols only.
+        "-Wl,--version-script=$(location :libnativewindow.lds)",
+    ],
+    linkshared = True,
+    deps = [
+        ":hardware_buffer",
+        ":libnativewindow.lds",
+        "//common:log",
+    ],
+)
+
+cc_binary(
+    name = "hardware_buffer_test",
+    testonly = True,
+    srcs = [
+        "hardware_buffer_test.cc",
+        "libnativewindow.so",
+    ],
+    deps = [
+        ":hardware_buffer",
+        "@com_google_googletest//:gtest",
+    ],
+)

@@ -9,7 +9,7 @@ alias(
 
 alias(
     name = "libnativewindow.so",
-    actual = "//common:libnativewindow.so",
+    actual = "//android:libnativewindow.so",
 )
 
 alias(

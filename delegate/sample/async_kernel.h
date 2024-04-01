@@ -13,7 +13,7 @@
 #include <vector>
 
 #include "absl/synchronization/mutex.h"
-#include "common/android_hardware_buffer.h"
+#include "android/hardware_buffer.h"
 #include "delegate/sample/core.h"
 #include "tensorflow/lite/async/backend_async_kernel_interface.h"
 #include "tensorflow/lite/core/async/interop/c/constants.h"

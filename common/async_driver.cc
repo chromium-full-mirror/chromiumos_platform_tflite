@@ -17,7 +17,7 @@
 #include <vector>
 
 #include "absl/cleanup/cleanup.h"
-#include "common/android_hardware_buffer.h"
+#include "android/hardware_buffer.h"
 #include "tensorflow/lite/core/async/c/task.h"
 #include "tensorflow/lite/core/async/interop/c/constants.h"
 #include "tensorflow/lite/delegates/utils/async_type_helpers.h"

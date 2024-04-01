@@ -53,39 +53,6 @@ cc_binary(
 )
 
 cc_library(
-    name = "android_hardware_buffer",
-    hdrs = ["android_hardware_buffer.h"],
-)
-
-cc_binary(
-    name = "libnativewindow.so",
-    srcs = ["android_hardware_buffer.cc"],
-    linkopts = [
-        # Expose necessary symbols only.
-        "-Wl,--version-script=$(location :libnativewindow.lds)",
-    ],
-    linkshared = True,
-    deps = [
-        ":android_hardware_buffer",
-        ":libnativewindow.lds",
-        ":log",
-    ],
-)
-
-cc_binary(
-    name = "android_hardware_buffer_test",
-    testonly = True,
-    srcs = [
-        "android_hardware_buffer_test.cc",
-        "libnativewindow.so",
-    ],
-    deps = [
-        ":android_hardware_buffer",
-        "@com_google_googletest//:gtest",
-    ],
-)
-
-cc_library(
     name = "simple_model_builder",
     srcs = ["simple_model_builder.cc"],
     hdrs = ["simple_model_builder.h"],
@@ -114,7 +81,7 @@ cc_library(
     srcs = ["async_driver.cc"],
     hdrs = ["async_driver.h"],
     deps = [
-        ":android_hardware_buffer",
+        "//android:hardware_buffer",
         "@com_google_absl//absl/cleanup",
         "@org_tensorflow//tensorflow/lite:framework",
         "@org_tensorflow//tensorflow/lite/core/async/c:task",
@@ -127,7 +94,7 @@ cc_binary(
     name = "async_delegate_test",
     srcs = [
         "async_delegate_test.cc",
-        ":libnativewindow.so",
+        "//android:libnativewindow.so",
     ],
     deps = [
         ":async_driver",
