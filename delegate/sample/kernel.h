@@ -36,8 +36,6 @@ class CrosSampleDelegateKernel : public SimpleAsyncDelegateKernelInterface {
                        TfLiteOpaqueNode* node) override;
   TfLiteStatus Eval(TfLiteOpaqueContext* context,
                     TfLiteOpaqueNode* node) override;
-  // Returns nullptr for now, since the delegate does not support asynchronous
-  // execution yet.
   TfLiteAsyncKernel* AsyncKernel(TfLiteOpaqueContext* context,
                                  TfLiteOpaqueNode* node) override;
 
