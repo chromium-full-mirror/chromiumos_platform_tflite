@@ -20,8 +20,8 @@
  * SOFTWARE.
  */
 
-#ifndef TENSORFLOW_LITE_EXPERIMENTAL_DELEGATES_NEURON_NEURON_DELEGATE_H_
-#define TENSORFLOW_LITE_EXPERIMENTAL_DELEGATES_NEURON_NEURON_DELEGATE_H_
+#ifndef DELEGATE_MTK_NEURON_NEURON_DELEGATE_H_
+#define DELEGATE_MTK_NEURON_NEURON_DELEGATE_H_
 
 #include <farmhash.h>
 #include <string.h>
@@ -80,4 +80,4 @@ class NeuronStableDelegate : public SimpleOpaqueDelegateInterface {
 }  // namespace neuron
 }  // namespace tflite
 
-#endif  // TENSORFLOW_LITE_EXPERIMENTAL_DELEGATES_NEURON_NEURON_DELEGATE_H_
+#endif  // DELEGATE_MTK_NEURON_NEURON_DELEGATE_H_

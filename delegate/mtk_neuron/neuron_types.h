@@ -20,8 +20,8 @@
  * SOFTWARE.
  */
 
-#ifndef TENSORFLOW_LITE_EXPERIMENTAL_DELEGATES_NEURON_NEURON_TYPES_H_
-#define TENSORFLOW_LITE_EXPERIMENTAL_DELEGATES_NEURON_NEURON_TYPES_H_
+#ifndef DELEGATE_MTK_NEURON_NEURON_TYPES_H_
+#define DELEGATE_MTK_NEURON_NEURON_TYPES_H_
 
 #include <stdint.h>
 #include <stdio.h>
@@ -583,4 +583,4 @@ typedef int (*NeuronMemory_createFromAHardwareBuffer_fn)(
 #endif
 typedef int (*Neuron_getNeuroPilotMagicNumber_fn)(int32_t* magic);
 
-#endif  // TENSORFLOW_LITE_EXPERIMENTAL_DELEGATES_NEURON_NEURON_TYPES_H_
+#endif  // DELEGATE_MTK_NEURON_NEURON_TYPES_H_

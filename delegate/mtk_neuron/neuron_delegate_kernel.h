@@ -20,8 +20,8 @@
  * SOFTWARE.
  */
 
-#ifndef TENSORFLOW_LITE_EXPERIMENTAL_DELEGATES_NEURON_NEURON_KERNEL_H_
-#define TENSORFLOW_LITE_EXPERIMENTAL_DELEGATES_NEURON_NEURON_KERNEL_H_
+#ifndef DELEGATE_MTK_NEURON_NEURON_DELEGATE_KERNEL_H_
+#define DELEGATE_MTK_NEURON_NEURON_DELEGATE_KERNEL_H_
 
 // #include <android/hardware_buffer.h>
 
@@ -265,4 +265,4 @@ class NeuronStableDelegateKernel : public SimpleOpaqueDelegateKernelInterface {
 }  // namespace neuron
 }  // namespace tflite
 
-#endif  // TENSORFLOW_LITE_EXPERIMENTAL_DELEGATES_NEURON_NEURON_KERNEL_H_
+#endif  // DELEGATE_MTK_NEURON_NEURON_DELEGATE_KERNEL_H_

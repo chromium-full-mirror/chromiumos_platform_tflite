@@ -20,8 +20,8 @@
  * SOFTWARE.
  */
 
-#ifndef MTK_TENSORFLOW_LITE_UTILS_H_
-#define MTK_TENSORFLOW_LITE_UTILS_H_
+#ifndef DELEGATE_MTK_NEURON_MTK_MTK_UTILS_H_
+#define DELEGATE_MTK_NEURON_MTK_MTK_UTILS_H_
 
 #include <inttypes.h>
 #include <stdlib.h>
@@ -49,4 +49,4 @@ size_t PackOemScalarString(const char* str, uint8_t** out_buffer);
 }  // namespace mtk
 }  // namespace tflite
 
-#endif  // MTK_TENSORFLOW_LITE_UTILS_H_
+#endif  // DELEGATE_MTK_NEURON_MTK_MTK_UTILS_H_

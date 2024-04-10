@@ -20,8 +20,8 @@
  * SOFTWARE.
  */
 
-#ifndef TENSORFLOW_CONTRIB_LITE_MTK_KERNELS_MTKEXT_OPS_H_
-#define TENSORFLOW_CONTRIB_LITE_MTK_KERNELS_MTKEXT_OPS_H_
+#ifndef DELEGATE_MTK_NEURON_MTK_MTKEXT_OPS_H_
+#define DELEGATE_MTK_NEURON_MTK_MTKEXT_OPS_H_
 
 namespace tflite {
 namespace ops {
@@ -56,4 +56,4 @@ struct OpData {
 }  // namespace ops
 }  // namespace tflite
 
-#endif  // TENSORFLOW_CONTRIB_LITE_MTK_KERNELS_MTKEXT_OPS_H_
+#endif  // DELEGATE_MTK_NEURON_MTK_MTKEXT_OPS_H_

@@ -20,8 +20,8 @@
  * SOFTWARE.
  */
 
-#ifndef MTK_TENSORFLOW_LITE_MINIMAL_LOGGING_H_
-#define MTK_TENSORFLOW_LITE_MINIMAL_LOGGING_H_
+#ifndef DELEGATE_MTK_NEURON_MTK_MTK_MINIMAL_LOGGING_H_
+#define DELEGATE_MTK_NEURON_MTK_MTK_MINIMAL_LOGGING_H_
 
 #include <cstdarg>
 #include <string>
@@ -75,4 +75,4 @@ inline void Log(LogSeverity severity, const char* tag, const char* format,
   tflite::logging_internal::mtk::Log(tflite::TFLITE_LOG_INFO, \
                                      "TFLite OP Dump", format, ##__VA_ARGS__);
 
-#endif  // MTK_TENSORFLOW_LITE_MINIMAL_LOGGING_H_
+#endif  // DELEGATE_MTK_NEURON_MTK_MTK_MINIMAL_LOGGING_H_
