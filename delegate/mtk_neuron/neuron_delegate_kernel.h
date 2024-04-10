@@ -23,12 +23,10 @@
 #ifndef DELEGATE_MTK_NEURON_NEURON_DELEGATE_KERNEL_H_
 #define DELEGATE_MTK_NEURON_NEURON_DELEGATE_KERNEL_H_
 
-// #include <android/hardware_buffer.h>
-
-#include <map>
 #include <memory>
 #include <string>
 #include <tuple>
+#include <utility>
 #include <vector>
 
 #include "delegate/mtk_neuron/neuron_delegate.h"

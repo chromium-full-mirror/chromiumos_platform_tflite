@@ -25,7 +25,6 @@
 
 #include <stdint.h>
 #include <stdio.h>
-// #include <android/hardware_buffer.h>
 
 // NeuronModel is an opaque type that contains a description of the mathematical
 // operations that constitute the model.

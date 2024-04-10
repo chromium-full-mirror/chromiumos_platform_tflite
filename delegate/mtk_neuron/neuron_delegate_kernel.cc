@@ -22,6 +22,15 @@
 
 #include "delegate/mtk_neuron/neuron_delegate_kernel.h"
 
+#include <farmhash.h>
+#include <inttypes.h>
+#include <linux/dma-heap.h>
+#include <string.h>
+#include <sys/ioctl.h>
+#include <sys/mman.h>
+
+#include <iostream>
+
 #include "delegate/mtk_neuron/mtk/mtk_minimal_logging.h"
 #include "delegate/mtk_neuron/mtk/mtk_utils.h"
 #include "delegate/mtk_neuron/mtk/mtkext_ops.h"
@@ -38,19 +47,7 @@
 #include "tensorflow/lite/schema/schema_generated.h"
 #include "tensorflow/lite/util.h"
 
-/// M: NeuroPilot {@
-#include <farmhash.h>
-#include <inttypes.h>
-#include <string.h>
-#include <sys/ioctl.h>
-#include <sys/mman.h>
-
-#include <iostream>
-
-#include "linux/dma-heap.h"
-
 #define LOG_TAG "NeuronDelegate"
-/// M: NeuroPilot @}
 
 namespace tflite {
 namespace neuron {

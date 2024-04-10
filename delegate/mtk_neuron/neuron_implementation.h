@@ -27,7 +27,6 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-// #include <android/hardware_buffer.h>
 
 #include "delegate/mtk_neuron/neuron_types.h"
 

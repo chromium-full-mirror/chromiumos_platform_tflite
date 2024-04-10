@@ -23,9 +23,8 @@
 #include "delegate/mtk_neuron/neuron_delegate.h"
 
 #include <farmhash.h>
-#include <string.h>
 
-#include <utility>
+#include <string>
 #include <vector>
 
 #include "delegate/mtk_neuron/mtk/mtk_minimal_logging.h"

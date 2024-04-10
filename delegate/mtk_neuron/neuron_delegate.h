@@ -24,9 +24,10 @@
 #define DELEGATE_MTK_NEURON_NEURON_DELEGATE_H_
 
 #include <farmhash.h>
-#include <string.h>
 
 #include <memory>
+#include <string>
+#include <vector>
 
 #include "delegate/mtk_neuron/neuron_delegate_options.h"
 #include "delegate/mtk_neuron/neuron_implementation.h"
