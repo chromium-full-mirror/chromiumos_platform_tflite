@@ -24,18 +24,19 @@
 #define TENSORFLOW_LITE_EXPERIMENTAL_DELEGATES_NEURON_NEURON_DELEGATE_H_
 
 #include <farmhash.h>
-#include <memory>
 #include <string.h>
+
+#include <memory>
 
 #include "delegate/mtk_neuron/neuron_delegate_options.h"
 #include "delegate/mtk_neuron/neuron_implementation.h"
+#include "tensorflow/lite/builtin_ops.h"
 #include "tensorflow/lite/c/builtin_op_data.h"
+#include "tensorflow/lite/c/c_api_opaque.h"
 #include "tensorflow/lite/c/c_api_types.h"
 #include "tensorflow/lite/c/common.h"
-#include "tensorflow/lite/delegates/utils/simple_opaque_delegate.h"
-#include "tensorflow/lite/builtin_ops.h"
 #include "tensorflow/lite/context_util.h"
-#include "tensorflow/lite/c/c_api_opaque.h"
+#include "tensorflow/lite/delegates/utils/simple_opaque_delegate.h"
 #include "tensorflow/lite/minimal_logging.h"
 #include "tensorflow/lite/schema/schema_generated.h"
 
@@ -48,36 +49,35 @@ static const char kNeuronStableDelegateVersion[] = "1.0.0";
 // Returns a structure with the default delegate options.
 NeuronDelegateOptions TfLiteNeuronDelegateOptionsDefault();
 
-class NeuronStableDelegate : public SimpleOpaqueDelegateInterface  {
-public:
-  explicit NeuronStableDelegate(const NeuronDelegateOptions &options)
+class NeuronStableDelegate : public SimpleOpaqueDelegateInterface {
+ public:
+  explicit NeuronStableDelegate(const NeuronDelegateOptions& options)
       : options_(options) {}
 
-  bool IsNodeSupportedByDelegate(const TfLiteRegistrationExternal *registration,
-                                 const TfLiteOpaqueNode *node,
-                                 TfLiteOpaqueContext *context) const override;
+  bool IsNodeSupportedByDelegate(const TfLiteRegistrationExternal* registration,
+                                 const TfLiteOpaqueNode* node,
+                                 TfLiteOpaqueContext* context) const override;
 
-  TfLiteStatus Initialize(TfLiteOpaqueContext *context) override;
+  TfLiteStatus Initialize(TfLiteOpaqueContext* context) override;
 
-  const char *Name() const override;
+  const char* Name() const override;
 
   std::unique_ptr<SimpleOpaqueDelegateKernelInterface>
-  CreateDelegateKernelInterface() override ;
+  CreateDelegateKernelInterface() override;
 
-private:
-
-  TfLiteStatus GenModelToken(TfLiteOpaqueContext *context);
-  void GetPreOpCheckResult(TfLiteOpaqueContext *context);
+ private:
+  TfLiteStatus GenModelToken(TfLiteOpaqueContext* context);
+  void GetPreOpCheckResult(TfLiteOpaqueContext* context);
   std::string TokenToHashString(std::vector<uint8_t> cache_token);
 
-  const NeuronApi *neuron_ = NeuronApiImplementation();
+  const NeuronApi* neuron_ = NeuronApiImplementation();
   NeuronDelegateOptions options_;
   std::vector<uint8_t> neuron_cache_token_;
   std::vector<int> node_is_supported_;
   mutable int node_id_ = -1;
 };
 
-} // namespace neuron
-} // namespace tflite
+}  // namespace neuron
+}  // namespace tflite
 
 #endif  // TENSORFLOW_LITE_EXPERIMENTAL_DELEGATES_NEURON_NEURON_DELEGATE_H_

@@ -26,9 +26,9 @@
 #include <string>
 #include <vector>
 
-#include "tensorflow/lite/c/common.h"
 #include "delegate/mtk_neuron/neuron_delegate.h"
 #include "delegate/mtk_neuron/neuron_implementation.h"
+#include "tensorflow/lite/c/common.h"
 
 namespace tflite {
 namespace neuron {
@@ -99,15 +99,15 @@ struct NeuronValidationFailure {
       : type(type), message(message) {}
 };
 
-bool Validate(const TfLiteRegistrationExternal* registration, const TfLiteOpaqueNode* node,
-              TfLiteOpaqueContext* context, const NeuronApi* neuronapi,
-              const NeuronDelegateOptions* options,
+bool Validate(const TfLiteRegistrationExternal* registration,
+              const TfLiteOpaqueNode* node, TfLiteOpaqueContext* context,
+              const NeuronApi* neuronapi, const NeuronDelegateOptions* options,
               std::vector<NeuronValidationFailure>* map_failures = nullptr);
 
 TfLiteStatus PreGetSupportedForWholeGraph(TfLiteOpaqueContext* context,
                                           const NeuronApi* neuronapi,
                                           const NeuronDelegateOptions* options,
-                                          std::vector<int> * is_supported);
+                                          std::vector<int>* is_supported);
 
 }  // namespace neuron
 }  // namespace tflite

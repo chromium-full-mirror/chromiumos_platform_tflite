@@ -23,7 +23,7 @@
 #ifndef TENSORFLOW_LITE_EXPERIMENTAL_DELEGATES_NEURON_NEURON_KERNEL_H_
 #define TENSORFLOW_LITE_EXPERIMENTAL_DELEGATES_NEURON_NEURON_KERNEL_H_
 
-//#include <android/hardware_buffer.h>
+// #include <android/hardware_buffer.h>
 
 #include <map>
 #include <memory>
@@ -149,11 +149,9 @@ class NNCompilationArgs {
  public:
   static const std::string& GetArgs(ExecutionPreference preference) {
 #ifdef MTK_GITHUB_RELEASE
-    static const std::string kFastSingleAnswerArgs =
-        "--opt 3";
+    static const std::string kFastSingleAnswerArgs = "--opt 3";
 #else
-    static const std::string kFastSingleAnswerArgs =
-        "--opt-accuracy --opt 3";
+    static const std::string kFastSingleAnswerArgs = "--opt-accuracy --opt 3";
 #endif
     return kFastSingleAnswerArgs;
   }
@@ -170,7 +168,7 @@ enum DelegateSpecificMode {
 };
 
 // Neuron delegate kernel.
-class NeuronStableDelegateKernel : public SimpleOpaqueDelegateKernelInterface  {
+class NeuronStableDelegateKernel : public SimpleOpaqueDelegateKernelInterface {
  public:
   static TfLiteStatus Map(TfLiteOpaqueContext* context, int builtin_code,
                           int version, int neuron_platform_version,
@@ -178,32 +176,38 @@ class NeuronStableDelegateKernel : public SimpleOpaqueDelegateKernelInterface  {
                           NeuronOperationType* nn_op_type);
 
   explicit NeuronStableDelegateKernel(const NeuronApi* neuronapi,
-                                const NeuronDelegateOptions& options)
+                                      const NeuronDelegateOptions& options)
       : neuronapi_(neuronapi),
         options_(options),
         nn_model_(nullptr, NNFreeModel(neuronapi_)),
         nn_compilation_(nullptr, NNFreeCompilation(neuronapi_))
 #ifdef NEURON_REUSABLE_EXECUTION
-        , nn_execution_(nullptr, NNFreeExecution(neuronapi_))
+        ,
+        nn_execution_(nullptr, NNFreeExecution(neuronapi_))
 #endif
-  {}
+  {
+  }
 
   virtual ~NeuronStableDelegateKernel() = default;
 
   TfLiteStatus Init(TfLiteOpaqueContext* context,
                     const TfLiteOpaqueDelegateParams* params) override;
 
-  TfLiteStatus Prepare(TfLiteOpaqueContext* context, TfLiteOpaqueNode* node) override;
+  TfLiteStatus Prepare(TfLiteOpaqueContext* context,
+                       TfLiteOpaqueNode* node) override;
 
-  TfLiteStatus Eval(TfLiteOpaqueContext* context, TfLiteOpaqueNode* node) override;
+  TfLiteStatus Eval(TfLiteOpaqueContext* context,
+                    TfLiteOpaqueNode* node) override;
 
-  TfLiteStatus GetSupportedOperationsForOneNode(TfLiteOpaqueContext* context,
-  TfLiteOpaqueNode* node, TfLiteRegistrationExternal* registration, bool* is_supported);
-  TfLiteStatus GetSupportedOperationsForWholeGraph(
-    TfLiteOpaqueContext* context, bool* is_supported);
-  TfLiteStatus GetSupportedOperations(
-    TfLiteOpaqueContext* context, const TfLiteIntArray* input_tensors,
-    const TfLiteIntArray* output_tensors, bool* is_supported);
+  TfLiteStatus GetSupportedOperationsForOneNode(
+      TfLiteOpaqueContext* context, TfLiteOpaqueNode* node,
+      TfLiteRegistrationExternal* registration, bool* is_supported);
+  TfLiteStatus GetSupportedOperationsForWholeGraph(TfLiteOpaqueContext* context,
+                                                   bool* is_supported);
+  TfLiteStatus GetSupportedOperations(TfLiteOpaqueContext* context,
+                                      const TfLiteIntArray* input_tensors,
+                                      const TfLiteIntArray* output_tensors,
+                                      bool* is_supported);
 
  private:
   const NeuronApi* neuronapi_;
@@ -242,7 +246,8 @@ class NeuronStableDelegateKernel : public SimpleOpaqueDelegateKernelInterface  {
   // Neuron delegate specific run mode
   DelegateSpecificMode delegate_specific_mode_ = kNormalMode;
   // For One Node Mode
-  std::pair<TfLiteOpaqueNode*, TfLiteRegistrationExternal*> one_node_and_reg_ = {nullptr, nullptr};
+  std::pair<TfLiteOpaqueNode*, TfLiteRegistrationExternal*> one_node_and_reg_ =
+      {nullptr, nullptr};
 
   void AddDequantizeOperatorsWhereNeeded(const TfLiteOpaqueContext* context,
                                          int builtin_code,

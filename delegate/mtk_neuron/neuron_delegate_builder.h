@@ -260,7 +260,8 @@ class NeuronOpBuilder {
     return AddFloat32OutputTensor(dimension_count, dims.data(), nullptr);
   }
 
-  std::vector<int32_t> TfLiteOpaqueTensorFullDim(const TfLiteOpaqueTensor* tensor) {
+  std::vector<int32_t> TfLiteOpaqueTensorFullDim(
+      const TfLiteOpaqueTensor* tensor) {
     std::vector<int32_t> dims;
     for (int i = 0; i < TfLiteOpaqueTensorNumDims(tensor); i++) {
       dims.push_back(TfLiteOpaqueTensorDim(tensor, i));
@@ -274,10 +275,9 @@ class NeuronOpBuilder {
         TfLiteOpaqueContextGetOpaqueTensor(context_, tensor_index);
     std::vector<int32_t> full_dim = TfLiteOpaqueTensorFullDim(tensor);
     // SAFETY: neuron adapter will allocate local memory to save it.
-    return AddFloat32OutputTensor(
-        TfLiteOpaqueTensorNumDims(tensor),
-        reinterpret_cast<uint32_t*>(full_dim.data()),
-        ann_tensor_index_out);
+    return AddFloat32OutputTensor(TfLiteOpaqueTensorNumDims(tensor),
+                                  reinterpret_cast<uint32_t*>(full_dim.data()),
+                                  ann_tensor_index_out);
   }
 
   // Add a constant tensor with a single element, intended for broadcast capable
@@ -319,7 +319,8 @@ class NeuronOpBuilder {
     TfLiteOpaqueTensor* tensor =
         TfLiteOpaqueContextGetOpaqueTensor(context_, lite_input_index);
     float input_scale = TfLiteOpaqueTensorGetQuantizationParams(tensor).scale;
-    int input_zero_point = TfLiteOpaqueTensorGetQuantizationParams(tensor).zero_point;
+    int input_zero_point =
+        TfLiteOpaqueTensorGetQuantizationParams(tensor).zero_point;
     float input_min = 0.f;
     float input_max = 0.f;
     int tensor_flags = 0;
@@ -351,16 +352,18 @@ class NeuronOpBuilder {
         CalculateQuantizationParams(s1_output_min, s1_output_max,
                                     &s1_output_scale, &s1_output_zero_point);
       }
-      TF_LITE_OPAQUE_ENSURE_STATUS(AddTensorInput(lite_input_index, false, tensor_flags));
+      TF_LITE_OPAQUE_ENSURE_STATUS(
+          AddTensorInput(lite_input_index, false, tensor_flags));
       const float value3f = 1.f / 3.f;
-      TF_LITE_OPAQUE_ENSURE_STATUS(AddSingleValueConstantTensor(value3f, is_quantized));
+      TF_LITE_OPAQUE_ENSURE_STATUS(
+          AddSingleValueConstantTensor(value3f, is_quantized));
       TF_LITE_OPAQUE_ENSURE_STATUS(AddScalarInt32Operand(NEURON_FUSED_RELU1));
       std::vector<int32_t> full_dim = TfLiteOpaqueTensorFullDim(tensor);
       // SAFETY: neuron adapter will allocate local memory to save it.
       TF_LITE_OPAQUE_ENSURE_STATUS(AddAdditionalOutputTensor(
           TfLiteOpaqueTensorNumDims(tensor),
-          reinterpret_cast<uint32_t*>(full_dim.data()),
-          nn_type, s1_output_scale, s1_output_zero_point, &s1_out_ann_index));
+          reinterpret_cast<uint32_t*>(full_dim.data()), nn_type,
+          s1_output_scale, s1_output_zero_point, &s1_out_ann_index));
       TF_LITE_OPAQUE_ENSURE_STATUS(FinalizeAddOperation(NEURON_MUL));
     }
 
@@ -371,16 +374,18 @@ class NeuronOpBuilder {
     {
       float s2_output_scale = input_scale / 2.0f;
       int s2_output_zero_point = input_zero_point;
-      TF_LITE_OPAQUE_ENSURE_STATUS(AddTensorInput(lite_input_index, false, tensor_flags));
+      TF_LITE_OPAQUE_ENSURE_STATUS(
+          AddTensorInput(lite_input_index, false, tensor_flags));
       const float value2f = 0.5f;
-      TF_LITE_OPAQUE_ENSURE_STATUS(AddSingleValueConstantTensor(value2f, is_quantized));
+      TF_LITE_OPAQUE_ENSURE_STATUS(
+          AddSingleValueConstantTensor(value2f, is_quantized));
       TF_LITE_OPAQUE_ENSURE_STATUS(AddScalarInt32Operand(NEURON_FUSED_NONE));
       std::vector<int32_t> full_dim = TfLiteOpaqueTensorFullDim(tensor);
       // SAFETY: neuron adapter will allocate local memory to save it.
       TF_LITE_OPAQUE_ENSURE_STATUS(AddAdditionalOutputTensor(
           TfLiteOpaqueTensorNumDims(tensor),
-          reinterpret_cast<uint32_t*>(full_dim.data()),
-          nn_type, s2_output_scale, s2_output_zero_point, &s2_out_ann_index));
+          reinterpret_cast<uint32_t*>(full_dim.data()), nn_type,
+          s2_output_scale, s2_output_zero_point, &s2_out_ann_index));
       TF_LITE_OPAQUE_ENSURE_STATUS(FinalizeAddOperation(NEURON_MUL));
     }
 
@@ -407,8 +412,8 @@ class NeuronOpBuilder {
       // SAFETY: neuron adapter will allocate local memory to save it.
       TF_LITE_OPAQUE_ENSURE_STATUS(AddAdditionalOutputTensor(
           TfLiteOpaqueTensorNumDims(tensor),
-          reinterpret_cast<uint32_t*>(full_dim.data()),
-          nn_type, s3_output_scale, s3_output_zero_point, &s3_out_ann_index));
+          reinterpret_cast<uint32_t*>(full_dim.data()), nn_type,
+          s3_output_scale, s3_output_zero_point, &s3_out_ann_index));
       TF_LITE_OPAQUE_ENSURE_STATUS(FinalizeAddOperation(NEURON_MUL));
     }
 
@@ -417,7 +422,8 @@ class NeuronOpBuilder {
       augmented_inputs_.push_back(s2_out_ann_index);
       augmented_inputs_.push_back(s3_out_ann_index);
       TF_LITE_OPAQUE_ENSURE_STATUS(AddScalarInt32Operand(NEURON_FUSED_NONE));
-      TF_LITE_OPAQUE_ENSURE_STATUS(AddTensorOutput(lite_output_index, tensor_flags));
+      TF_LITE_OPAQUE_ENSURE_STATUS(
+          AddTensorOutput(lite_output_index, tensor_flags));
       TF_LITE_OPAQUE_ENSURE_STATUS(FinalizeAddOperation(NEURON_ADD));
     }
 
@@ -436,11 +442,13 @@ class NeuronOpBuilder {
     if (dequantized_ann_index == -1) {
       // The dequantized version does not exist yet, it has to be added: a new
       // Dequantize operation is added, yielding a new tensor.
-      TfLiteOpaqueTensor* tensor = TfLiteOpaqueContextGetOpaqueTensor(context_, lite_index);
+      TfLiteOpaqueTensor* tensor =
+          TfLiteOpaqueContextGetOpaqueTensor(context_, lite_index);
       std::vector<int32_t> full_dim = TfLiteOpaqueTensorFullDim(tensor);
       // SAFETY: neuron adapter will allocate local memory to save it.
       NeuronOperandType operand_type{
-          NEURON_TENSOR_FLOAT32, static_cast<uint32_t>(TfLiteOpaqueTensorNumDims(tensor)),
+          NEURON_TENSOR_FLOAT32,
+          static_cast<uint32_t>(TfLiteOpaqueTensorNumDims(tensor)),
           reinterpret_cast<uint32_t*>(full_dim.data()), 0.f, 0};
       RETURN_TFLITE_ERROR_IF_NEURON_ERROR(
           context_,
@@ -459,7 +467,7 @@ class NeuronOpBuilder {
                                                dequantize_input, 1,
                                                dequantize_output),
           "adding operation");
-      total_op_num_ ++;
+      total_op_num_++;
       dequantize_mapping_->Add(neuron_index, dequantized_type,
                                dequantized_ann_index);
     }
@@ -475,16 +483,15 @@ class NeuronOpBuilder {
   // dimensions of the TFLite output tensor.
   TfLiteStatus AppendReshape(int nn_input_index, int lite_out_tensor_index) {
     augmented_inputs_.push_back(nn_input_index);
-    TfLiteOpaqueTensor * output_tensor =
+    TfLiteOpaqueTensor* output_tensor =
         TfLiteOpaqueContextGetOpaqueTensor(context_, lite_out_tensor_index);
     std::vector<int32_t> full_dim = TfLiteOpaqueTensorFullDim(output_tensor);
     // SAFETY: neuron adapter will allocate local memory to save it.
-    TF_LITE_OPAQUE_ENSURE_STATUS(
-        AddVectorInt32Operand(full_dim.data(),
-                              static_cast<uint32_t>(
-                                TfLiteOpaqueTensorNumDims(output_tensor))));
-    TF_LITE_OPAQUE_ENSURE_STATUS(AddTensorOutput(lite_out_tensor_index,
-                                 NN_TENSOR_FLAG_USE_INT8_ASYMM_SIGNED));
+    TF_LITE_OPAQUE_ENSURE_STATUS(AddVectorInt32Operand(
+        full_dim.data(),
+        static_cast<uint32_t>(TfLiteOpaqueTensorNumDims(output_tensor))));
+    TF_LITE_OPAQUE_ENSURE_STATUS(AddTensorOutput(
+        lite_out_tensor_index, NN_TENSOR_FLAG_USE_INT8_ASYMM_SIGNED));
     TF_LITE_OPAQUE_ENSURE_STATUS(FinalizeAddOperation(NEURON_RESHAPE));
     return kTfLiteOk;
   }
@@ -495,27 +502,32 @@ class NeuronOpBuilder {
     // Add input tensors for CONCAT, and calculate the dimensions for the
     // output.
     int concat_output_ann_index = -1;
-    TfLitePackParams* builtin =
-        reinterpret_cast<TfLitePackParams*>(TfLiteOpaqueNodeGetBuiltinData(node));
-    const TfLiteOpaqueTensor * input_tensor =
-        TfLiteOpaqueNodeGetInput(const_cast<const TfLiteOpaqueContext*>(context_), node, 0);
-    int axis = builtin->axis < 0 ? TfLiteOpaqueTensorNumDims(input_tensor) + builtin->axis + 1
-                                 : builtin->axis;
-    TF_LITE_OPAQUE_ENSURE(context_, axis < TfLiteOpaqueTensorNumDims(input_tensor));
+    TfLitePackParams* builtin = reinterpret_cast<TfLitePackParams*>(
+        TfLiteOpaqueNodeGetBuiltinData(node));
+    const TfLiteOpaqueTensor* input_tensor = TfLiteOpaqueNodeGetInput(
+        const_cast<const TfLiteOpaqueContext*>(context_), node, 0);
+    int axis = builtin->axis < 0
+                   ? TfLiteOpaqueTensorNumDims(input_tensor) + builtin->axis + 1
+                   : builtin->axis;
+    TF_LITE_OPAQUE_ENSURE(context_,
+                          axis < TfLiteOpaqueTensorNumDims(input_tensor));
     uint32_t concat_dim_size = 0;
-    const int *inputs;
+    const int* inputs;
     int num_inputs;
-    TF_LITE_OPAQUE_ENSURE_STATUS(TfLiteOpaqueNodeInputs(node, &inputs, &num_inputs));
-    for (int input_pos = 0; input_pos < TfLiteOpaqueNodeNumberOfInputs(node); ++input_pos) {
+    TF_LITE_OPAQUE_ENSURE_STATUS(
+        TfLiteOpaqueNodeInputs(node, &inputs, &num_inputs));
+    for (int input_pos = 0; input_pos < TfLiteOpaqueNodeNumberOfInputs(node);
+         ++input_pos) {
       const auto input_index = inputs[input_pos];
-      concat_dim_size +=
-          TfLiteOpaqueTensorDim(TfLiteOpaqueNodeGetInput(context_, node, input_pos), axis);
+      concat_dim_size += TfLiteOpaqueTensorDim(
+          TfLiteOpaqueNodeGetInput(context_, node, input_pos), axis);
       TF_LITE_OPAQUE_ENSURE_STATUS(
           AddTensorInput(input_index, /*hybrid_op=*/false,
                          NN_TENSOR_FLAG_USE_INT8_ASYMM_SIGNED));
     }
     TF_LITE_OPAQUE_ENSURE_STATUS(AddScalarInt32Operand(axis));
-    std::vector<uint32_t> concat_output_shape(TfLiteOpaqueTensorNumDims(input_tensor), 0);
+    std::vector<uint32_t> concat_output_shape(
+        TfLiteOpaqueTensorNumDims(input_tensor), 0);
     for (int i = 0; i < concat_output_shape.size(); i++) {
       if (i == axis) {
         concat_output_shape[i] = concat_dim_size;
@@ -530,9 +542,10 @@ class NeuronOpBuilder {
         TfLiteOpaqueTensorGetQuantizationParams(input_tensor).zero_point,
         &concat_output_ann_index));
     TF_LITE_OPAQUE_ENSURE_STATUS(FinalizeAddOperation(NEURON_CONCATENATION));
-    const int *outputs;
+    const int* outputs;
     int num_outputs;
-    TF_LITE_OPAQUE_ENSURE_STATUS(TfLiteOpaqueNodeOutputs(node, &outputs, &num_outputs));
+    TF_LITE_OPAQUE_ENSURE_STATUS(
+        TfLiteOpaqueNodeOutputs(node, &outputs, &num_outputs));
     // Reshape the output tensor
     TF_LITE_OPAQUE_ENSURE_STATUS(
         AppendReshape(concat_output_ann_index, outputs[0]));
@@ -540,24 +553,25 @@ class NeuronOpBuilder {
   }
 
   // Lower SPLIT_V into SLICEs.
-  TfLiteStatus TransformSplitVIntoSupportedOps(int lite_node_index,
-                                               TfLiteOpaqueNode* node,
-                                               TfLiteRegistrationExternal* reg) {
-    const auto& input =
-        TfLiteOpaqueNodeGetInput(const_cast<const TfLiteOpaqueContext*>(context_),
-                                 const_cast<const TfLiteOpaqueNode*>(node), 0);
-    const auto& size_splits_tensor =
-        TfLiteOpaqueNodeGetInput(const_cast<const TfLiteOpaqueContext*>(context_),
-                                 const_cast<const TfLiteOpaqueNode*>(node), 1);
-    const auto& axis_tensor =
-        TfLiteOpaqueNodeGetInput(const_cast<const TfLiteOpaqueContext*>(context_),
-                                 const_cast<const TfLiteOpaqueNode*>(node), 2);
+  TfLiteStatus TransformSplitVIntoSupportedOps(
+      int lite_node_index, TfLiteOpaqueNode* node,
+      TfLiteRegistrationExternal* reg) {
+    const auto& input = TfLiteOpaqueNodeGetInput(
+        const_cast<const TfLiteOpaqueContext*>(context_),
+        const_cast<const TfLiteOpaqueNode*>(node), 0);
+    const auto& size_splits_tensor = TfLiteOpaqueNodeGetInput(
+        const_cast<const TfLiteOpaqueContext*>(context_),
+        const_cast<const TfLiteOpaqueNode*>(node), 1);
+    const auto& axis_tensor = TfLiteOpaqueNodeGetInput(
+        const_cast<const TfLiteOpaqueContext*>(context_),
+        const_cast<const TfLiteOpaqueNode*>(node), 2);
     int input_rank = TfLiteOpaqueTensorNumDims(input);
 
     const auto* size_splits =
         reinterpret_cast<int32_t*>(TfLiteOpaqueTensorData(size_splits_tensor));
     int num_splits = TfLiteOpaqueTensorDim(size_splits_tensor, 0);
-    int axis = reinterpret_cast<int32_t*>(TfLiteOpaqueTensorData(axis_tensor))[0];
+    int axis =
+        reinterpret_cast<int32_t*>(TfLiteOpaqueTensorData(axis_tensor))[0];
     axis = axis < 0 ? axis + input_rank : axis;
     TF_LITE_OPAQUE_ENSURE(context_, axis >= 0);
     TF_LITE_OPAQUE_ENSURE(context_, axis < input_rank);
@@ -589,8 +603,10 @@ class NeuronOpBuilder {
 
       const int *inputs, *outputs;
       int num_inputs, num_outputs;
-      TF_LITE_OPAQUE_ENSURE_STATUS(TfLiteOpaqueNodeInputs(node, &inputs, &num_inputs));
-      TF_LITE_OPAQUE_ENSURE_STATUS(TfLiteOpaqueNodeOutputs(node, &outputs, &num_outputs));
+      TF_LITE_OPAQUE_ENSURE_STATUS(
+          TfLiteOpaqueNodeInputs(node, &inputs, &num_inputs));
+      TF_LITE_OPAQUE_ENSURE_STATUS(
+          TfLiteOpaqueNodeOutputs(node, &outputs, &num_outputs));
       // Build NNAPI SLICE inputs and output.
       TF_LITE_OPAQUE_ENSURE_STATUS(AddTensorInput(
           inputs[0],
@@ -634,7 +650,7 @@ class NeuronOpBuilder {
             static_cast<uint32_t>(augmented_outputs_.size()),
             augmented_outputs_.data()),
         "adding operation");
-    total_op_num_ ++;
+    total_op_num_++;
     augmented_inputs_.clear();
     augmented_outputs_.clear();
     return kTfLiteOk;
@@ -663,8 +679,8 @@ class NeuronOpBuilder {
 
     const TfLiteType tensor_type = TfLiteOpaqueTensorType(tensor);
     TfLiteType nn_type_equivalent;
-    TF_LITE_OPAQUE_ENSURE_STATUS(GetEquivalentToNeuronType(context_, nn_type,
-                                                           &nn_type_equivalent));
+    TF_LITE_OPAQUE_ENSURE_STATUS(
+        GetEquivalentToNeuronType(context_, nn_type, &nn_type_equivalent));
     if (tensor_type != nn_type_equivalent) {
       operand_mapping_->add_type_conversion(tensor_index, nn_type_equivalent);
     }
@@ -687,7 +703,7 @@ class NeuronOpBuilder {
 
   NeuronModel* GetNnModel(void) { return nn_model_; }
 
-  int GetTotalOpNum(void) {return total_op_num_;}
+  int GetTotalOpNum(void) { return total_op_num_; }
   /// M: NeuroPilot @}
 
   template <typename T>
@@ -695,10 +711,12 @@ class NeuronOpBuilder {
       int32_t nn_type, TfLiteType type, const TfLiteIntArray* dims,
       const std::vector<T>& tensor_value,
       const TfLiteQuantizationParams& quant_params, int* tensor_index) {
-    TfLiteOpaqueTensorBuilder* tensor_builder = TfLiteOpaqueTensorBuilderCreate();
+    TfLiteOpaqueTensorBuilder* tensor_builder =
+        TfLiteOpaqueTensorBuilderCreate();
     TfLiteOpaqueTensorBuilderSetType(tensor_builder, type);
     TfLiteOpaqueTensorBuilderSetAllocationType(tensor_builder, kTfLiteDynamic);
-    TfLiteOpaqueTensorBuilderSetQuantizationParams(tensor_builder, quant_params);
+    TfLiteOpaqueTensorBuilderSetQuantizationParams(tensor_builder,
+                                                   quant_params);
     // The dynamic tensor need to set the tensor data. Set an empty pointer and
     // set the data value later after resizeing tensor dimension.
     void* tensor_data = malloc(tensor_value.size() * sizeof(T));
@@ -706,16 +724,15 @@ class NeuronOpBuilder {
 
     int new_tensor_index = -1;
     TF_LITE_OPAQUE_ENSURE_STATUS(TfLiteOpaqueContextAddTensor(
-      context_, tensor_builder, &new_tensor_index));
+        context_, tensor_builder, &new_tensor_index));
     TfLiteOpaqueTensorBuilderDelete(tensor_builder);
-    TfLiteOpaqueTensor* new_tensor = TfLiteOpaqueContextGetOpaqueTensor(
-                context_, new_tensor_index);
+    TfLiteOpaqueTensor* new_tensor =
+        TfLiteOpaqueContextGetOpaqueTensor(context_, new_tensor_index);
 
     // Not removing the new tensor in case of resizing errors since it will
     // be cleared by the context
     TF_LITE_OPAQUE_ENSURE_STATUS(TfLiteOpaqueContextResizeTensor(
-        context_, new_tensor,
-        TfLiteIntArrayCopy(dims)));
+        context_, new_tensor, TfLiteIntArrayCopy(dims)));
 
     memcpy(TfLiteOpaqueTensorData(new_tensor),
            reinterpret_cast<const char*>(tensor_value.data()),
@@ -737,9 +754,9 @@ class NeuronOpBuilder {
 
     RETURN_TFLITE_ERROR_IF_NEURON_ERROR(
         context_,
-        neuronapi_->NeuronModel_setOperandValue(nn_model_, neuron_tensor_index,
-                                                TfLiteOpaqueTensorData(new_tensor),
-                                                TfLiteOpaqueTensorByteSize(new_tensor)),
+        neuronapi_->NeuronModel_setOperandValue(
+            nn_model_, neuron_tensor_index, TfLiteOpaqueTensorData(new_tensor),
+            TfLiteOpaqueTensorByteSize(new_tensor)),
         "setting new operand value");
 
     return kTfLiteOk;
@@ -792,8 +809,8 @@ class NeuronOpBuilder {
  private:
   // Returns a TF Lite type which has the same memory representation as a
   // provided Neuron type.
-  TfLiteStatus GetEquivalentToNeuronType(TfLiteOpaqueContext* context, int nn_type,
-                                         TfLiteType* type) {
+  TfLiteStatus GetEquivalentToNeuronType(TfLiteOpaqueContext* context,
+                                         int nn_type, TfLiteType* type) {
     switch (nn_type) {
       case NEURON_INT32:
         *type = kTfLiteInt32;
@@ -803,8 +820,10 @@ class NeuronOpBuilder {
         return kTfLiteOk;
       default:
         TfLiteOpaqueContextReportError(
-            context, "Neuron Delegate: Can't get an equivalent TF Lite "
-            "type for provided Neuron type: %d.\n", nn_type);
+            context,
+            "Neuron Delegate: Can't get an equivalent TF Lite "
+            "type for provided Neuron type: %d.\n",
+            nn_type);
         return kTfLiteError;
     }
   }
@@ -957,7 +976,8 @@ class NeuronOpBuilder {
         }
         scale = TfLiteOpaqueTensorGetQuantizationParams(tensor).scale;
         zeroPoint = TfLiteOpaqueTensorGetQuantizationParams(tensor).zero_point;
-        if (TfLiteOpaqueTensorGetQuantization(tensor).type == kTfLiteAffineQuantization) {
+        if (TfLiteOpaqueTensorGetQuantization(tensor).type ==
+            kTfLiteAffineQuantization) {
           TfLiteAffineQuantization* quantization_params =
               static_cast<TfLiteAffineQuantization*>(
                   TfLiteOpaqueTensorGetQuantization(tensor).params);
@@ -1009,9 +1029,9 @@ class NeuronOpBuilder {
           scale = 1;
         }
         if (zeroPoint != 0) {
-            nn_type = NEURON_EXT_TENSOR_QUANT16_ASYMM_SIGNED;
+          nn_type = NEURON_EXT_TENSOR_QUANT16_ASYMM_SIGNED;
         } else {
-            nn_type = NEURON_TENSOR_QUANT16_SYMM;
+          nn_type = NEURON_TENSOR_QUANT16_SYMM;
         }
         break;
       case kTfLiteUInt16:
@@ -1028,7 +1048,8 @@ class NeuronOpBuilder {
             TfLiteTypeGetName(tensor_type));
         return kTfLiteError;
     }
-    uint32_t tensor_rank = static_cast<uint32_t>(TfLiteOpaqueTensorNumDims(tensor));
+    uint32_t tensor_rank =
+        static_cast<uint32_t>(TfLiteOpaqueTensorNumDims(tensor));
 
     std::vector<int32_t> full_dim = TfLiteOpaqueTensorFullDim(tensor);
     uint32_t* tensor_dims = reinterpret_cast<uint32_t*>(full_dim.data());
@@ -1058,16 +1079,19 @@ class NeuronOpBuilder {
         // We need to to add a tensor and convert the weights into uint8.
         // Currently this is only needed for fully_connected. The new_tensor is
         // needed for lifetime management for the converted weights.
-        TfLiteOpaqueTensorBuilder* tensor_builder = TfLiteOpaqueTensorBuilderCreate();
+        TfLiteOpaqueTensorBuilder* tensor_builder =
+            TfLiteOpaqueTensorBuilderCreate();
         TfLiteOpaqueTensorBuilderSetType(tensor_builder, kTfLiteUInt8);
-        TfLiteOpaqueTensorBuilderSetAllocationType(tensor_builder, kTfLiteDynamic);
-        TfLiteQuantizationParams quant_params {
+        TfLiteOpaqueTensorBuilderSetAllocationType(tensor_builder,
+                                                   kTfLiteDynamic);
+        TfLiteQuantizationParams quant_params{
             .scale = scale,
             .zero_point = zeroPoint,
         };
-        TfLiteOpaqueTensorBuilderSetQuantizationParams(tensor_builder, quant_params);
-        // The dynamic tensor need to set the tensor data. Set a tensor pointer and
-        // set the data value later after resizeing tensor dimension.
+        TfLiteOpaqueTensorBuilderSetQuantizationParams(tensor_builder,
+                                                       quant_params);
+        // The dynamic tensor need to set the tensor data. Set a tensor pointer
+        // and set the data value later after resizeing tensor dimension.
         void* tensor_data = malloc(TfLiteOpaqueTensorByteSize(tensor));
         TfLiteOpaqueTensorBuilderSetData(tensor_builder, tensor_data);
 
@@ -1075,8 +1099,8 @@ class NeuronOpBuilder {
         TF_LITE_OPAQUE_ENSURE_STATUS(TfLiteOpaqueContextAddTensor(
             context_, tensor_builder, &new_tensor_index));
         TfLiteOpaqueTensorBuilderDelete(tensor_builder);
-        TfLiteOpaqueTensor* new_tensor = TfLiteOpaqueContextGetOpaqueTensor(
-                    context_, new_tensor_index);
+        TfLiteOpaqueTensor* new_tensor =
+            TfLiteOpaqueContextGetOpaqueTensor(context_, new_tensor_index);
 
         // Not removing the new tensor in case of resizing errors since it will
         // be cleared by the context
@@ -1085,12 +1109,11 @@ class NeuronOpBuilder {
         for (int i = 0; i < dim_array->size; ++i) {
           dim_array->data[i] = TfLiteOpaqueTensorDim(tensor, i);
         }
-        TF_LITE_OPAQUE_ENSURE_STATUS(TfLiteOpaqueContextResizeTensor(
-                                     context_,
-                                     new_tensor,
-                                     // Resize Tensor takes ownership of
-                                     // the dims array passed as param
-                                     dim_array));
+        TF_LITE_OPAQUE_ENSURE_STATUS(
+            TfLiteOpaqueContextResizeTensor(context_, new_tensor,
+                                            // Resize Tensor takes ownership of
+                                            // the dims array passed as param
+                                            dim_array));
 
         // Convert the int8 value into corresponding uint8 value;
         const auto num_elements = NumElements(tensor);
@@ -1099,7 +1122,8 @@ class NeuronOpBuilder {
         auto* new_tensor_data =
             reinterpret_cast<uint8_t*>(TfLiteOpaqueTensorData(new_tensor));
         for (int i = 0; i < num_elements; ++i) {
-          new_tensor_data[i] = static_cast<const uint8_t>(ori_tensor_data[i] + 128);
+          new_tensor_data[i] =
+              static_cast<const uint8_t>(ori_tensor_data[i] + 128);
         }
         RETURN_TFLITE_ERROR_IF_NEURON_ERROR(
             context_,

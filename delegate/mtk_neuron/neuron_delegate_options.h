@@ -89,7 +89,7 @@ typedef struct {
   NeuronOperationCheckMode operation_check_mode;
 } NeuronDelegateOptions;
 
-} // namespace neuron
-} // namespace tflite
+}  // namespace neuron
+}  // namespace tflite
 
 #endif  // TENSORFLOW_LITE_EXPERIMENTAL_DELEGATES_NEURON_NEURON_DELEGATE_OPTIONS_H_

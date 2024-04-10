@@ -29,45 +29,43 @@
 #include <string>
 
 #include "delegate/mtk_neuron/neuron_types.h"
-#include "tensorflow/lite/c/common.h"
 #include "tensorflow/lite/c/c_api_opaque.h"
+#include "tensorflow/lite/c/common.h"
 #include "tensorflow/lite/context_util.h"
 #ifdef __ANDROID__
 #include <sys/system_properties.h>
 #endif
 
-
 namespace tflite {
 namespace neuron {
 
-#define RETURN_TFLITE_ERROR_IF_NEURON_ERROR(context, code, call_desc)  \
-  do {                                                                 \
-    const auto _code = (code);                                         \
-    const auto _call_desc = (call_desc);                               \
-    if (_code != NEURON_NO_ERROR) {                                    \
-      const auto error_desc = NeuronErrorDescription(_code);           \
-      TfLiteOpaqueContextReportError(                                  \
-          context,                                                     \
-          "Neuron returned error %s at line %d while %s.\n",           \
-          error_desc.c_str(), __LINE__, _call_desc);                   \
-      return kTfLiteError;                                             \
-    }                                                                  \
+#define RETURN_TFLITE_ERROR_IF_NEURON_ERROR(context, code, call_desc) \
+  do {                                                                \
+    const auto _code = (code);                                        \
+    const auto _call_desc = (call_desc);                              \
+    if (_code != NEURON_NO_ERROR) {                                   \
+      const auto error_desc = NeuronErrorDescription(_code);          \
+      TfLiteOpaqueContextReportError(                                 \
+          context, "Neuron returned error %s at line %d while %s.\n", \
+          error_desc.c_str(), __LINE__, _call_desc);                  \
+      return kTfLiteError;                                            \
+    }                                                                 \
   } while (0)
 
-#define RETURN_TFLITE_ERROR_IF_ION_ERROR(code)                \
-  do {                                                        \
-    const auto _code = (code);                                \
-    if (_code != 0) {                                         \
-      return kTfLiteError;                                    \
-    }                                                         \
+#define RETURN_TFLITE_ERROR_IF_ION_ERROR(code) \
+  do {                                         \
+    const auto _code = (code);                 \
+    if (_code != 0) {                          \
+      return kTfLiteError;                     \
+    }                                          \
   } while (0)
 
 #define TF_LITE_OPAQUE_ENSURE_STATUS(a) \
-  do {                           \
-    const TfLiteStatus s = (a);  \
-    if (s != kTfLiteOk) {        \
-      return s;                  \
-    }                            \
+  do {                                  \
+    const TfLiteStatus s = (a);         \
+    if (s != kTfLiteOk) {               \
+      return s;                         \
+    }                                   \
   } while (0)
 
 inline std::string GetPropertyValue(const std::string& property) {

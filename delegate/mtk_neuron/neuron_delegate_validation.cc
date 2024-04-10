@@ -128,7 +128,8 @@ bool ExpectOpVersion(int curr_version, int max_version,
                    "OP Version different from %d", max_version);
 }
 
-bool ExpectIsFloatOperator(const TfLiteOpaqueContext* context, const TfLiteOpaqueNode* node,
+bool ExpectIsFloatOperator(const TfLiteOpaqueContext* context,
+                           const TfLiteOpaqueNode* node,
                            OpValidationContext* val_ctx) {
   const auto input_type =
       TfLiteOpaqueTensorType(TfLiteOpaqueNodeGetInput(context, node, 0));
@@ -187,12 +188,16 @@ bool ExpectIsRestrictedScalesCompliant(const TfLiteOpaqueContext* context,
                                        const TfLiteOpaqueNode* node,
                                        OpValidationContext* val_ctx) {
   const float input_scale = TfLiteOpaqueTensorGetQuantizationParams(
-      TfLiteOpaqueNodeGetInput(context, node, 0)).scale;
+                                TfLiteOpaqueNodeGetInput(context, node, 0))
+                                .scale;
   const float filter_scale = TfLiteOpaqueTensorGetQuantizationParams(
-      TfLiteOpaqueNodeGetInput(context, node, 1)).scale;
-  float output_scale = TfLiteOpaqueTensorGetQuantizationParams(
-      TfLiteOpaqueNodeGetOutput(
-          const_cast<TfLiteOpaqueContext*>(context), node, 0)).scale;
+                                 TfLiteOpaqueNodeGetInput(context, node, 1))
+                                 .scale;
+  float output_scale =
+      TfLiteOpaqueTensorGetQuantizationParams(
+          TfLiteOpaqueNodeGetOutput(const_cast<TfLiteOpaqueContext*>(context),
+                                    node, 0))
+          .scale;
   return Expect(
       input_scale * filter_scale < output_scale,
       NeuronValidationFailureType::kNotRestrictedScaleCompliant,
@@ -201,16 +206,20 @@ bool ExpectIsRestrictedScalesCompliant(const TfLiteOpaqueContext* context,
 
 // Pack one node to NeuronModel_getSupportedOperations
 bool ExpectIsSupportedOperationForOneNode(
-  const TfLiteRegistrationExternal* registration, const TfLiteOpaqueNode* node,
-  TfLiteOpaqueContext* context, const NeuronApi* neuronapi,
-  const NeuronDelegateOptions* options, OpValidationContext* val_ctx) {
+    const TfLiteRegistrationExternal* registration,
+    const TfLiteOpaqueNode* node, TfLiteOpaqueContext* context,
+    const NeuronApi* neuronapi, const NeuronDelegateOptions* options,
+    OpValidationContext* val_ctx) {
   bool is_supported = false;
-  auto kernel_state = std::make_unique<NeuronStableDelegateKernel>(neuronapi, *options);
-  if (kernel_state->GetSupportedOperationsForOneNode(context,
-      const_cast<TfLiteOpaqueNode*>(node), const_cast<TfLiteRegistrationExternal*>(registration),
-      &is_supported) != kTfLiteOk) {
+  auto kernel_state =
+      std::make_unique<NeuronStableDelegateKernel>(neuronapi, *options);
+  if (kernel_state->GetSupportedOperationsForOneNode(
+          context, const_cast<TfLiteOpaqueNode*>(node),
+          const_cast<TfLiteRegistrationExternal*>(registration),
+          &is_supported) != kTfLiteOk) {
     AddValidationFailure(NeuronValidationFailureType::kUnsupportedOperator,
-        "GetSupportedOperationsForOneNode returns error", val_ctx);
+                         "GetSupportedOperationsForOneNode returns error",
+                         val_ctx);
     return false;
   }
   return Expect(is_supported, NeuronValidationFailureType::kUnsupportedOperator,
@@ -252,47 +261,54 @@ int ComputeSplitVUnknownSplitSize(const TfLiteOpaqueContext* context,
 TfLiteStatus PreGetSupportedForWholeGraph(TfLiteOpaqueContext* context,
                                           const NeuronApi* neuronapi,
                                           const NeuronDelegateOptions* options,
-                                          std::vector<int> * is_supported) {
-  TfLiteIntArray *execution_plan = nullptr;
-  if (TfLiteOpaqueContextGetExecutionPlan(context, &execution_plan) != kTfLiteOk) {
-    TFLITE_LOG_PROD(tflite::TFLITE_LOG_ERROR, "PreOpCheck: Fail to get exexution plan");
+                                          std::vector<int>* is_supported) {
+  TfLiteIntArray* execution_plan = nullptr;
+  if (TfLiteOpaqueContextGetExecutionPlan(context, &execution_plan) !=
+      kTfLiteOk) {
+    TFLITE_LOG_PROD(tflite::TFLITE_LOG_ERROR,
+                    "PreOpCheck: Fail to get exexution plan");
     return kTfLiteError;
   }
   int num_node = execution_plan->size;
-  TfLiteOpaqueNode *ref_node;
-  TfLiteRegistrationExternal *ref_reg;
+  TfLiteOpaqueNode* ref_node;
+  TfLiteRegistrationExternal* ref_reg;
   std::vector<NeuronValidationFailure> failure;
   // Check if all nodes pass the validate function
-  for (int i = 0; i < num_node; i ++) {
-    if (TfLiteOpaqueContextGetNodeAndRegistration(
-            context, i, &ref_node, &ref_reg) != kTfLiteOk) {
-      TFLITE_LOG_PROD(tflite::TFLITE_LOG_ERROR, "PreOpCheck: Fail to get Node and Registration.");
+  for (int i = 0; i < num_node; i++) {
+    if (TfLiteOpaqueContextGetNodeAndRegistration(context, i, &ref_node,
+                                                  &ref_reg) != kTfLiteOk) {
+      TFLITE_LOG_PROD(tflite::TFLITE_LOG_ERROR,
+                      "PreOpCheck: Fail to get Node and Registration.");
       return kTfLiteError;
     }
-    bool node_result = Validate(ref_reg, ref_node, context, neuronapi, options, &failure);
+    bool node_result =
+        Validate(ref_reg, ref_node, context, neuronapi, options, &failure);
     if (!node_result) {
       TFLITE_LOG_PROD(
-        tflite::TFLITE_LOG_ERROR, "PreOpCheck: OP %s (v%d) is not supported (%s)",
-        tflite::EnumNameBuiltinOperator(
-            static_cast<BuiltinOperator>(
-                TfLiteRegistrationExternalGetBuiltInCode(ref_reg))),
-        TfLiteRegistrationExternalGetVersion(ref_reg),
-        failure.size() > 0 ? failure[0].message.c_str() : "");
-      TFLITE_LOG_PROD(tflite::TFLITE_LOG_ERROR, "PreOpCheck: Fail validation because of above op.");
+          tflite::TFLITE_LOG_ERROR,
+          "PreOpCheck: OP %s (v%d) is not supported (%s)",
+          tflite::EnumNameBuiltinOperator(static_cast<BuiltinOperator>(
+              TfLiteRegistrationExternalGetBuiltInCode(ref_reg))),
+          TfLiteRegistrationExternalGetVersion(ref_reg),
+          failure.size() > 0 ? failure[0].message.c_str() : "");
+      TFLITE_LOG_PROD(tflite::TFLITE_LOG_ERROR,
+                      "PreOpCheck: Fail validation because of above op.");
       return kTfLiteError;
     }
   }
   // GetSupportedOperationsForWholeGraph
   auto support_flags = std::make_unique<bool[]>(num_node);
-  auto kernel_state = std::make_unique<NeuronStableDelegateKernel>(neuronapi, *options);
+  auto kernel_state =
+      std::make_unique<NeuronStableDelegateKernel>(neuronapi, *options);
   if (kernel_state->GetSupportedOperationsForWholeGraph(
-      context, support_flags.get()) != kTfLiteOk) {
-    TFLITE_LOG_PROD(tflite::TFLITE_LOG_ERROR,
-      "PreOpCheck: GetSupportedOperationsForWholeGraph returns error");
+          context, support_flags.get()) != kTfLiteOk) {
+    TFLITE_LOG_PROD(
+        tflite::TFLITE_LOG_ERROR,
+        "PreOpCheck: GetSupportedOperationsForWholeGraph returns error");
     return kTfLiteError;
   }
   is_supported->clear();
-  for (int i = 0; i < num_node; i ++) {
+  for (int i = 0; i < num_node; i++) {
     is_supported->push_back(support_flags[i] ? 1 : 0);
   }
   TFLITE_LOG_PROD(tflite::TFLITE_LOG_INFO, "PreOpCheck: succesfully");
@@ -300,14 +316,13 @@ TfLiteStatus PreGetSupportedForWholeGraph(TfLiteOpaqueContext* context,
 }
 
 bool Validate(const TfLiteRegistrationExternal* registration,
-              const TfLiteOpaqueNode* node,
-              TfLiteOpaqueContext* context,
-              const NeuronApi* neuronapi,
-              const NeuronDelegateOptions* options,
+              const TfLiteOpaqueNode* node, TfLiteOpaqueContext* context,
+              const NeuronApi* neuronapi, const NeuronDelegateOptions* options,
               std::vector<NeuronValidationFailure>* map_failures) {
   OpValidationContext val_ctx{true, map_failures};
 
-  const auto builtin_code = TfLiteRegistrationExternalGetBuiltInCode(registration);
+  const auto builtin_code =
+      TfLiteRegistrationExternalGetBuiltInCode(registration);
   const auto version = TfLiteRegistrationExternalGetVersion(registration);
   switch (builtin_code) {
     case kTfLiteBuiltinAdd: {
@@ -327,16 +342,14 @@ bool Validate(const TfLiteRegistrationExternal* registration,
              NeuronValidationFailureType::kUnsupportedOutputType,
              "Neuron only supports int32 axis.", &val_ctx);
       if (builtin_code == kTfLiteBuiltinArgMax) {
-        auto builtin =
-            reinterpret_cast<TfLiteArgMaxParams*>(
-              TfLiteOpaqueNodeGetBuiltinData(node));
+        auto builtin = reinterpret_cast<TfLiteArgMaxParams*>(
+            TfLiteOpaqueNodeGetBuiltinData(node));
         Expect(builtin->output_type == kTfLiteInt32,
                NeuronValidationFailureType::kUnsupportedOutputType,
                "Neuron only supports int32 output.", &val_ctx);
       } else {
-        auto builtin =
-            reinterpret_cast<TfLiteArgMinParams*>(
-              TfLiteOpaqueNodeGetBuiltinData(node));
+        auto builtin = reinterpret_cast<TfLiteArgMinParams*>(
+            TfLiteOpaqueNodeGetBuiltinData(node));
         Expect(builtin->output_type == kTfLiteInt32,
                NeuronValidationFailureType::kUnsupportedOutputType,
                "Neuron only supports int32 output.", &val_ctx);
@@ -401,15 +414,15 @@ bool Validate(const TfLiteRegistrationExternal* registration,
       Expect(filter_type != kTfLiteInt4,
              NeuronValidationFailureType::kUnsupportedOutputType,
              "Unsupported filter of type kTfLiteInt4", &val_ctx);
-      const int *inputs;
+      const int* inputs;
       int num_inputs;
-      TF_LITE_OPAQUE_ENSURE_STATUS(TfLiteOpaqueNodeInputs(node, &inputs, &num_inputs));
-      const bool is_bias_present =
-          TfLiteOpaqueNodeNumberOfInputs(node) == 3 &&
-          inputs[2] != kTfLiteOptionalTensor;
+      TF_LITE_OPAQUE_ENSURE_STATUS(
+          TfLiteOpaqueNodeInputs(node, &inputs, &num_inputs));
+      const bool is_bias_present = TfLiteOpaqueNodeNumberOfInputs(node) == 3 &&
+                                   inputs[2] != kTfLiteOptionalTensor;
       if (is_bias_present) {
         const TfLiteType bias_type =
-          TfLiteOpaqueTensorType(TfLiteOpaqueNodeGetInput(context, node, 2));
+            TfLiteOpaqueTensorType(TfLiteOpaqueNodeGetInput(context, node, 2));
         Expect(bias_type != kTfLiteInt64,
                NeuronValidationFailureType::kUnsupportedOutputType,
                "Unsupported bias of type kTfLiteInt64", &val_ctx);
@@ -442,9 +455,8 @@ bool Validate(const TfLiteRegistrationExternal* registration,
       }
       if (TfLiteOpaqueNodeNumberOfInputs(node) == 1) {
         // reject scalar reshaping
-        auto* params =
-            reinterpret_cast<TfLiteReshapeParams*>(
-                TfLiteOpaqueNodeGetBuiltinData(node));
+        auto* params = reinterpret_cast<TfLiteReshapeParams*>(
+            TfLiteOpaqueNodeGetBuiltinData(node));
         int num_dimensions = params->num_dimensions;
         if (num_dimensions == 1 && params->shape[0] == 0) {
           // Legacy tflite models use a shape parameter of [0] to indicate
@@ -481,7 +493,7 @@ bool Validate(const TfLiteRegistrationExternal* registration,
     case kTfLiteBuiltinL2Normalization: {
       ExpectMaxOpVersion(version, 2, &val_ctx);
       auto builtin = reinterpret_cast<TfLiteL2NormParams*>(
-                         TfLiteOpaqueNodeGetBuiltinData(node));
+          TfLiteOpaqueNodeGetBuiltinData(node));
       Expect(builtin->activation == kTfLiteActNone,
              NeuronValidationFailureType::kNoActivationExpected,
              "Expected no activation", &val_ctx);
@@ -489,10 +501,12 @@ bool Validate(const TfLiteRegistrationExternal* registration,
     case kTfLiteBuiltinConcatenation: {
       ExpectMaxOpVersion(version, 2, &val_ctx);
       Expect(reinterpret_cast<TfLiteConcatenationParams*>(
-                 TfLiteOpaqueNodeGetBuiltinData(node))->activation == kTfLiteActNone,
+                 TfLiteOpaqueNodeGetBuiltinData(node))
+                     ->activation == kTfLiteActNone,
              NeuronValidationFailureType::kNoActivationExpected,
              "No activation function supported", &val_ctx);
-      Expect(TfLiteOpaqueTensorNumDims(TfLiteOpaqueNodeGetInput(context, node, 0)) <= 4,
+      Expect(TfLiteOpaqueTensorNumDims(
+                 TfLiteOpaqueNodeGetInput(context, node, 0)) <= 4,
              NeuronValidationFailureType::kUnsupportedOperandRank,
              "Input rank should be less than 4", &val_ctx);
 
@@ -505,12 +519,12 @@ bool Validate(const TfLiteRegistrationExternal* registration,
       // Allow dequantizing fp16->fp32.
       const auto& input = TfLiteOpaqueNodeGetInput(context, node, 0);
       if (TfLiteOpaqueTensorType(input) == kTfLiteFloat16 &&
-          TfLiteOpaqueTensorGetAllocationType(input) ==
-              kTfLiteMmapRo) {
+          TfLiteOpaqueTensorGetAllocationType(input) == kTfLiteMmapRo) {
         return true;
       }
       ExpectOpVersion(version, 2, &val_ctx);
-      EXPECT_INPUT_TYPE_IN(TfLiteOpaqueTensorType(input), kTfLiteUInt8, kTfLiteInt8);
+      EXPECT_INPUT_TYPE_IN(TfLiteOpaqueTensorType(input), kTfLiteUInt8,
+                           kTfLiteInt8);
     } break;
     case kTfLiteBuiltinFloor: {
       ExpectOpVersion(version, 1, &val_ctx);
@@ -558,10 +572,11 @@ bool Validate(const TfLiteRegistrationExternal* registration,
     case kTfLiteBuiltinBatchToSpaceNd: {
       ExpectMaxOpVersion(version, 2, &val_ctx);
       auto crops = TfLiteOpaqueNodeGetInput(context, node, 2);
-      auto crops_data = reinterpret_cast<int32_t*>(TfLiteOpaqueTensorData(crops));
+      auto crops_data =
+          reinterpret_cast<int32_t*>(TfLiteOpaqueTensorData(crops));
       Expect(crops_data && TfLiteOpaqueTensorByteSize(crops) == 16 &&
-             crops_data[0] == 0 && crops_data[1] == 0 && crops_data[2] == 0 &&
-             crops_data[3] == 0,
+                 crops_data[0] == 0 && crops_data[1] == 0 &&
+                 crops_data[2] == 0 && crops_data[3] == 0,
              NeuronValidationFailureType::kUnsupportedOperandValue,
              "All crops should be 0.", &val_ctx);
     } break;
@@ -574,8 +589,8 @@ bool Validate(const TfLiteRegistrationExternal* registration,
       // dimensions.
       // TODO(Code): Support dynamically-sized tensors in delegates.
       Expect((TfLiteOpaqueNodeNumberOfInputs(node) > 1) &&
-                 (TfLiteOpaqueTensorGetAllocationType(
-                      TfLiteOpaqueNodeGetInput(context, node, 1)) == kTfLiteMmapRo),
+                 (TfLiteOpaqueTensorGetAllocationType(TfLiteOpaqueNodeGetInput(
+                      context, node, 1)) == kTfLiteMmapRo),
              NeuronValidationFailureType::kInputTensorShouldHaveConstantShape,
              "Dynamically-sized tensors not supported.", &val_ctx);
     } break;
@@ -608,10 +623,10 @@ bool Validate(const TfLiteRegistrationExternal* registration,
     case kTfLiteBuiltinTransposeConv: {
       ExpectMaxOpVersion(version, 3, &val_ctx);
       Expect((TfLiteOpaqueNodeNumberOfInputs(node) > 1) &&
-                 (TfLiteOpaqueTensorGetAllocationType(
-                      TfLiteOpaqueNodeGetInput(context, node, 0)) == kTfLiteMmapRo) &&
-                 (TfLiteOpaqueTensorGetAllocationType(
-                      TfLiteOpaqueNodeGetInput(context, node, 1)) == kTfLiteMmapRo),
+                 (TfLiteOpaqueTensorGetAllocationType(TfLiteOpaqueNodeGetInput(
+                      context, node, 0)) == kTfLiteMmapRo) &&
+                 (TfLiteOpaqueTensorGetAllocationType(TfLiteOpaqueNodeGetInput(
+                      context, node, 1)) == kTfLiteMmapRo),
              NeuronValidationFailureType::kInputTensorShouldHaveConstantShape,
              "Dynamically-sized tensors not supported.", &val_ctx);
     } break;
@@ -624,12 +639,12 @@ bool Validate(const TfLiteRegistrationExternal* registration,
     } break;
     case kTfLiteBuiltinMean: {
       ExpectMaxOpVersion(version, 2, &val_ctx);
-      Expect(TfLiteOpaqueTensorType(TfLiteOpaqueNodeGetInput(context, node, 0)) ==
-               kTfLiteFloat32 ||
-           IsQuantized(TfLiteOpaqueTensorType(
-               TfLiteOpaqueNodeGetInput(context, node, 0))),
-       NeuronValidationFailureType::kUnsupportedInputType,
-       "Expected Float32 or Quantized input", &val_ctx);
+      Expect(TfLiteOpaqueTensorType(TfLiteOpaqueNodeGetInput(
+                 context, node, 0)) == kTfLiteFloat32 ||
+                 IsQuantized(TfLiteOpaqueTensorType(
+                     TfLiteOpaqueNodeGetInput(context, node, 0))),
+             NeuronValidationFailureType::kUnsupportedInputType,
+             "Expected Float32 or Quantized input", &val_ctx);
     } break;
     case kTfLiteBuiltinEmbeddingLookup: {
       ExpectOpVersion(version, 1, &val_ctx);
@@ -644,13 +659,15 @@ bool Validate(const TfLiteRegistrationExternal* registration,
           TfLiteOpaqueTensorType(TfLiteOpaqueNodeGetInput(context, node, 0));
       EXPECT_INPUT_TYPE_IN(input_type, kTfLiteFloat32, kTfLiteUInt8,
                            kTfLiteInt8, kTfLiteInt32);
-      const TfLiteOpaqueTensor* operand0 = TfLiteOpaqueNodeGetInput(context, node, 0);
+      const TfLiteOpaqueTensor* operand0 =
+          TfLiteOpaqueNodeGetInput(context, node, 0);
       if (TfLiteOpaqueTensorNumDims(operand0) == 0) {
         Expect(TfLiteOpaqueTensorGetAllocationType(operand0) == kTfLiteMmapRo,
                NeuronValidationFailureType::kUnsupportedInputType,
                "Scalar operand should be constant", &val_ctx);
       }
-      const TfLiteOpaqueTensor* operand1 = TfLiteOpaqueNodeGetInput(context, node, 1);
+      const TfLiteOpaqueTensor* operand1 =
+          TfLiteOpaqueNodeGetInput(context, node, 1);
       if (TfLiteOpaqueTensorNumDims(operand1) == 0) {
         Expect(TfLiteOpaqueTensorGetAllocationType(operand1) == kTfLiteMmapRo,
                NeuronValidationFailureType::kUnsupportedInputType,
@@ -663,10 +680,8 @@ bool Validate(const TfLiteRegistrationExternal* registration,
           TfLiteOpaqueTensorType(TfLiteOpaqueNodeGetInput(context, node, 0));
       const TfLiteType output_type =
           TfLiteOpaqueTensorType(TfLiteOpaqueNodeGetOutput(context, node, 0));
-      EXPECT_INPUT_TYPE_IN(input_type, kTfLiteInt32,
-                           kTfLiteUInt8, kTfLiteInt8);
-      ExpectTypeIn(output_type,
-                   {kTfLiteInt32, kTfLiteUInt8, kTfLiteInt8},
+      EXPECT_INPUT_TYPE_IN(input_type, kTfLiteInt32, kTfLiteUInt8, kTfLiteInt8);
+      ExpectTypeIn(output_type, {kTfLiteInt32, kTfLiteUInt8, kTfLiteInt8},
                    NeuronValidationFailureType::kUnsupportedOutputType,
                    "Output type should be one of kTfLiteInt32, "
                    "kTfLiteUInt8, kTfLiteInt8.",
@@ -732,8 +747,10 @@ bool Validate(const TfLiteRegistrationExternal* registration,
           TfLiteOpaqueNodeGetInput(context, node, 1);
       bool same_num_of_dim = TfLiteOpaqueTensorNumDims(condition_tensor) ==
                              TfLiteOpaqueTensorNumDims(input_tensor);
-      Expect(same_num_of_dim, NeuronValidationFailureType::kUnsupportedOperandValue,
-             "Condition and inputs tensors shuld have the number of dims", &val_ctx);
+      Expect(same_num_of_dim,
+             NeuronValidationFailureType::kUnsupportedOperandValue,
+             "Condition and inputs tensors shuld have the number of dims",
+             &val_ctx);
       if (same_num_of_dim) {
         for (int i = 0; i < TfLiteOpaqueTensorNumDims(condition_tensor); i++) {
           Expect(TfLiteOpaqueTensorDim(condition_tensor, i) ==
@@ -763,10 +780,12 @@ bool Validate(const TfLiteRegistrationExternal* registration,
     } break;
     case kTfLiteBuiltinSplit: {
       ExpectOpVersion(version, 3, &val_ctx);
-      const TfLiteOpaqueTensor* input = TfLiteOpaqueNodeGetInput(context, node, 1);
-      EXPECT_INPUT_TYPE_IN(TfLiteOpaqueTensorType(input), kTfLiteFloat32, kTfLiteUInt8,
-                           kTfLiteInt8, kTfLiteInt32);
-      const TfLiteOpaqueTensor* axis = TfLiteOpaqueNodeGetInput(context, node, 0);
+      const TfLiteOpaqueTensor* input =
+          TfLiteOpaqueNodeGetInput(context, node, 1);
+      EXPECT_INPUT_TYPE_IN(TfLiteOpaqueTensorType(input), kTfLiteFloat32,
+                           kTfLiteUInt8, kTfLiteInt8, kTfLiteInt32);
+      const TfLiteOpaqueTensor* axis =
+          TfLiteOpaqueNodeGetInput(context, node, 0);
       Expect(TfLiteOpaqueTensorType(axis) == kTfLiteInt32 &&
                  TfLiteOpaqueTensorGetAllocationType(axis) == kTfLiteMmapRo,
              NeuronValidationFailureType::kUnsupportedInputType,
@@ -775,18 +794,21 @@ bool Validate(const TfLiteRegistrationExternal* registration,
     case kTfLiteBuiltinSplitV: {
       ExpectOpVersion(version, 2, &val_ctx);
       // Tensor indices: value: 0, size_splits: 1, axis: 2
-      const TfLiteOpaqueTensor* input = TfLiteOpaqueNodeGetInput(context, node, 0);
-      const TfLiteOpaqueTensor* size_splits = TfLiteOpaqueNodeGetInput(context, node, 1);
-      const TfLiteOpaqueTensor* axis = TfLiteOpaqueNodeGetInput(context, node, 2);
-      EXPECT_INPUT_TYPE_IN(TfLiteOpaqueTensorType(input), kTfLiteFloat32, kTfLiteUInt8,
-                           kTfLiteInt8, kTfLiteInt32);
+      const TfLiteOpaqueTensor* input =
+          TfLiteOpaqueNodeGetInput(context, node, 0);
+      const TfLiteOpaqueTensor* size_splits =
+          TfLiteOpaqueNodeGetInput(context, node, 1);
+      const TfLiteOpaqueTensor* axis =
+          TfLiteOpaqueNodeGetInput(context, node, 2);
+      EXPECT_INPUT_TYPE_IN(TfLiteOpaqueTensorType(input), kTfLiteFloat32,
+                           kTfLiteUInt8, kTfLiteInt8, kTfLiteInt32);
       bool size_splits_is_int32_const_vector =
           TfLiteOpaqueTensorType(size_splits) == kTfLiteInt32 &&
-              TfLiteOpaqueTensorNumDims(size_splits) == 1 &&
-                  TfLiteOpaqueTensorGetAllocationType(size_splits) == kTfLiteMmapRo;
+          TfLiteOpaqueTensorNumDims(size_splits) == 1 &&
+          TfLiteOpaqueTensorGetAllocationType(size_splits) == kTfLiteMmapRo;
       bool axis_is_int32_const =
           TfLiteOpaqueTensorType(axis) == kTfLiteInt32 &&
-              TfLiteOpaqueTensorGetAllocationType(axis) == kTfLiteMmapRo;
+          TfLiteOpaqueTensorGetAllocationType(axis) == kTfLiteMmapRo;
       Expect(size_splits_is_int32_const_vector,
              NeuronValidationFailureType::kUnsupportedInputType,
              "Neuron only supports constant int32 size_splits vector.",
@@ -797,9 +819,10 @@ bool Validate(const TfLiteRegistrationExternal* registration,
       if (size_splits_is_int32_const_vector && axis_is_int32_const) {
         int32_t* size_splits_data =
             reinterpret_cast<int32_t*>(TfLiteOpaqueTensorData(size_splits));
-        Expect(std::all_of(size_splits_data,
-                           size_splits_data + TfLiteOpaqueTensorDim(size_splits, 0),
-                           [](auto size) { return size != 0; }),
+        Expect(std::all_of(
+                   size_splits_data,
+                   size_splits_data + TfLiteOpaqueTensorDim(size_splits, 0),
+                   [](auto size) { return size != 0; }),
                NeuronValidationFailureType::kUnsupportedInputType,
                "Neuron only supports non-zero split sizes.", &val_ctx);
 #if 1
@@ -832,9 +855,8 @@ bool Validate(const TfLiteRegistrationExternal* registration,
           NeuronValidationFailureType::kUnsupportedOutputType,
           "Output should be kTfLiteInt16 or kTfLiteUInt8 or kTfLiteInt8.",
           &val_ctx);
-      const auto quantization_params =
-          TfLiteOpaqueTensorGetQuantizationParams(
-              TfLiteOpaqueNodeGetOutput(context, node, 0));
+      const auto quantization_params = TfLiteOpaqueTensorGetQuantizationParams(
+          TfLiteOpaqueNodeGetOutput(context, node, 0));
       Expect(quantization_params.scale > 0.f,
              NeuronValidationFailureType::kUnsupportedQuantizationParameters,
              "Output quantization scale should be > 0.", &val_ctx);
@@ -873,13 +895,14 @@ bool Validate(const TfLiteRegistrationExternal* registration,
           TfLiteOpaqueTensorType(TfLiteOpaqueNodeGetInput(context, node, 0));
       EXPECT_INPUT_TYPE_IN(input_type, kTfLiteInt32, kTfLiteFloat32,
                            kTfLiteInt8);
-      auto builtin =
-          reinterpret_cast<TfLitePackParams*>(TfLiteOpaqueNodeGetBuiltinData(node));
-      Expect(builtin->axis != -1 &&
-                 builtin->axis !=
-                     TfLiteOpaqueTensorNumDims(TfLiteOpaqueNodeGetInput(context, node, 0)),
-             NeuronValidationFailureType::kUnsupportedOperandValue,
-             "Neuron does not support axis being the last dimension", &val_ctx);
+      auto builtin = reinterpret_cast<TfLitePackParams*>(
+          TfLiteOpaqueNodeGetBuiltinData(node));
+      Expect(
+          builtin->axis != -1 &&
+              builtin->axis != TfLiteOpaqueTensorNumDims(
+                                   TfLiteOpaqueNodeGetInput(context, node, 0)),
+          NeuronValidationFailureType::kUnsupportedOperandValue,
+          "Neuron does not support axis being the last dimension", &val_ctx);
     } break;
     case kTfLiteBuiltinSquaredDifference:
     case kTfLiteBuiltinRsqrt:
@@ -907,9 +930,9 @@ bool Validate(const TfLiteRegistrationExternal* registration,
       if (strcmp(TfLiteRegistrationExternalGetCustomName(registration),
                  "TFLite_Detection_PostProcess") == 0 &&
           magic_number >= kMinMagicNumberForNeuron33) {
-        ExpectIsSupportedOperationForOneNode(
-          registration, node, context, neuronapi, options, &val_ctx);
-          break;
+        ExpectIsSupportedOperationForOneNode(registration, node, context,
+                                             neuronapi, options, &val_ctx);
+        break;
       }
     }  // no break, pass to default
 #endif
@@ -922,8 +945,8 @@ bool Validate(const TfLiteRegistrationExternal* registration,
   }
   if (val_ctx.is_valid) {
     if (options->operation_check_mode == kPerNodeOperationCheck) {
-      ExpectIsSupportedOperationForOneNode(
-              registration, node, context, neuronapi, options, &val_ctx);
+      ExpectIsSupportedOperationForOneNode(registration, node, context,
+                                           neuronapi, options, &val_ctx);
     }
   }
   return val_ctx.is_valid;

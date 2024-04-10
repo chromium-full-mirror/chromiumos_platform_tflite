@@ -30,8 +30,8 @@
 #include "delegate/mtk_neuron/neuron_implementation.h"
 #include "tensorflow/lite/builtin_ops.h"
 #include "tensorflow/lite/c/builtin_op_data.h"
-#include "tensorflow/lite/c/common.h"
 #include "tensorflow/lite/c/c_api_opaque.h"
+#include "tensorflow/lite/c/common.h"
 #include "tensorflow/lite/context_util.h"
 #include "tensorflow/lite/core/api/profiler.h"
 #include "tensorflow/lite/minimal_logging.h"
@@ -41,10 +41,11 @@
 /// M: NeuroPilot {@
 #include <farmhash.h>
 #include <inttypes.h>
-#include <iostream>
 #include <string.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
+
+#include <iostream>
 
 #include "linux/dma-heap.h"
 
@@ -182,7 +183,8 @@ inline bool isLstmBasicKernel(const TfLiteOpaqueNode* node) {
 
 inline bool isLstmFullKernel(const TfLiteOpaqueNode* node) {
   return TfLiteOpaqueNodeNumberOfInputs(node) == kLstmFullKernelInputSize ||
-         TfLiteOpaqueNodeNumberOfInputs(node) == kLstmFullKernelNoOptionalParamsInputSize;
+         TfLiteOpaqueNodeNumberOfInputs(node) ==
+             kLstmFullKernelNoOptionalParamsInputSize;
 }
 
 bool IsHybridOperator(const TfLiteOpaqueContext* context, int builtin_code,
@@ -254,11 +256,13 @@ uint64_t GetHash(const TfLiteIntArray* int_array, uint64_t combine_with = 0) {
   return result;
 }
 
-uint64_t GetHash(const int *int_array, int num_of_array, uint64_t combine_with = 0) {
+uint64_t GetHash(const int* int_array, int num_of_array,
+                 uint64_t combine_with = 0) {
   constexpr auto kHashConst = 0x9e3779b97f4a7800ULL;
   uint64_t result = combine_with;
   for (int i = 0; i < num_of_array; i++) {
-    result = result ^ (int_array[i] + kHashConst + (result << 10) + (result >> 4));
+    result =
+        result ^ (int_array[i] + kHashConst + (result << 10) + (result >> 4));
   }
   return result;
 }
@@ -269,14 +273,14 @@ uint64_t GetInOutPutHash(TfLiteOpaqueContext* context,
   uint64_t result = 0;
   for (auto i : TfLiteIntArrayView(int_array)) {
     result = result ^ (TfLiteOpaqueTensorByteSize(
-                       TfLiteOpaqueContextGetOpaqueTensor(context, i)) +
-                   kHashConst + (result << 10) + (result >> 4));
+                           TfLiteOpaqueContextGetOpaqueTensor(context, i)) +
+                       kHashConst + (result << 10) + (result >> 4));
   }
   return result;
 }
 
 TfLiteStatus GetAcceleratorDevice(const NeuronApi* neuron_api,
-                                  TfLiteOpaqueContext *context,
+                                  TfLiteOpaqueContext* context,
                                   const char* device_name,
                                   NeuronDevice** result) {
   if (!device_name) {
@@ -305,26 +309,28 @@ TfLiteStatus GetAcceleratorDevice(const NeuronApi* neuron_api,
   }
 
   TfLiteOpaqueContextReportError(
-      context, "Could not find the specified Neuron accelerator: %s.", device_name);
+      context, "Could not find the specified Neuron accelerator: %s.",
+      device_name);
   return kTfLiteError;
 }
 
-NeuronAdapterFuseCode GetEquivalentToNeuronFuseCode(TfLiteFusedActivation activation) {
-    switch (activation) {
-      case kTfLiteActNone:
-        return NEURON_FUSED_NONE;
-      case kTfLiteActRelu:
-        return NEURON_FUSED_RELU;
-      case kTfLiteActReluN1To1:
-        return NEURON_FUSED_RELU1;
-      case kTfLiteActRelu6:
-        return NEURON_FUSED_RELU6;
-      default:
-        TFLITE_LOG_PROD(tflite::TFLITE_LOG_WARNING,
-          "Unsupported FusedActivation: %d", activation);
-        return NEURON_FUSED_NONE;
-    }
+NeuronAdapterFuseCode GetEquivalentToNeuronFuseCode(
+    TfLiteFusedActivation activation) {
+  switch (activation) {
+    case kTfLiteActNone:
+      return NEURON_FUSED_NONE;
+    case kTfLiteActRelu:
+      return NEURON_FUSED_RELU;
+    case kTfLiteActReluN1To1:
+      return NEURON_FUSED_RELU1;
+    case kTfLiteActRelu6:
+      return NEURON_FUSED_RELU6;
+    default:
+      TFLITE_LOG_PROD(tflite::TFLITE_LOG_WARNING,
+                      "Unsupported FusedActivation: %d", activation);
+      return NEURON_FUSED_NONE;
   }
+}
 }  // namespace
 
 NNMemory::NNMemory(const NeuronApi* neuronapi, const char* name, size_t size,
@@ -362,8 +368,8 @@ NNMemory::NNMemory(const NeuronApi* neuronapi, const char* name, size_t size,
     int ret = false;
 
     struct dma_heap_allocation_data heap_data = {
-      .len = size,
-      .fd_flags = O_RDWR | O_CLOEXEC,
+        .len = size,
+        .fd_flags = O_RDWR | O_CLOEXEC,
     };
 
     dma_heap_fd_ = open("/dev/dma_heap/system", O_RDWR | O_CLOEXEC);
@@ -381,11 +387,11 @@ NNMemory::NNMemory(const NeuronApi* neuronapi, const char* name, size_t size,
     fd_ = heap_data.fd;
     if (fd_ >= 0) {
       /* map user va */
-      data_ptr_ = reinterpret_cast<uint8_t*>(mmap(NULL, byte_size_, PROT_READ | PROT_WRITE,
-                  MAP_SHARED, fd_, 0));
+      data_ptr_ = reinterpret_cast<uint8_t*>(
+          mmap(NULL, byte_size_, PROT_READ | PROT_WRITE, MAP_SHARED, fd_, 0));
       if (data_ptr_ != MAP_FAILED) {
-        neuronapi_->NeuronMemory_createFromFd(size, PROT_READ | PROT_WRITE,
-                                              fd_, 0, &nn_memory_handle_);
+        neuronapi_->NeuronMemory_createFromFd(size, PROT_READ | PROT_WRITE, fd_,
+                                              0, &nn_memory_handle_);
       }
     }
 #endif
@@ -409,12 +415,9 @@ NNMemory::~NNMemory() {
   }
 #else
   if (use_ahwb_) {
-    if (data_ptr_)
-      munmap(data_ptr_, byte_size_);
-    if (fd_ >= 0)
-      close(fd_);
-    if (dma_heap_fd_ >= 0)
-      close(dma_heap_fd_);
+    if (data_ptr_) munmap(data_ptr_, byte_size_);
+    if (fd_ >= 0) close(fd_);
+    if (dma_heap_fd_ >= 0) close(dma_heap_fd_);
   }
 #endif
 }
@@ -428,7 +431,8 @@ TfLiteStatus NeuronStableDelegateKernel::Map(
     // Neuron requires a bias tensor, so we allocate a new tensor to fill
     // it with zeroes. It is deleted with other tensors in the context
     // during subgraph destructor call.
-    TfLiteOpaqueTensorBuilder* tensor_builder = TfLiteOpaqueTensorBuilderCreate();
+    TfLiteOpaqueTensorBuilder* tensor_builder =
+        TfLiteOpaqueTensorBuilderCreate();
     const auto input_type = TfLiteOpaqueTensorType(
         TfLiteOpaqueContextGetOpaqueTensor(mapping_args.context, input_id));
     void* tensor_data = nullptr;
@@ -448,7 +452,8 @@ TfLiteStatus NeuronStableDelegateKernel::Map(
       quant_params.scale =
           TfLiteOpaqueTensorGetQuantizationParams(input_tensor).scale *
           TfLiteOpaqueTensorGetQuantizationParams(filter_tensor).scale;
-      TfLiteOpaqueTensorBuilderSetQuantizationParams(tensor_builder, quant_params);
+      TfLiteOpaqueTensorBuilderSetQuantizationParams(tensor_builder,
+                                                     quant_params);
     }
     TfLiteOpaqueTensorBuilderSetAllocationType(tensor_builder, kTfLiteDynamic);
 
@@ -457,40 +462,42 @@ TfLiteStatus NeuronStableDelegateKernel::Map(
     TfLiteOpaqueTensorBuilderSetData(tensor_builder, tensor_data);
 
     int bias_index = -1;
-    TfLiteOpaqueContextAddTensor(
-      mapping_args.context, tensor_builder, &bias_index);
+    TfLiteOpaqueContextAddTensor(mapping_args.context, tensor_builder,
+                                 &bias_index);
     TfLiteOpaqueTensorBuilderDelete(tensor_builder);
-    TfLiteOpaqueTensor* bias_tensor = TfLiteOpaqueContextGetOpaqueTensor(
-                mapping_args.context, bias_index);
+    TfLiteOpaqueTensor* bias_tensor =
+        TfLiteOpaqueContextGetOpaqueTensor(mapping_args.context, bias_index);
 
     // Create an array with a required bias shape and resize the bias
     // tensor.
     TfLiteIntArray* bias_shape = TfLiteIntArrayCreate(1);
     bias_shape->data[0] = num_elements;
-    TfLiteOpaqueContextResizeTensor(mapping_args.context,
-                                    bias_tensor,
+    TfLiteOpaqueContextResizeTensor(mapping_args.context, bias_tensor,
                                     bias_shape);
     // Set tensor's values to zeroes and add it using AddVector*, so
     // that the values are copied to Neuron. We don't use the AddTensor
     // function because it doesn't copy values and the tensor we just
     // created is not in the node->inputs.
     if (input_type == kTfLiteFloat32) {
-      memset(TfLiteOpaqueTensorData(bias_tensor), 0, num_elements * sizeof(float));
+      memset(TfLiteOpaqueTensorData(bias_tensor), 0,
+             num_elements * sizeof(float));
       mapping_args.builder->AddVectorFloat32Operand(
-        reinterpret_cast<const float*>(TfLiteOpaqueTensorData(bias_tensor)), num_elements);
+          reinterpret_cast<const float*>(TfLiteOpaqueTensorData(bias_tensor)),
+          num_elements);
     } else {
-      memset(TfLiteOpaqueTensorData(bias_tensor), 0, num_elements * sizeof(int));
+      memset(TfLiteOpaqueTensorData(bias_tensor), 0,
+             num_elements * sizeof(int));
       mapping_args.builder->AddVectorInt32Operand(
-          reinterpret_cast<const int32_t*>(TfLiteOpaqueTensorData(bias_tensor)), num_elements,
+          reinterpret_cast<const int32_t*>(TfLiteOpaqueTensorData(bias_tensor)),
+          num_elements,
           TfLiteOpaqueTensorGetQuantizationParams(bias_tensor).scale,
           /*zero_point=*/0);
     }
   };
   switch (builtin_code) {
     case kTfLiteBuiltinAdd: {
-      auto builtin =
-          reinterpret_cast<TfLiteAddParams*>(
-            TfLiteOpaqueNodeGetBuiltinData(mapping_args.node));
+      auto builtin = reinterpret_cast<TfLiteAddParams*>(
+          TfLiteOpaqueNodeGetBuiltinData(mapping_args.node));
       mapping_args.builder->AddScalarInt32Operand(builtin->activation);
       *nn_op_type = NEURON_ADD;
     } break;
@@ -501,31 +508,29 @@ TfLiteStatus NeuronStableDelegateKernel::Map(
       *nn_op_type = NEURON_ARGMIN;
     } break;
     case kTfLiteBuiltinMul: {
-      auto builtin =
-          reinterpret_cast<TfLiteMulParams*>(
-            TfLiteOpaqueNodeGetBuiltinData(mapping_args.node));
+      auto builtin = reinterpret_cast<TfLiteMulParams*>(
+          TfLiteOpaqueNodeGetBuiltinData(mapping_args.node));
       mapping_args.builder->AddScalarInt32Operand(builtin->activation);
       *nn_op_type = NEURON_MUL;
     } break;
     case kTfLiteBuiltinAveragePool2d: {
       mapping_args.builder->AddPoolingParams(
-        TfLiteOpaqueNodeGetBuiltinData(mapping_args.node));
+          TfLiteOpaqueNodeGetBuiltinData(mapping_args.node));
       *nn_op_type = NEURON_AVERAGE_POOL_2D;
     } break;
     case kTfLiteBuiltinMaxPool2d: {
       mapping_args.builder->AddPoolingParams(
-        TfLiteOpaqueNodeGetBuiltinData(mapping_args.node));
+          TfLiteOpaqueNodeGetBuiltinData(mapping_args.node));
       *nn_op_type = NEURON_MAX_POOL_2D;
     } break;
     case kTfLiteBuiltinL2Pool2d: {
       mapping_args.builder->AddPoolingParams(
-        TfLiteOpaqueNodeGetBuiltinData(mapping_args.node));
+          TfLiteOpaqueNodeGetBuiltinData(mapping_args.node));
       *nn_op_type = NEURON_L2_POOL_2D;
     } break;
     case kTfLiteBuiltinConv2d: {
-      auto builtin =
-          reinterpret_cast<TfLiteConvParams*>(
-            TfLiteOpaqueNodeGetBuiltinData(mapping_args.node));
+      auto builtin = reinterpret_cast<TfLiteConvParams*>(
+          TfLiteOpaqueNodeGetBuiltinData(mapping_args.node));
       mapping_args.builder->AddScalarInt32Operand(builtin->padding);
       mapping_args.builder->AddScalarInt32Operand(builtin->stride_width);
       mapping_args.builder->AddScalarInt32Operand(builtin->stride_height);
@@ -556,22 +561,20 @@ TfLiteStatus NeuronStableDelegateKernel::Map(
       *nn_op_type = NEURON_DEPTHWISE_CONV_2D;
     } break;
     case kTfLiteBuiltinFullyConnected: {
-      const int *inputs;
+      const int* inputs;
       int num_inputs;
       TF_LITE_OPAQUE_ENSURE_STATUS(
-        TfLiteOpaqueNodeInputs(mapping_args.node, &inputs, &num_inputs));
+          TfLiteOpaqueNodeInputs(mapping_args.node, &inputs, &num_inputs));
       const bool is_bias_present =
           TfLiteOpaqueNodeNumberOfInputs(mapping_args.node) == 3 &&
           inputs[2] != kTfLiteOptionalTensor;
       if (!is_bias_present) {
-        const int input_tensor_id =
-            inputs[/*kInputTensor*/ 0];
-        const int filter_tensor_id =
-            inputs[/*kWeightsTensor*/ 1];
+        const int input_tensor_id = inputs[/*kInputTensor*/ 0];
+        const int filter_tensor_id = inputs[/*kWeightsTensor*/ 1];
         const int num_units =
-            TfLiteOpaqueTensorDim(
-              TfLiteOpaqueContextGetOpaqueTensor(
-                mapping_args.context, filter_tensor_id), 0);
+            TfLiteOpaqueTensorDim(TfLiteOpaqueContextGetOpaqueTensor(
+                                      mapping_args.context, filter_tensor_id),
+                                  0);
         add_zero_bias(input_tensor_id, filter_tensor_id, num_units);
       }
       auto builtin = reinterpret_cast<TfLiteFullyConnectedParams*>(
@@ -624,9 +627,9 @@ TfLiteStatus NeuronStableDelegateKernel::Map(
           TfLiteOpaqueNodeGetInput(mapping_args.context, mapping_args.node, 1);
       // Neuron uses scalar inputs for height and width.
       mapping_args.builder->AddScalarInt32Operand(
-        reinterpret_cast<int32_t*>(TfLiteOpaqueTensorData(new_shape))[1]);
+          reinterpret_cast<int32_t*>(TfLiteOpaqueTensorData(new_shape))[1]);
       mapping_args.builder->AddScalarInt32Operand(
-        reinterpret_cast<int32_t*>(TfLiteOpaqueTensorData(new_shape))[0]);
+          reinterpret_cast<int32_t*>(TfLiteOpaqueTensorData(new_shape))[0]);
       mapping_args.builder->AddScalarBoolOperand(false);  // Use NHWC format
       auto builtin = reinterpret_cast<TfLiteResizeNearestNeighborParams*>(
           TfLiteOpaqueNodeGetBuiltinData(mapping_args.node));
@@ -663,10 +666,10 @@ TfLiteStatus NeuronStableDelegateKernel::Map(
       auto builtin = reinterpret_cast<TfLiteConcatenationParams*>(
           TfLiteOpaqueNodeGetBuiltinData(mapping_args.node));
       int axis = builtin->axis < 0
-               ? TfLiteOpaqueTensorNumDims(TfLiteOpaqueNodeGetInput(
-                     mapping_args.context, mapping_args.node, 0)) +
-                     builtin->axis
-               : builtin->axis;
+                     ? TfLiteOpaqueTensorNumDims(TfLiteOpaqueNodeGetInput(
+                           mapping_args.context, mapping_args.node, 0)) +
+                           builtin->axis
+                     : builtin->axis;
       mapping_args.builder->AddScalarInt32Operand(axis);
       *nn_op_type = NEURON_CONCATENATION;
     } break;
@@ -692,16 +695,14 @@ TfLiteStatus NeuronStableDelegateKernel::Map(
       *nn_op_type = NEURON_TANH;
     } break;
     case kTfLiteBuiltinSub: {
-      auto builtin =
-          reinterpret_cast<TfLiteSubParams*>(
-            TfLiteOpaqueNodeGetBuiltinData(mapping_args.node));
+      auto builtin = reinterpret_cast<TfLiteSubParams*>(
+          TfLiteOpaqueNodeGetBuiltinData(mapping_args.node));
       mapping_args.builder->AddScalarInt32Operand(builtin->activation);
       *nn_op_type = NEURON_SUB;
     } break;
     case kTfLiteBuiltinDiv: {
-      auto builtin =
-          reinterpret_cast<TfLiteDivParams*>(
-            TfLiteOpaqueNodeGetBuiltinData(mapping_args.node));
+      auto builtin = reinterpret_cast<TfLiteDivParams*>(
+          TfLiteOpaqueNodeGetBuiltinData(mapping_args.node));
       mapping_args.builder->AddScalarInt32Operand(builtin->activation);
       *nn_op_type = NEURON_DIV;
     } break;
@@ -713,10 +714,10 @@ TfLiteStatus NeuronStableDelegateKernel::Map(
       if (TfLiteOpaqueNodeNumberOfInputs(mapping_args.node) == 2) {
         *nn_op_type = NEURON_PAD;
       } else {
-        const int *inputs;
+        const int* inputs;
         int num_inputs;
         TF_LITE_OPAQUE_ENSURE_STATUS(
-          TfLiteOpaqueNodeInputs(mapping_args.node, &inputs, &num_inputs));
+            TfLiteOpaqueNodeInputs(mapping_args.node, &inputs, &num_inputs));
         const int constant_value_id = inputs[2];
         if (constant_value_id == kTfLiteOptionalTensor) {
           *nn_op_type = NEURON_PAD;
@@ -758,15 +759,13 @@ TfLiteStatus NeuronStableDelegateKernel::Map(
       *nn_op_type = NEURON_SLICE;
     } break;
     case kTfLiteBuiltinTransposeConv: {
-      const int *inputs;
+      const int* inputs;
       int num_inputs;
       TF_LITE_OPAQUE_ENSURE_STATUS(
-        TfLiteOpaqueNodeInputs(mapping_args.node, &inputs, &num_inputs));
+          TfLiteOpaqueNodeInputs(mapping_args.node, &inputs, &num_inputs));
       int input_tensor_flags = 0;
-      const int input_tensor_id =
-          inputs[/*kDataInputTensor*/ 2];
-      const int weight_tensor_id =
-          inputs[/*kWeightsTensor*/ 1];
+      const int input_tensor_id = inputs[/*kDataInputTensor*/ 2];
+      const int weight_tensor_id = inputs[/*kWeightsTensor*/ 1];
 
       // Transpose convolution doesn't have hybrid variation.
       const bool hybrid_op = false;
@@ -785,21 +784,20 @@ TfLiteStatus NeuronStableDelegateKernel::Map(
 
       const bool is_bias_present =
           TfLiteOpaqueNodeNumberOfInputs(mapping_args.node) == 4 &&
-          inputs[/*kBiasTensor*/ 3] !=
-              kTfLiteOptionalTensor;
+          inputs[/*kBiasTensor*/ 3] != kTfLiteOptionalTensor;
 
       if (is_bias_present) {
-        mapping_args.builder->AddTensorInput(
-            inputs[/*kBiasTensor*/ 3], hybrid_op);
+        mapping_args.builder->AddTensorInput(inputs[/*kBiasTensor*/ 3],
+                                             hybrid_op);
       } else {
-        const TfLiteOpaqueTensor* output_shape =
-            TfLiteOpaqueNodeGetInput(mapping_args.context, mapping_args.node, 0);
-        const int output_depth = reinterpret_cast<int32_t*>(
-          TfLiteOpaqueTensorData(output_shape))[3];
+        const TfLiteOpaqueTensor* output_shape = TfLiteOpaqueNodeGetInput(
+            mapping_args.context, mapping_args.node, 0);
+        const int output_depth =
+            reinterpret_cast<int32_t*>(TfLiteOpaqueTensorData(output_shape))[3];
         add_zero_bias(input_tensor_id, weight_tensor_id, output_depth);
       }
-      mapping_args.builder->AddTensorInput(
-          inputs[/*kOutputShapeTensor*/ 0], hybrid_op);
+      mapping_args.builder->AddTensorInput(inputs[/*kOutputShapeTensor*/ 0],
+                                           hybrid_op);
 
       auto builtin = reinterpret_cast<TfLiteTransposeConvParams*>(
           TfLiteOpaqueNodeGetBuiltinData(mapping_args.node));
@@ -807,7 +805,7 @@ TfLiteStatus NeuronStableDelegateKernel::Map(
       mapping_args.builder->AddScalarInt32Operand(builtin->stride_width);
       mapping_args.builder->AddScalarInt32Operand(builtin->stride_height);
       mapping_args.builder->AddScalarInt32Operand(
-        GetEquivalentToNeuronFuseCode(builtin->activation));
+          GetEquivalentToNeuronFuseCode(builtin->activation));
       // Use NHWC layout for input and output.
       mapping_args.builder->AddScalarBoolOperand(false);
       *nn_op_type = NEURON_TRANSPOSE_CONV_2D;
@@ -845,9 +843,8 @@ TfLiteStatus NeuronStableDelegateKernel::Map(
       *nn_op_type = NEURON_CAST;
     } break;
     case kTfLiteBuiltinLeakyRelu: {
-      const auto input_type =
-          TfLiteOpaqueTensorType(
-            TfLiteOpaqueNodeGetInput(mapping_args.context, mapping_args.node, 0));
+      const auto input_type = TfLiteOpaqueTensorType(
+          TfLiteOpaqueNodeGetInput(mapping_args.context, mapping_args.node, 0));
       auto builtin = reinterpret_cast<TfLiteLeakyReluParams*>(
           TfLiteOpaqueNodeGetBuiltinData(mapping_args.node));
 
@@ -919,7 +916,7 @@ TfLiteStatus NeuronStableDelegateKernel::Map(
       const TfLiteOpaqueTensor* k_param =
           TfLiteOpaqueNodeGetInput(mapping_args.context, mapping_args.node, 1);
       mapping_args.builder->AddScalarInt32Operand(
-        *reinterpret_cast<int32_t*>(TfLiteOpaqueTensorData(k_param)));
+          *reinterpret_cast<int32_t*>(TfLiteOpaqueTensorData(k_param)));
       *nn_op_type = NEURON_TOPK_V2;
     } break;
     case kTfLiteBuiltinSelect: {
@@ -928,10 +925,10 @@ TfLiteStatus NeuronStableDelegateKernel::Map(
     case kTfLiteBuiltinGather: {
       auto builtin = reinterpret_cast<TfLiteGatherParams*>(
           TfLiteOpaqueNodeGetBuiltinData(mapping_args.node));
-      const int *inputs;
+      const int* inputs;
       int num_inputs;
       TF_LITE_OPAQUE_ENSURE_STATUS(
-        TfLiteOpaqueNodeInputs(mapping_args.node, &inputs, &num_inputs));
+          TfLiteOpaqueNodeInputs(mapping_args.node, &inputs, &num_inputs));
       mapping_args.builder->AddTensorInput(inputs[0],
                                            /* hybrid_op */ false,
                                            /* scalar_as_tensor */ false);
@@ -947,11 +944,10 @@ TfLiteStatus NeuronStableDelegateKernel::Map(
     case kTfLiteBuiltinSplit: {
       const TfLiteOpaqueTensor* axis =
           TfLiteOpaqueNodeGetInput(mapping_args.context, mapping_args.node, 0);
-      auto builtin =
-          reinterpret_cast<TfLiteSplitParams*>(
-            TfLiteOpaqueNodeGetBuiltinData(mapping_args.node));
+      auto builtin = reinterpret_cast<TfLiteSplitParams*>(
+          TfLiteOpaqueNodeGetBuiltinData(mapping_args.node));
       mapping_args.builder->AddScalarInt32Operand(
-        *reinterpret_cast<int32_t*>(TfLiteOpaqueTensorData(axis)));
+          *reinterpret_cast<int32_t*>(TfLiteOpaqueTensorData(axis)));
       mapping_args.builder->AddScalarInt32Operand(builtin->num_splits);
       *nn_op_type = NEURON_SPLIT;
     } break;
@@ -962,15 +958,16 @@ TfLiteStatus NeuronStableDelegateKernel::Map(
             // temporally Check if we can remove the AddDequantize latter, since
             // Neuron adapter should support requantize directly
       */
-      const int *inputs;
+      const int* inputs;
       int num_inputs;
       TF_LITE_OPAQUE_ENSURE_STATUS(
-        TfLiteOpaqueNodeInputs(mapping_args.node, &inputs, &num_inputs));
+          TfLiteOpaqueNodeInputs(mapping_args.node, &inputs, &num_inputs));
       auto input_type = TfLiteOpaqueTensorType(
-        TfLiteOpaqueNodeGetInput(mapping_args.context, mapping_args.node, 0));
-      auto output_type = TfLiteOpaqueTensorType(
-        TfLiteOpaqueNodeGetOutput(mapping_args.context, mapping_args.node, 0));
-      if (IsQuantized(input_type) && IsQuantized(output_type) && input_type != output_type) {
+          TfLiteOpaqueNodeGetInput(mapping_args.context, mapping_args.node, 0));
+      auto output_type = TfLiteOpaqueTensorType(TfLiteOpaqueNodeGetOutput(
+          mapping_args.context, mapping_args.node, 0));
+      if (IsQuantized(input_type) && IsQuantized(output_type) &&
+          input_type != output_type) {
         // Use requantize instead of quantize
         const char* custom_name = "requantizemtk";
         size_t oem_scalar_size = 0;
@@ -1092,19 +1089,20 @@ TfLiteStatus NeuronStableDelegateKernel::Map(
       *nn_op_type = NEURON_PACK;
     } break;
     case kTfLiteBuiltinCustom: {
-      if (strcmp(TfLiteRegistrationExternalGetCustomName(mapping_args.registration),
+      if (strcmp(TfLiteRegistrationExternalGetCustomName(
+                     mapping_args.registration),
                  "TFLite_Detection_PostProcess") == 0) {
         const char* custom_name = "detectionpostprocessingmtk";
         size_t oem_scalar_size = 0;
         uint8_t* oem_scalar = nullptr;
-        const int *inputs;
+        const int* inputs;
         int num_inputs;
         TF_LITE_OPAQUE_ENSURE_STATUS(
-          TfLiteOpaqueNodeInputs(mapping_args.node, &inputs, &num_inputs));
-        const int *outputs;
+            TfLiteOpaqueNodeInputs(mapping_args.node, &inputs, &num_inputs));
+        const int* outputs;
         int num_outputs;
         TF_LITE_OPAQUE_ENSURE_STATUS(
-          TfLiteOpaqueNodeOutputs(mapping_args.node, &outputs, &num_outputs));
+            TfLiteOpaqueNodeOutputs(mapping_args.node, &outputs, &num_outputs));
         mapping_args.builder->AddTensorInput(inputs[1],
                                              /* hybrid_op */ false,
                                              /* scalar_as_tensor */ false);
@@ -1141,14 +1139,10 @@ TfLiteStatus NeuronStableDelegateKernel::Map(
           free(oem_scalar);
         }
         mapping_args.builder->GetExtensionOperationType(nn_op_type);
-        mapping_args.builder->AddTensorOutput(
-            outputs[2]);
-        mapping_args.builder->AddTensorOutput(
-            outputs[0]);
-        mapping_args.builder->AddTensorOutput(
-            outputs[1]);
-        mapping_args.builder->AddTensorOutput(
-            outputs[3]);
+        mapping_args.builder->AddTensorOutput(outputs[2]);
+        mapping_args.builder->AddTensorOutput(outputs[0]);
+        mapping_args.builder->AddTensorOutput(outputs[1]);
+        mapping_args.builder->AddTensorOutput(outputs[3]);
         break;  // needed
       }
     }  // no break, pass to default
@@ -1160,8 +1154,8 @@ TfLiteStatus NeuronStableDelegateKernel::Map(
   return kTfLiteOk;
 }
 
-TfLiteStatus NeuronStableDelegateKernel::Init(TfLiteOpaqueContext* context,
-                                        const TfLiteOpaqueDelegateParams* params) {
+TfLiteStatus NeuronStableDelegateKernel::Init(
+    TfLiteOpaqueContext* context, const TfLiteOpaqueDelegateParams* params) {
   TFLITE_LOG_PROD(tflite::TFLITE_LOG_INFO, "Init");
   if (params->delegate == nullptr) return kTfLiteDelegateError;
 
@@ -1254,7 +1248,8 @@ TfLiteStatus NeuronStableDelegateKernel::Prepare(TfLiteOpaqueContext* context,
   }
   RETURN_TFLITE_ERROR_IF_NEURON_ERROR(context, result,
                                       "setting compilation priority");
-  if (strlen(options_.cache_dir.c_str()) != 0 && !nn_compilation_cache_token_.empty()) {
+  if (strlen(options_.cache_dir.c_str()) != 0 &&
+      !nn_compilation_cache_token_.empty()) {
     RETURN_TFLITE_ERROR_IF_NEURON_ERROR(
         context,
         neuronapi_->NeuronCompilation_setCaching(
@@ -1269,8 +1264,7 @@ TfLiteStatus NeuronStableDelegateKernel::Prepare(TfLiteOpaqueContext* context,
         context,
         neuronapi_->NeuronCompilation_setOptimizationString(
             compilation,
-            NNCompilationArgs::GetArgs(options_.execution_preference)
-                .c_str()),
+            NNCompilationArgs::GetArgs(options_.execution_preference).c_str()),
         "set optimization string");
   }
   // sample for print model token
@@ -1298,8 +1292,7 @@ TfLiteStatus NeuronStableDelegateKernel::Prepare(TfLiteOpaqueContext* context,
         "set compile options");
   }
   uint32_t apu_mem_size = 0;
-  if (neuronapi_->Neuron_getL1MemorySizeKb(&apu_mem_size) ==
-          NEURON_NO_ERROR &&
+  if (neuronapi_->Neuron_getL1MemorySizeKb(&apu_mem_size) == NEURON_NO_ERROR &&
       apu_mem_size > 0) {
     RETURN_TFLITE_ERROR_IF_NEURON_ERROR(
         context,
@@ -1310,7 +1303,8 @@ TfLiteStatus NeuronStableDelegateKernel::Prepare(TfLiteOpaqueContext* context,
 
   // NeuronCompilation_getSupportedOperations must be called before
   // calling NeuronCompilation_finish
-  if (delegate_specific_mode_ == kOneNodeMode || delegate_specific_mode_ == kContextMode) {
+  if (delegate_specific_mode_ == kOneNodeMode ||
+      delegate_specific_mode_ == kContextMode) {
     nn_compilation_.reset(compilation);
     return kTfLiteOk;
   }
@@ -1337,7 +1331,7 @@ TfLiteStatus NeuronStableDelegateKernel::Prepare(TfLiteOpaqueContext* context,
 
 TfLiteStatus NeuronStableDelegateKernel::Eval(TfLiteOpaqueContext* context,
                                               TfLiteOpaqueNode* node) {
-  //MTK_ATRACE_CALL();
+  // MTK_ATRACE_CALL();
 #ifdef NEURON_REUSABLE_EXECUTION
   NeuronExecution* execution = nn_execution_.get();
 #else
@@ -1362,10 +1356,11 @@ TfLiteStatus NeuronStableDelegateKernel::Eval(TfLiteOpaqueContext* context,
   // absolute indices but Neuron indices inputs by relative indices.
   int relative_input_index = 0;
   size_t input_offset = 0;
-  const int *inputs;
+  const int* inputs;
   int num_inputs;
-  TF_LITE_OPAQUE_ENSURE_STATUS(TfLiteOpaqueNodeInputs(node, &inputs, &num_inputs));
-  for (auto i = 0; i < num_inputs; i ++) {
+  TF_LITE_OPAQUE_ENSURE_STATUS(
+      TfLiteOpaqueNodeInputs(node, &inputs, &num_inputs));
+  for (auto i = 0; i < num_inputs; i++) {
     int absolute_input_index = inputs[i];
     if (absolute_input_index == kTfLiteOptionalTensor) {
       continue;
@@ -1399,7 +1394,8 @@ TfLiteStatus NeuronStableDelegateKernel::Eval(TfLiteOpaqueContext* context,
                    nn_type_equivalent == kTfLiteInt32) {
           for (int i = 0; i < num_elements; ++i) {
             reinterpret_cast<int32_t*>(input_ptr)[i] =
-                static_cast<const int32_t*>(TfLiteOpaqueTensorData(tensor))[i] + 128;
+                static_cast<const int32_t*>(TfLiteOpaqueTensorData(tensor))[i] +
+                128;
           }
         } else {
           TfLiteOpaqueContextReportError(
@@ -1410,8 +1406,9 @@ TfLiteStatus NeuronStableDelegateKernel::Eval(TfLiteOpaqueContext* context,
           return kTfLiteError;
         }
         size_t type_size;
-        TF_LITE_ENSURE_OK(
-            context, TfLiteOpaqueContextGetSizeOfType(context, nn_type_equivalent, &type_size));
+        TF_LITE_ENSURE_OK(context,
+                          TfLiteOpaqueContextGetSizeOfType(
+                              context, nn_type_equivalent, &type_size));
         tensor_size = NumElements(tensor) * type_size;
         if (options_.use_ahwb) {
           if (need_set_memory) {
@@ -1433,7 +1430,8 @@ TfLiteStatus NeuronStableDelegateKernel::Eval(TfLiteOpaqueContext* context,
       } else {
         // copy data to pre-allocated shared memory.
         memcpy(nn_input_memory_->get_data_ptr() + input_offset,
-               TfLiteOpaqueTensorData(tensor), TfLiteOpaqueTensorByteSize(tensor));
+               TfLiteOpaqueTensorData(tensor),
+               TfLiteOpaqueTensorByteSize(tensor));
         if (options_.use_ahwb) {
           if (need_set_memory) {
             RETURN_TFLITE_ERROR_IF_NEURON_ERROR(
@@ -1465,11 +1463,11 @@ TfLiteStatus NeuronStableDelegateKernel::Eval(TfLiteOpaqueContext* context,
   // Set the output tensor buffers.
   int relative_output_index = 0;
   size_t output_offset = 0;
-  const int *outputs;
+  const int* outputs;
   int num_outputs;
   TF_LITE_OPAQUE_ENSURE_STATUS(
-    TfLiteOpaqueNodeOutputs(node, &outputs, &num_outputs));
-  for (auto i = 0; i < num_outputs; i ++) {
+      TfLiteOpaqueNodeOutputs(node, &outputs, &num_outputs));
+  for (auto i = 0; i < num_outputs; i++) {
     int output_index = outputs[i];
     // If the Neuron implementation doesn't have some of the outputs
     // they are left unmapped and we should not try to read their value here
@@ -1554,7 +1552,7 @@ TfLiteStatus NeuronStableDelegateKernel::Eval(TfLiteOpaqueContext* context,
       "running computation");
   // copy results from shared memory to the destination.
   output_offset = 0;
-  for (auto i = 0; i < num_outputs; i ++) {
+  for (auto i = 0; i < num_outputs; i++) {
     int output_index = outputs[i];
     TfLiteOpaqueTensor* tensor =
         TfLiteOpaqueContextGetOpaqueTensor(context, output_index);
@@ -1591,18 +1589,16 @@ TfLiteStatus NeuronStableDelegateKernel::Eval(TfLiteOpaqueContext* context,
     TfLiteOpaqueTensor* dest =
         TfLiteOpaqueContextGetOpaqueTensor(context, inputs[input_tensor_idx]);
 
-    memcpy(TfLiteOpaqueTensorData(dest),
-           TfLiteOpaqueTensorData(src),
+    memcpy(TfLiteOpaqueTensorData(dest), TfLiteOpaqueTensorData(src),
            TfLiteOpaqueTensorByteSize(src));
   }
 
   return kTfLiteOk;
-
 }
 
 void NeuronStableDelegateKernel::AddDequantizeOperatorsWhereNeeded(
-    const TfLiteOpaqueContext* context, int builtin_code, const TfLiteOpaqueNode* node,
-    NeuronOpBuilder* builder) {
+    const TfLiteOpaqueContext* context, int builtin_code,
+    const TfLiteOpaqueNode* node, NeuronOpBuilder* builder) {
   int input_tensor_index = -1;
   std::vector<int> inputs_to_potentially_dequantize;
 
@@ -1625,7 +1621,7 @@ void NeuronStableDelegateKernel::AddDequantizeOperatorsWhereNeeded(
     default:
       return;
   }
-  const int *inputs;
+  const int* inputs;
   int num_inputs;
   TfLiteOpaqueNodeInputs(node, &inputs, &num_inputs);
   int tensor_id = inputs[input_tensor_index];
@@ -1633,16 +1629,17 @@ void NeuronStableDelegateKernel::AddDequantizeOperatorsWhereNeeded(
 
   // Nothing to do if the input is not floating-point.
   if (!IsFloat(TfLiteOpaqueTensorType(
-        TfLiteOpaqueContextGetOpaqueTensor(context, tensor_id)))) return;
+          TfLiteOpaqueContextGetOpaqueTensor(context, tensor_id))))
+    return;
 
   for (int i : inputs_to_potentially_dequantize) {
-    if (i < 0 || i >= TfLiteOpaqueNodeNumberOfInputs(node)) continue;  // Ignore invalid index.
+    if (i < 0 || i >= TfLiteOpaqueNodeNumberOfInputs(node))
+      continue;  // Ignore invalid index.
     tensor_id = inputs[i];
     if (tensor_id < 0) continue;  // Ignore optional input.
 
-    const TfLiteType type =
-        TfLiteOpaqueTensorType(
-          TfLiteOpaqueContextGetOpaqueTensor(context, tensor_id));
+    const TfLiteType type = TfLiteOpaqueTensorType(
+        TfLiteOpaqueContextGetOpaqueTensor(context, tensor_id));
     // Nothing to do for this tensor if it's not quantized.
     if (!IsQuantized(type)) continue;
 
@@ -1652,8 +1649,8 @@ void NeuronStableDelegateKernel::AddDequantizeOperatorsWhereNeeded(
   }
 }
 
-
-TfLiteStatus NeuronStableDelegateKernel::AddOpsAndTensors(TfLiteOpaqueContext* context) {
+TfLiteStatus NeuronStableDelegateKernel::AddOpsAndTensors(
+    TfLiteOpaqueContext* context) {
   TFLITE_LOG_PROD(tflite::TFLITE_LOG_INFO, "AddOpsAndTensors");
   DequantizeMapping dequantize_mapping;
   // The operand builder allows creating a single op. It is created outside
@@ -1669,8 +1666,8 @@ TfLiteStatus NeuronStableDelegateKernel::AddOpsAndTensors(TfLiteOpaqueContext* c
       node = one_node_and_reg_.first;
       reg = one_node_and_reg_.second;
     } else {
-      TF_LITE_ENSURE_STATUS(
-        TfLiteOpaqueContextGetNodeAndRegistration(context, node_index, &node, &reg));
+      TF_LITE_ENSURE_STATUS(TfLiteOpaqueContextGetNodeAndRegistration(
+          context, node_index, &node, &reg));
     }
 
 #ifdef LOWERING_PACK
@@ -1689,15 +1686,15 @@ TfLiteStatus NeuronStableDelegateKernel::AddOpsAndTensors(TfLiteOpaqueContext* c
     // Remove MirrorPad set same quantization params of input & output tensors
     // patch due to the limitation of the MirrorPad spec.
     const bool hybrid_op = IsHybridOperator(
-      context, TfLiteRegistrationExternalGetBuiltInCode(reg), node);
-    const bool scalar_as_tensor = IsScalarInputSupported(
-      TfLiteRegistrationExternalGetBuiltInCode(reg));
+        context, TfLiteRegistrationExternalGetBuiltInCode(reg), node);
+    const bool scalar_as_tensor =
+        IsScalarInputSupported(TfLiteRegistrationExternalGetBuiltInCode(reg));
     const bool need_int8_conversion = false;
     const bool use_int8_asymm_signed = true;
-    const int *node_inputs;
+    const int* node_inputs;
     int node_num_inputs;
     TF_LITE_OPAQUE_ENSURE_STATUS(
-      TfLiteOpaqueNodeInputs(node, &node_inputs, &node_num_inputs));
+        TfLiteOpaqueNodeInputs(node, &node_inputs, &node_num_inputs));
 
     int input_tensor_flags = 0;
     if (scalar_as_tensor) {
@@ -1708,7 +1705,8 @@ TfLiteStatus NeuronStableDelegateKernel::AddOpsAndTensors(TfLiteOpaqueContext* c
     }
 #ifdef LOWERING_HARD_SWISH
     // h_swish will be lowered into supported Neuron operations.
-    if (TfLiteRegistrationExternalGetBuiltInCode(reg) == kTfLiteBuiltinHardSwish) {
+    if (TfLiteRegistrationExternalGetBuiltInCode(reg) ==
+        kTfLiteBuiltinHardSwish) {
       builder.AddHardSwish(node_inputs[0], node->outputs->data[0],
                            need_int8_conversion);
       continue;
@@ -1717,24 +1715,27 @@ TfLiteStatus NeuronStableDelegateKernel::AddOpsAndTensors(TfLiteOpaqueContext* c
 #ifndef LOWERING_PACK
     // For PACK, NNAPI expects the axis scalar before all input tensors.
     if (TfLiteRegistrationExternalGetBuiltInCode(reg) == kTfLiteBuiltinPack) {
-      const auto* builtin =
-          reinterpret_cast<TfLitePackParams*>(TfLiteOpaqueNodeGetBuiltinData(node));
+      const auto* builtin = reinterpret_cast<TfLitePackParams*>(
+          TfLiteOpaqueNodeGetBuiltinData(node));
       // Neuron only accepts non-negative axis.
       auto* input_tensor = TfLiteOpaqueNodeGetInput(context, node, 0);
-      int axis = builtin->axis < 0
-               ? TfLiteOpaqueTensorNumDims(input_tensor) + builtin->axis + 1
-               : builtin->axis;
+      int axis = builtin->axis < 0 ? TfLiteOpaqueTensorNumDims(input_tensor) +
+                                         builtin->axis + 1
+                                   : builtin->axis;
       TF_LITE_ENSURE_STATUS(builder.AddScalarInt32Operand(axis));
     }
 #endif
     // Map inputs to Neuron tensor indices.
-    for (int input_pos = 0; input_pos < TfLiteOpaqueNodeNumberOfInputs(node); ++input_pos) {
-      if (TfLiteRegistrationExternalGetBuiltInCode(reg) == kTfLiteBuiltinTransposeConv) {
+    for (int input_pos = 0; input_pos < TfLiteOpaqueNodeNumberOfInputs(node);
+         ++input_pos) {
+      if (TfLiteRegistrationExternalGetBuiltInCode(reg) ==
+          kTfLiteBuiltinTransposeConv) {
         // Everything is added during Map since input tensors
         // have different order.
         continue;
       }
-      if (TfLiteRegistrationExternalGetBuiltInCode(reg) == kTfLiteBuiltinFullyConnected &&
+      if (TfLiteRegistrationExternalGetBuiltInCode(reg) ==
+              kTfLiteBuiltinFullyConnected &&
           node_inputs[input_pos] == kTfLiteOptionalTensor) {
         // skip optional bias and handle it during mapping
         continue;
@@ -1742,24 +1743,39 @@ TfLiteStatus NeuronStableDelegateKernel::AddOpsAndTensors(TfLiteOpaqueContext* c
       const auto input_index = node_inputs[input_pos];
       if (need_int8_conversion &&
           (input_pos == 0 ||
-           TfLiteRegistrationExternalGetBuiltInCode(reg) == kTfLiteBuiltinFullyConnected ||
-           TfLiteRegistrationExternalGetBuiltInCode(reg) == kTfLiteBuiltinConv2d ||
-           TfLiteRegistrationExternalGetBuiltInCode(reg) == kTfLiteBuiltinDepthwiseConv2d ||
+           TfLiteRegistrationExternalGetBuiltInCode(reg) ==
+               kTfLiteBuiltinFullyConnected ||
+           TfLiteRegistrationExternalGetBuiltInCode(reg) ==
+               kTfLiteBuiltinConv2d ||
+           TfLiteRegistrationExternalGetBuiltInCode(reg) ==
+               kTfLiteBuiltinDepthwiseConv2d ||
            TfLiteRegistrationExternalGetBuiltInCode(reg) == kTfLiteBuiltinAdd ||
            TfLiteRegistrationExternalGetBuiltInCode(reg) == kTfLiteBuiltinMul ||
            TfLiteRegistrationExternalGetBuiltInCode(reg) == kTfLiteBuiltinSub ||
-           TfLiteRegistrationExternalGetBuiltInCode(reg) == kTfLiteBuiltinConcatenation ||
-           TfLiteRegistrationExternalGetBuiltInCode(reg) == kTfLiteBuiltinMaximum ||
-           TfLiteRegistrationExternalGetBuiltInCode(reg) == kTfLiteBuiltinMinimum ||
-           TfLiteRegistrationExternalGetBuiltInCode(reg) == kTfLiteBuiltinLeakyRelu ||
-           TfLiteRegistrationExternalGetBuiltInCode(reg) == kTfLiteBuiltinLess ||
-           TfLiteRegistrationExternalGetBuiltInCode(reg) == kTfLiteBuiltinLessEqual ||
-           TfLiteRegistrationExternalGetBuiltInCode(reg) == kTfLiteBuiltinPrelu ||
-           TfLiteRegistrationExternalGetBuiltInCode(reg) == kTfLiteBuiltinGreater ||
-           TfLiteRegistrationExternalGetBuiltInCode(reg) == kTfLiteBuiltinGreaterEqual ||
-           TfLiteRegistrationExternalGetBuiltInCode(reg) == kTfLiteBuiltinEqual ||
-           TfLiteRegistrationExternalGetBuiltInCode(reg) == kTfLiteBuiltinNotEqual ||
-           TfLiteRegistrationExternalGetBuiltInCode(reg) == kTfLiteBuiltinSelect)) {
+           TfLiteRegistrationExternalGetBuiltInCode(reg) ==
+               kTfLiteBuiltinConcatenation ||
+           TfLiteRegistrationExternalGetBuiltInCode(reg) ==
+               kTfLiteBuiltinMaximum ||
+           TfLiteRegistrationExternalGetBuiltInCode(reg) ==
+               kTfLiteBuiltinMinimum ||
+           TfLiteRegistrationExternalGetBuiltInCode(reg) ==
+               kTfLiteBuiltinLeakyRelu ||
+           TfLiteRegistrationExternalGetBuiltInCode(reg) ==
+               kTfLiteBuiltinLess ||
+           TfLiteRegistrationExternalGetBuiltInCode(reg) ==
+               kTfLiteBuiltinLessEqual ||
+           TfLiteRegistrationExternalGetBuiltInCode(reg) ==
+               kTfLiteBuiltinPrelu ||
+           TfLiteRegistrationExternalGetBuiltInCode(reg) ==
+               kTfLiteBuiltinGreater ||
+           TfLiteRegistrationExternalGetBuiltInCode(reg) ==
+               kTfLiteBuiltinGreaterEqual ||
+           TfLiteRegistrationExternalGetBuiltInCode(reg) ==
+               kTfLiteBuiltinEqual ||
+           TfLiteRegistrationExternalGetBuiltInCode(reg) ==
+               kTfLiteBuiltinNotEqual ||
+           TfLiteRegistrationExternalGetBuiltInCode(reg) ==
+               kTfLiteBuiltinSelect)) {
         // Only selected inputs require int8 conversion.
         TF_LITE_ENSURE_STATUS(builder.AddTensorInput(
             input_index, hybrid_op,
@@ -1793,7 +1809,8 @@ TfLiteStatus NeuronStableDelegateKernel::AddOpsAndTensors(TfLiteOpaqueContext* c
           continue;
         }
       }
-      if ((TfLiteRegistrationExternalGetBuiltInCode(reg) == kTfLiteBuiltinSplit) &&
+      if ((TfLiteRegistrationExternalGetBuiltInCode(reg) ==
+           kTfLiteBuiltinSplit) &&
           (input_index == node_inputs[0])) {
         // Skip the axis input tensor; it will be added as a scalar operand
         // by the Map() mapping.
@@ -1802,8 +1819,10 @@ TfLiteStatus NeuronStableDelegateKernel::AddOpsAndTensors(TfLiteOpaqueContext* c
 
       // Pad and Padv2 have an optional parameter for a pad value which has
       // to be converted to a scalar type in Neuron.
-      if ((TfLiteRegistrationExternalGetBuiltInCode(reg) == kTfLiteBuiltinPadv2 ||
-           TfLiteRegistrationExternalGetBuiltInCode(reg) == kTfLiteBuiltinPad) &&
+      if ((TfLiteRegistrationExternalGetBuiltInCode(reg) ==
+               kTfLiteBuiltinPadv2 ||
+           TfLiteRegistrationExternalGetBuiltInCode(reg) ==
+               kTfLiteBuiltinPad) &&
           TfLiteOpaqueNodeNumberOfInputs(node) == 3 && input_pos == 2) {
         const int constant_value_id = node_inputs[2];
         if (constant_value_id == kTfLiteOptionalTensor) {
@@ -1814,52 +1833,59 @@ TfLiteStatus NeuronStableDelegateKernel::AddOpsAndTensors(TfLiteOpaqueContext* c
 
         switch (TfLiteOpaqueTensorType(constant_value)) {
           case kTfLiteFloat32:
-            if (TfLiteOpaqueTensorGetAllocationType(constant_value) == kTfLiteMmapRo) {
-              builder.AddScalarFloat32Operand(
-                *reinterpret_cast<float*>(TfLiteOpaqueTensorData(constant_value)));
+            if (TfLiteOpaqueTensorGetAllocationType(constant_value) ==
+                kTfLiteMmapRo) {
+              builder.AddScalarFloat32Operand(*reinterpret_cast<float*>(
+                  TfLiteOpaqueTensorData(constant_value)));
             } else {
               builder.AddSingleValueTensorAsScalarOperand(constant_value_id,
                                                           NEURON_FLOAT32);
             }
             break;
           case kTfLiteUInt8:
-            if (TfLiteOpaqueTensorGetAllocationType(constant_value) == kTfLiteMmapRo) {
-              builder.AddScalarInt32Operand(
-                  *static_cast<int32_t*>(TfLiteOpaqueTensorData(constant_value)));
+            if (TfLiteOpaqueTensorGetAllocationType(constant_value) ==
+                kTfLiteMmapRo) {
+              builder.AddScalarInt32Operand(*static_cast<int32_t*>(
+                  TfLiteOpaqueTensorData(constant_value)));
             } else {
               builder.AddSingleValueTensorAsScalarOperand(constant_value_id,
                                                           NEURON_INT32);
             }
             break;
           case kTfLiteInt8:
-            if (TfLiteOpaqueTensorGetAllocationType(constant_value) == kTfLiteMmapRo) {
+            if (TfLiteOpaqueTensorGetAllocationType(constant_value) ==
+                kTfLiteMmapRo) {
               builder.AddScalarInt32Operand(
-                  *static_cast<int32_t*>(TfLiteOpaqueTensorData(constant_value)) + 128);
+                  *static_cast<int32_t*>(
+                      TfLiteOpaqueTensorData(constant_value)) +
+                  128);
             } else {
               builder.AddSingleValueTensorAsScalarOperand(constant_value_id,
                                                           NEURON_INT32);
             }
             break;
           default:
-            TfLiteOpaqueContextReportError(context,
-                                           "Unsupported type of pad value for pad_v2\n");
+            TfLiteOpaqueContextReportError(
+                context, "Unsupported type of pad value for pad_v2\n");
             return kTfLiteError;
         }
         continue;
       }
 
       if (input_index == kTfLiteOptionalTensor &&
-          (TfLiteRegistrationExternalGetBuiltInCode(reg) == kTfLiteBuiltinLstm ||
-           TfLiteRegistrationExternalGetBuiltInCode(reg) == kTfLiteBuiltinSvdf ||
+          (TfLiteRegistrationExternalGetBuiltInCode(reg) ==
+               kTfLiteBuiltinLstm ||
            TfLiteRegistrationExternalGetBuiltInCode(reg) ==
-           kTfLiteBuiltinBidirectionalSequenceLstm)) {
+               kTfLiteBuiltinSvdf ||
+           TfLiteRegistrationExternalGetBuiltInCode(reg) ==
+               kTfLiteBuiltinBidirectionalSequenceLstm)) {
         // properly handle the optional tensor for LSTM and SVDF.
         // currently only support float32.
         TF_LITE_ENSURE_STATUS(builder.AddVectorFloat32Operand(nullptr, 0));
       } else if (TfLiteRegistrationExternalGetBuiltInCode(reg) ==
-                    kTfLiteBuiltinResizeBilinear ||
-                TfLiteRegistrationExternalGetBuiltInCode(reg) ==
-                    kTfLiteBuiltinResizeNearestNeighbor) {
+                     kTfLiteBuiltinResizeBilinear ||
+                 TfLiteRegistrationExternalGetBuiltInCode(reg) ==
+                     kTfLiteBuiltinResizeNearestNeighbor) {
         if (input_pos == 0) {
           // Only the first input tensor is added. The second one,
           // specifying the output height and width, is not added and
@@ -1867,29 +1893,33 @@ TfLiteStatus NeuronStableDelegateKernel::AddOpsAndTensors(TfLiteOpaqueContext* c
           // scalars by the mapping function returned by Map().
           TF_LITE_ENSURE_STATUS(builder.AddTensorInput(input_index, hybrid_op));
         }
-      } else if (TfLiteRegistrationExternalGetBuiltInCode(reg) == kTfLiteBuiltinTopkV2 &&
+      } else if (TfLiteRegistrationExternalGetBuiltInCode(reg) ==
+                     kTfLiteBuiltinTopkV2 &&
                  input_pos > 0) {
         // The K parameter tensor is not handled here but by the functor
         // returned by Map, the input tensor is instead added in
         // the else clause below
         continue;
-      } else if (TfLiteRegistrationExternalGetBuiltInCode(reg) == kTfLiteBuiltinGather) {
+      } else if (TfLiteRegistrationExternalGetBuiltInCode(reg) ==
+                 kTfLiteBuiltinGather) {
         // Everything is added during Map since input tensors
         // have different order.
         continue;
       } else if (TfLiteRegistrationExternalGetBuiltInCode(reg) ==
-                 kTfLiteBuiltinExpandDims &&
+                     kTfLiteBuiltinExpandDims &&
                  input_pos == 1) {
         // The axis param is added during Map
         continue;
       } else if (TfLiteRegistrationExternalGetBuiltInCode(reg) ==
-                 kTfLiteBuiltinBatchToSpaceNd &&
+                     kTfLiteBuiltinBatchToSpaceNd &&
                  input_pos == 2) {
         // Neuron does not support crops.
         // The Map function will check if all crops are zero.
         continue;
-      } else if (TfLiteRegistrationExternalGetBuiltInCode(reg) == kTfLiteBuiltinArgMin ||
-                 TfLiteRegistrationExternalGetBuiltInCode(reg) == kTfLiteBuiltinArgMax) {
+      } else if (TfLiteRegistrationExternalGetBuiltInCode(reg) ==
+                     kTfLiteBuiltinArgMin ||
+                 TfLiteRegistrationExternalGetBuiltInCode(reg) ==
+                     kTfLiteBuiltinArgMax) {
         // The first input tensor is added as is. The second one, specifying
         // the axis, needs to be converted to a scalar since TFLite uses a
         // tensor but Neuron uses a scalar as the axis.
@@ -1901,9 +1931,11 @@ TfLiteStatus NeuronStableDelegateKernel::AddOpsAndTensors(TfLiteOpaqueContext* c
               TfLiteOpaqueContextGetOpaqueTensor(context, axis_id);
           switch (TfLiteOpaqueTensorType(axis_tensor)) {
             case kTfLiteInt32:
-              if (TfLiteOpaqueTensorGetAllocationType(axis_tensor) == kTfLiteMmapRo) {
-                TF_LITE_ENSURE_STATUS(builder.AddScalarInt32Operand(
-                    *static_cast<int32_t*>(TfLiteOpaqueTensorData(axis_tensor))));
+              if (TfLiteOpaqueTensorGetAllocationType(axis_tensor) ==
+                  kTfLiteMmapRo) {
+                TF_LITE_ENSURE_STATUS(
+                    builder.AddScalarInt32Operand(*static_cast<int32_t*>(
+                        TfLiteOpaqueTensorData(axis_tensor))));
               } else {
                 TF_LITE_ENSURE_STATUS(
                     builder.AddSingleValueTensorAsScalarOperand(axis_id,
@@ -1919,7 +1951,8 @@ TfLiteStatus NeuronStableDelegateKernel::AddOpsAndTensors(TfLiteOpaqueContext* c
               return kTfLiteError;
           }
         }
-      } else if (TfLiteRegistrationExternalGetBuiltInCode(reg) == kTfLiteBuiltinCustom &&
+      } else if (TfLiteRegistrationExternalGetBuiltInCode(reg) ==
+                     kTfLiteBuiltinCustom &&
                  strcmp(TfLiteRegistrationExternalGetCustomName(reg),
                         "TFLite_Detection_PostProcess") == 0) {
         // Everything is added during Map since input tensors
@@ -1937,12 +1970,12 @@ TfLiteStatus NeuronStableDelegateKernel::AddOpsAndTensors(TfLiteOpaqueContext* c
     // Get op type and operands
     // Fails if the Validate function failed
     NeuronOperationType nn_op_type;
-    TF_LITE_ENSURE_STATUS(Map(context, TfLiteRegistrationExternalGetBuiltInCode(reg),
-                              TfLiteRegistrationExternalGetVersion(reg),
-                              android_sdk_version,
-                              {context, &builder, node, &model_state_outputs_,
-                               &model_state_tfl_inputs_, &feedback_loops_, reg},
-                              &nn_op_type));
+    TF_LITE_ENSURE_STATUS(
+        Map(context, TfLiteRegistrationExternalGetBuiltInCode(reg),
+            TfLiteRegistrationExternalGetVersion(reg), android_sdk_version,
+            {context, &builder, node, &model_state_outputs_,
+             &model_state_tfl_inputs_, &feedback_loops_, reg},
+            &nn_op_type));
     // Map outputs to Neuron tensor indices.
     int output_tensor_flags = 0;
     if (need_int8_conversion) {
@@ -1954,10 +1987,12 @@ TfLiteStatus NeuronStableDelegateKernel::AddOpsAndTensors(TfLiteOpaqueContext* c
     // fc_nn_intermediate_output_index is used to indicate whether additional
     // RESHAPE op is needed.
     int fc_nn_intermediate_output_index = -1;
-    const int *outputs;
+    const int* outputs;
     int num_outputs;
-    TF_LITE_OPAQUE_ENSURE_STATUS(TfLiteOpaqueNodeOutputs(node, &outputs, &num_outputs));
-    for (int output_pos = 0; output_pos < TfLiteOpaqueNodeNumberOfOutputs(node); ++output_pos) {
+    TF_LITE_OPAQUE_ENSURE_STATUS(
+        TfLiteOpaqueNodeOutputs(node, &outputs, &num_outputs));
+    for (int output_pos = 0; output_pos < TfLiteOpaqueNodeNumberOfOutputs(node);
+         ++output_pos) {
       auto output_index = outputs[output_pos];
 
       // Outputs for  basic LSTM cell are set in the Map function since
@@ -1966,22 +2001,27 @@ TfLiteStatus NeuronStableDelegateKernel::AddOpsAndTensors(TfLiteOpaqueContext* c
         continue;
       }
       // Handle FC with keep_num_dims==true.
-      if (TfLiteRegistrationExternalGetBuiltInCode(reg) == kTfLiteBuiltinFullyConnected &&
-          reinterpret_cast<TfLiteFullyConnectedParams*>(TfLiteOpaqueNodeGetBuiltinData(node))
+      if (TfLiteRegistrationExternalGetBuiltInCode(reg) ==
+              kTfLiteBuiltinFullyConnected &&
+          reinterpret_cast<TfLiteFullyConnectedParams*>(
+              TfLiteOpaqueNodeGetBuiltinData(node))
               ->keep_num_dims) {
-        auto* output_tensor = TfLiteOpaqueContextGetOpaqueTensor(context, output_index);
+        auto* output_tensor =
+            TfLiteOpaqueContextGetOpaqueTensor(context, output_index);
 
         int num_units = TfLiteOpaqueTensorDim(
-          output_tensor, TfLiteOpaqueTensorNumDims(output_tensor) - 1);
+            output_tensor, TfLiteOpaqueTensorNumDims(output_tensor) - 1);
         std::vector<uint32_t> output_dims(2);
         output_dims[0] = NumElements(output_tensor) / num_units;
         output_dims[1] = num_units;
         TF_LITE_ENSURE_STATUS(builder.AddIntermediateOutputTensor(
-            TfLiteOpaqueTensorType(output_tensor), output_dims.size(), output_dims.data(),
+            TfLiteOpaqueTensorType(output_tensor), output_dims.size(),
+            output_dims.data(),
             TfLiteOpaqueTensorGetQuantizationParams(output_tensor).scale,
             TfLiteOpaqueTensorGetQuantizationParams(output_tensor).zero_point,
             &fc_nn_intermediate_output_index));
-      } else if (TfLiteRegistrationExternalGetBuiltInCode(reg) == kTfLiteBuiltinCustom &&
+      } else if (TfLiteRegistrationExternalGetBuiltInCode(reg) ==
+                     kTfLiteBuiltinCustom &&
                  strcmp(TfLiteRegistrationExternalGetCustomName(reg),
                         "TFLite_Detection_PostProcess") == 0) {
         // Everything is added during Map since output tensors
@@ -1995,20 +2035,18 @@ TfLiteStatus NeuronStableDelegateKernel::AddOpsAndTensors(TfLiteOpaqueContext* c
 
     // Dequantize operators may have to be added in case inputs are to be
     // floating-point.
-    AddDequantizeOperatorsWhereNeeded(context,
-                                      TfLiteRegistrationExternalGetBuiltInCode(reg),
-                                      node, &builder);
+    AddDequantizeOperatorsWhereNeeded(
+        context, TfLiteRegistrationExternalGetBuiltInCode(reg), node, &builder);
     TF_LITE_ENSURE_STATUS(builder.FinalizeAddOperation(nn_op_type));
     if (fc_nn_intermediate_output_index > -1) {
-      TF_LITE_ENSURE_STATUS(builder.AppendReshape(
-          fc_nn_intermediate_output_index, outputs[0]));
+      TF_LITE_ENSURE_STATUS(
+          builder.AppendReshape(fc_nn_intermediate_output_index, outputs[0]));
     }
   }
   total_op_num_ = builder.GetTotalOpNum();
   TFLITE_LOG_PROD(tflite::TFLITE_LOG_INFO, "AddOpsAndTensors done");
   return kTfLiteOk;
 }
-
 
 TfLiteStatus NeuronStableDelegateKernel::BuildGraph(
     TfLiteOpaqueContext* context, const TfLiteOpaqueDelegateParams* params,
@@ -2029,7 +2067,7 @@ TfLiteStatus NeuronStableDelegateKernel::BuildGraph(
     // Constant tensors are not Neuron inputs.
     if (i != kTfLiteOptionalTensor &&
         TfLiteOpaqueTensorGetAllocationType(
-          TfLiteOpaqueContextGetOpaqueTensor(context, i)) != kTfLiteMmapRo &&
+            TfLiteOpaqueContextGetOpaqueTensor(context, i)) != kTfLiteMmapRo &&
         // The delegate might not have mapped this input (this can
         // happen if one tensor is split in several ones)
         operand_mapping_.lite_index_to_neuron(i) != -1) {
@@ -2039,14 +2077,16 @@ TfLiteStatus NeuronStableDelegateKernel::BuildGraph(
           operand_mapping_.lite_index_to_neuron_type_conversion(i);
       int tensor_size = 0;
       if (nn_type_conversion == kTfLiteNoType) {
-        tensor_size =
-            TfLiteOpaqueTensorByteSize(TfLiteOpaqueContextGetOpaqueTensor(context, i));
+        tensor_size = TfLiteOpaqueTensorByteSize(
+            TfLiteOpaqueContextGetOpaqueTensor(context, i));
       } else {
         size_t type_size;
-        TF_LITE_ENSURE_OK(
-            context, TfLiteOpaqueContextGetSizeOfType(context, nn_type_conversion, &type_size));
-        tensor_size = NumElements(
-          TfLiteOpaqueContextGetOpaqueTensor(context, i)) * type_size;
+        TF_LITE_ENSURE_OK(context,
+                          TfLiteOpaqueContextGetSizeOfType(
+                              context, nn_type_conversion, &type_size));
+        tensor_size =
+            NumElements(TfLiteOpaqueContextGetOpaqueTensor(context, i)) *
+            type_size;
       }
       total_input_byte_size += tensor_size;
       total_input_byte_size += getNumPaddingBytes(tensor_size);
@@ -2064,11 +2104,10 @@ TfLiteStatus NeuronStableDelegateKernel::BuildGraph(
       outputs.push_back(output_tensor_neuron_index);
     }
     // TODO(MTK): Temporary remove buffer_handle
-    total_output_byte_size +=
-        TfLiteOpaqueTensorByteSize(TfLiteOpaqueContextGetOpaqueTensor(context, i));
-    total_output_byte_size +=
-        getNumPaddingBytes(
-          TfLiteOpaqueTensorByteSize(TfLiteOpaqueContextGetOpaqueTensor(context, i)));
+    total_output_byte_size += TfLiteOpaqueTensorByteSize(
+        TfLiteOpaqueContextGetOpaqueTensor(context, i));
+    total_output_byte_size += getNumPaddingBytes(TfLiteOpaqueTensorByteSize(
+        TfLiteOpaqueContextGetOpaqueTensor(context, i)));
   }
   TFLITE_LOG_PROD(tflite::TFLITE_LOG_INFO, "total_output_byte_size: %d",
                   total_output_byte_size);
@@ -2101,9 +2140,9 @@ TfLiteStatus NeuronStableDelegateKernel::BuildGraph(
   nn_compilation_cache_token_ = nnapi_cache_token;
 
   std::string test = "{";
-  for (auto i:nnapi_cache_token) {
-        test += std::to_string(i);
-        test += ",";
+  for (auto i : nnapi_cache_token) {
+    test += std::to_string(i);
+    test += ",";
   }
   test += "};";
 
@@ -2156,10 +2195,10 @@ TfLiteStatus NeuronStableDelegateKernel::GetSupportedOperations(
     TFLITE_LOG_PROD(tflite::TFLITE_LOG_INFO,
                     "NeuronCompilation_getSupportedOperations");
     RETURN_TFLITE_ERROR_IF_NEURON_ERROR(
-      context,
-      neuronapi_->NeuronCompilation_getSupportedOperations(
-          nn_compilation_.get(), total_op_num_, is_supported),
-      "get supported operations for devices");
+        context,
+        neuronapi_->NeuronCompilation_getSupportedOperations(
+            nn_compilation_.get(), total_op_num_, is_supported),
+        "get supported operations for devices");
   } else {
     uint32_t num_devices = 0;
 
@@ -2170,63 +2209,64 @@ TfLiteStatus NeuronStableDelegateKernel::GetSupportedOperations(
     NeuronDevice* device[num_devices];
     int device_count = 0;
     if (strlen(options_.accelerator_name.c_str()) != 0) {
-      char* device_split_name =
-          std::strtok(const_cast<char*>(options_.accelerator_name.c_str()), ",");
+      char* device_split_name = std::strtok(
+          const_cast<char*>(options_.accelerator_name.c_str()), ",");
       while (device_split_name) {
         NeuronDevice* mtk_device = nullptr;
         if (GetAcceleratorDevice(neuronapi_, context, device_split_name,
                                  &mtk_device) == kTfLiteOk) {
           device[device_count] = mtk_device;
           device_count++;
-          TFLITE_LOG_PROD(tflite::TFLITE_LOG_INFO,
-                          "Get device: %s", device_split_name);
+          TFLITE_LOG_PROD(tflite::TFLITE_LOG_INFO, "Get device: %s",
+                          device_split_name);
         }
         device_split_name = std::strtok(NULL, ",");
       }
     }
     if (device_count) {
-    TFLITE_LOG_PROD(tflite::TFLITE_LOG_INFO,
-                    "NeuronModel_getSupportedOperationsForDevices");
+      TFLITE_LOG_PROD(tflite::TFLITE_LOG_INFO,
+                      "NeuronModel_getSupportedOperationsForDevices");
       RETURN_TFLITE_ERROR_IF_NEURON_ERROR(
-        context,
-        neuronapi_->NeuronModel_getSupportedOperationsForDevices(
-            nn_model_.get(), device, device_count, is_supported),
-        "get supported operations for devices");
+          context,
+          neuronapi_->NeuronModel_getSupportedOperationsForDevices(
+              nn_model_.get(), device, device_count, is_supported),
+          "get supported operations for devices");
 
     } else {
-    TFLITE_LOG_PROD(tflite::TFLITE_LOG_INFO,
-                    "NeuronModel_getSupportedOperations");
+      TFLITE_LOG_PROD(tflite::TFLITE_LOG_INFO,
+                      "NeuronModel_getSupportedOperations");
       RETURN_TFLITE_ERROR_IF_NEURON_ERROR(
-        context,
-        neuronapi_->NeuronModel_getSupportedOperations(
-            nn_model_.get(), is_supported, total_op_num_),
-        "get supported operations");
+          context,
+          neuronapi_->NeuronModel_getSupportedOperations(
+              nn_model_.get(), is_supported, total_op_num_),
+          "get supported operations");
     }
   }
   return kTfLiteOk;
 }
 
 TfLiteStatus NeuronStableDelegateKernel::GetSupportedOperationsForOneNode(
-  TfLiteOpaqueContext* context, TfLiteOpaqueNode* node,
-  TfLiteRegistrationExternal* registration, bool* is_supported) {
+    TfLiteOpaqueContext* context, TfLiteOpaqueNode* node,
+    TfLiteRegistrationExternal* registration, bool* is_supported) {
   delegate_specific_mode_ = kOneNodeMode;
-  TFLITE_LOG_PROD(tflite::TFLITE_LOG_INFO, "GetSupportedOperationsForOneNode: %s",
-    EnumNameBuiltinOperator(
-      static_cast<BuiltinOperator>(
-        TfLiteRegistrationExternalGetBuiltInCode(registration))));
+  TFLITE_LOG_PROD(tflite::TFLITE_LOG_INFO,
+                  "GetSupportedOperationsForOneNode: %s",
+                  EnumNameBuiltinOperator(static_cast<BuiltinOperator>(
+                      TfLiteRegistrationExternalGetBuiltInCode(registration))));
   // One Node Mode with unknown node index, nodes_ is always set to [0].
   nodes_.push_back(0);
   one_node_and_reg_.first = node;
   one_node_and_reg_.second = registration;
   NeuronModel* model = nullptr;
-  RETURN_TFLITE_ERROR_IF_NEURON_ERROR(context,
-                                      neuronapi_->NeuronModel_create(&model),
-                                      "creating Neuron model");
+  RETURN_TFLITE_ERROR_IF_NEURON_ERROR(
+      context, neuronapi_->NeuronModel_create(&model), "creating Neuron model");
   nn_model_.reset(model);
   const int *inputs, *outputs;
   int num_inputs, num_outputs;
-  TF_LITE_OPAQUE_ENSURE_STATUS(TfLiteOpaqueNodeInputs(node, &inputs, &num_inputs));
-  TF_LITE_OPAQUE_ENSURE_STATUS(TfLiteOpaqueNodeOutputs(node, &outputs, &num_outputs));
+  TF_LITE_OPAQUE_ENSURE_STATUS(
+      TfLiteOpaqueNodeInputs(node, &inputs, &num_inputs));
+  TF_LITE_OPAQUE_ENSURE_STATUS(
+      TfLiteOpaqueNodeOutputs(node, &outputs, &num_outputs));
   TfLiteIntArray* input_tensors = TfLiteIntArrayCreate(num_inputs);
   TfLiteIntArray* output_tensors = TfLiteIntArrayCreate(num_outputs);
   if (input_tensors) {
@@ -2237,7 +2277,7 @@ TfLiteStatus NeuronStableDelegateKernel::GetSupportedOperationsForOneNode(
   }
 
   TF_LITE_OPAQUE_ENSURE_STATUS(GetSupportedOperations(
-    context, input_tensors, output_tensors, is_supported));
+      context, input_tensors, output_tensors, is_supported));
 
   if (input_tensors) {
     TfLiteIntArrayFree(input_tensors);
@@ -2251,24 +2291,28 @@ TfLiteStatus NeuronStableDelegateKernel::GetSupportedOperationsForOneNode(
 TfLiteStatus NeuronStableDelegateKernel::GetSupportedOperationsForWholeGraph(
     TfLiteOpaqueContext* context, bool* is_supported) {
   delegate_specific_mode_ = kContextMode;
-  TfLiteIntArray *execution_plan = nullptr;
-  TFLITE_LOG_PROD(tflite::TFLITE_LOG_INFO, "GetSupportedOperationsForWholeGraph");
-  if (TfLiteOpaqueContextGetExecutionPlan(context, &execution_plan) != kTfLiteOk) {
+  TfLiteIntArray* execution_plan = nullptr;
+  TFLITE_LOG_PROD(tflite::TFLITE_LOG_INFO,
+                  "GetSupportedOperationsForWholeGraph");
+  if (TfLiteOpaqueContextGetExecutionPlan(context, &execution_plan) !=
+      kTfLiteOk) {
     TFLITE_LOG_PROD(tflite::TFLITE_LOG_ERROR, "Fail to get exexution plan");
     return kTfLiteError;
   }
   nodes_.resize(execution_plan->size);
-  memcpy(nodes_.data(), execution_plan->data, sizeof(int) * execution_plan->size);
+  memcpy(nodes_.data(), execution_plan->data,
+         sizeof(int) * execution_plan->size);
 
   NeuronModel* model = nullptr;
-  RETURN_TFLITE_ERROR_IF_NEURON_ERROR(context,
-                                      neuronapi_->NeuronModel_create(&model),
-                                      "creating Neuron model");
+  RETURN_TFLITE_ERROR_IF_NEURON_ERROR(
+      context, neuronapi_->NeuronModel_create(&model), "creating Neuron model");
   nn_model_.reset(model);
   const int *inputs, *outputs;
   int num_inputs, num_outputs;
-  TF_LITE_OPAQUE_ENSURE_STATUS(TfLiteOpaqueContextGetInputs(context, &inputs, &num_inputs));
-  TF_LITE_OPAQUE_ENSURE_STATUS(TfLiteOpaqueContextGetOutputs(context, &outputs, &num_outputs));
+  TF_LITE_OPAQUE_ENSURE_STATUS(
+      TfLiteOpaqueContextGetInputs(context, &inputs, &num_inputs));
+  TF_LITE_OPAQUE_ENSURE_STATUS(
+      TfLiteOpaqueContextGetOutputs(context, &outputs, &num_outputs));
   TfLiteIntArray* input_tensors = TfLiteIntArrayCreate(num_inputs);
   TfLiteIntArray* output_tensors = TfLiteIntArrayCreate(num_outputs);
   if (input_tensors) {
@@ -2279,7 +2323,7 @@ TfLiteStatus NeuronStableDelegateKernel::GetSupportedOperationsForWholeGraph(
   }
 
   TF_LITE_OPAQUE_ENSURE_STATUS(GetSupportedOperations(
-    context, input_tensors, output_tensors, is_supported));
+      context, input_tensors, output_tensors, is_supported));
 
   if (input_tensors) {
     TfLiteIntArrayFree(input_tensors);
@@ -2289,7 +2333,6 @@ TfLiteStatus NeuronStableDelegateKernel::GetSupportedOperationsForWholeGraph(
   }
   return kTfLiteOk;
 }
-
 
 }  // namespace neuron
 }  // namespace tflite

@@ -27,10 +27,11 @@
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <unistd.h>
+
+#include <cstdarg>
 #include <cstdlib>
 #include <cstring>
 #include <string>
-#include <cstdarg>
 
 #ifdef __ANDROID__
 #include <android/dlext.h>
@@ -39,14 +40,14 @@
 #endif  // __ANDROID__
 
 #define NEURONAPI_LOG(format, ...) Log(format, ##__VA_ARGS__);
-#define RETURN_NEURON_ERROR(code, call_desc)                  \
-  do {                                                        \
-    const auto _code = (code);                                \
-    const auto _call_desc = (call_desc);                      \
-    if (_code != 0) {                                         \
-      NEURONAPI_LOG("Neuron returned error %d while %s.\n",   \
-                    _code, _call_desc);                       \
-    }                                                         \
+#define RETURN_NEURON_ERROR(code, call_desc)                       \
+  do {                                                             \
+    const auto _code = (code);                                     \
+    const auto _call_desc = (call_desc);                           \
+    if (_code != 0) {                                              \
+      NEURONAPI_LOG("Neuron returned error %d while %s.\n", _code, \
+                    _call_desc);                                   \
+    }                                                              \
   } while (0)
 
 void Log(const char* format, ...) {
@@ -144,8 +145,8 @@ const NeuronApi LoadNeuronApi() {
   LOAD_FUNCTION(libneuron_adapter, NeuronModel_setOperandValue, neuron_api);
   LOAD_FUNCTION(libneuron_adapter,
                 NeuronModel_setOperandSymmPerChannelQuantParams, neuron_api);
-  LOAD_FUNCTION(libneuron_adapter,
-                NeuronModel_setOperandPerChannelQuantParams, neuron_api);
+  LOAD_FUNCTION(libneuron_adapter, NeuronModel_setOperandPerChannelQuantParams,
+                neuron_api);
   LOAD_FUNCTION(libneuron_adapter, NeuronModel_addOperation, neuron_api);
   LOAD_FUNCTION(libneuron_adapter, NeuronModel_identifyInputsAndOutputs,
                 neuron_api);
@@ -158,8 +159,8 @@ const NeuronApi LoadNeuronApi() {
   LOAD_FUNCTION_OPTIONAL(libneuron_adapter,
                          NeuronCompilation_getCompiledNetworkSize, neuron_api);
 #if defined(NP8)
-  LOAD_FUNCTION_OPTIONAL(libneuron_adapter, NeuronCompilation_getSupportedOperations,
-                         neuron_api);
+  LOAD_FUNCTION_OPTIONAL(libneuron_adapter,
+                         NeuronCompilation_getSupportedOperations, neuron_api);
 #endif
   LOAD_FUNCTION_OPTIONAL(libneuron_adapter,
                          NeuronCompilation_setOptimizationHint, neuron_api);
@@ -169,8 +170,8 @@ const NeuronApi LoadNeuronApi() {
   LOAD_FUNCTION(libneuron_adapter, NeuronCompilation_setL1MemorySizeKb,
                 neuron_api);
 #if defined(NP8)
-  LOAD_FUNCTION_OPTIONAL(libneuron_adapter, NeuronCompilation_getOptimizationString,
-                         neuron_api);
+  LOAD_FUNCTION_OPTIONAL(libneuron_adapter,
+                         NeuronCompilation_getOptimizationString, neuron_api);
   LOAD_FUNCTION_OPTIONAL(libneuron_adapter,
                          NeuronCompilation_setOnlyAllowOptimizationString,
                          neuron_api);
@@ -226,28 +227,27 @@ const NeuronApi LoadNeuronApi() {
 
   uint32_t num_devices = 0;
   if (libneuron_adapter != nullptr) {
-      neuron_api.Neuron_getDeviceCount(&num_devices);
+    neuron_api.Neuron_getDeviceCount(&num_devices);
   }
   if (num_devices == 0) {
-      neuron_api.neuron_exists = false;
+    neuron_api.neuron_exists = false;
   } else if (neuron_api.neuron_exists) {
-      // check if mdla/dsp supported
-      neuron_api.neuron_exists = false;
-      for (uint32_t i = 0; i < num_devices; ++i) {
-        const char* name = nullptr;
-        NeuronDevice* device = nullptr;
-        RETURN_NEURON_ERROR(
-            neuron_api.Neuron_getDevice(i, &device), "getting device");
-        RETURN_NEURON_ERROR(
-            neuron_api.NeuronDevice_getName(device, &name),
-        "getting device name");
-        //TFLITE_LOG_PROD(tflite::TFLITE_LOG_INFO, "Got device name: %s", name);
-        if (name != nullptr && (strncmp(name, "mtk-dsp", 7) == 0 ||
-            strncmp(name, "mtk-mdla", 8) == 0)) {
-          neuron_api.neuron_exists = true;
-          break;
-        }
+    // check if mdla/dsp supported
+    neuron_api.neuron_exists = false;
+    for (uint32_t i = 0; i < num_devices; ++i) {
+      const char* name = nullptr;
+      NeuronDevice* device = nullptr;
+      RETURN_NEURON_ERROR(neuron_api.Neuron_getDevice(i, &device),
+                          "getting device");
+      RETURN_NEURON_ERROR(neuron_api.NeuronDevice_getName(device, &name),
+                          "getting device name");
+      // TFLITE_LOG_PROD(tflite::TFLITE_LOG_INFO, "Got device name: %s", name);
+      if (name != nullptr && (strncmp(name, "mtk-dsp", 7) == 0 ||
+                              strncmp(name, "mtk-mdla", 8) == 0)) {
+        neuron_api.neuron_exists = true;
+        break;
       }
+    }
   }
   if (!neuron_api.neuron_exists) {
     NEURONAPI_LOG("neuron error: Neuron adapter API exists: %d",

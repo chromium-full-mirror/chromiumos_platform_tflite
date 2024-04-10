@@ -25,23 +25,25 @@
 
 #include <cstdarg>
 #include <string>
-#include "tensorflow/lite/minimal_logging.h"
+
 #include "delegate/mtk_neuron/mtk/mtk_utils.h"
 #include "delegate/mtk_neuron/neuron_delegate_utils.h"
+#include "tensorflow/lite/minimal_logging.h"
 
 namespace tflite {
 namespace logging_internal {
 namespace mtk {
 
 inline bool IsPrintLogSupported() {
-  static bool enabled = tflite::mtk::PropertyGetBool("debug.mtk_tflite.vlog",
-                                                    false);
-  static bool isUserBuildType = tflite::neuron::GetPropertyValue("ro.build.type") == "user";
+  static bool enabled =
+      tflite::mtk::PropertyGetBool("debug.mtk_tflite.vlog", false);
+  static bool isUserBuildType =
+      tflite::neuron::GetPropertyValue("ro.build.type") == "user";
   return enabled && !isUserBuildType;
 }
 
-inline void Log(LogSeverity severity, const char* tag,
-    const char* format, ...) {
+inline void Log(LogSeverity severity, const char* tag, const char* format,
+                ...) {
   static bool support = IsPrintLogSupported();
   if (!support && severity != TFLITE_LOG_ERROR) {
     return;
@@ -57,20 +59,20 @@ inline void Log(LogSeverity severity, const char* tag,
 }  // namespace logging_internal
 }  // namespace tflite
 
-#define TFLITE_MTK_LOG_INFO(format, ...) \
+#define TFLITE_MTK_LOG_INFO(format, ...)                                       \
+  tflite::logging_internal::mtk::Log(tflite::TFLITE_LOG_INFO, LOG_TAG, format, \
+                                     ##__VA_ARGS__);
+
+#define TFLITE_MTK_LOG_WARN(format, ...)                                  \
+  tflite::logging_internal::mtk::Log(tflite::TFLITE_LOG_WARNING, LOG_TAG, \
+                                     format, ##__VA_ARGS__);
+
+#define TFLITE_MTK_LOG_ERROR(format, ...)                               \
+  tflite::logging_internal::mtk::Log(tflite::TFLITE_LOG_ERROR, LOG_TAG, \
+                                     format, ##__VA_ARGS__);
+
+#define TFLITE_MTK_LOG_OP_DUMP(format, ...)                   \
   tflite::logging_internal::mtk::Log(tflite::TFLITE_LOG_INFO, \
-                                    LOG_TAG, format, ##__VA_ARGS__);
-
-#define TFLITE_MTK_LOG_WARN(format, ...) \
-  tflite::logging_internal::mtk::Log(tflite::TFLITE_LOG_WARNING, \
-                                    LOG_TAG, format, ##__VA_ARGS__);
-
-#define TFLITE_MTK_LOG_ERROR(format, ...) \
-  tflite::logging_internal::mtk::Log(tflite::TFLITE_LOG_ERROR, \
-                                    LOG_TAG, format, ##__VA_ARGS__);
-
-#define TFLITE_MTK_LOG_OP_DUMP(format, ...) \
-  tflite::logging_internal::mtk::Log(tflite::TFLITE_LOG_INFO, \
-                                    "TFLite OP Dump", format, ##__VA_ARGS__);
+                                     "TFLite OP Dump", format, ##__VA_ARGS__);
 
 #endif  // MTK_TENSORFLOW_LITE_MINIMAL_LOGGING_H_

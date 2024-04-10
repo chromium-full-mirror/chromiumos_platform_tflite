@@ -27,7 +27,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-//#include <android/hardware_buffer.h>
+// #include <android/hardware_buffer.h>
 
 #include "delegate/mtk_neuron/neuron_types.h"
 
@@ -106,11 +106,11 @@ struct NeuronApi {
       const NeuronSymmPerChannelQuantParams* channelQuant);
 
   // Sets an operand's per channel quantization parameters
-  // Sets parameters required by a tensor of type NEURON_TENSOR_QUANT8_SYMM_PER_CHANNEL
-  // or NEURON_TENSOR_QUANT8_ASYMM_PER_CHANNEL.
-  // This function must be called for every tensor of type
-  // NEURON_TENSOR_QUANT8_SYMM_PER_CHANNEL or NEURON_TENSOR_QUANT8_ASYMM_PER_CHANNEL
-  // before calling NeuronModel_finish.
+  // Sets parameters required by a tensor of type
+  // NEURON_TENSOR_QUANT8_SYMM_PER_CHANNEL or
+  // NEURON_TENSOR_QUANT8_ASYMM_PER_CHANNEL. This function must be called for
+  // every tensor of type NEURON_TENSOR_QUANT8_SYMM_PER_CHANNEL or
+  // NEURON_TENSOR_QUANT8_ASYMM_PER_CHANNEL before calling NeuronModel_finish.
   int (*NeuronModel_setOperandPerChannelQuantParams)(
       NeuronModel* model, int32_t index,
       const NeuronPerChannelQuantParams* channelQuant);
@@ -155,11 +155,11 @@ struct NeuronApi {
   int (*NeuronCompilation_getCompiledNetworkSize)(
       NeuronCompilation* compilation, size_t* size);
 
-  // Gets the supported operations in a model with specific optimized configures.
-  // This function must be called before calling NeuronCompilation_finish.
-  int (*NeuronCompilation_getSupportedOperations)(NeuronCompilation* compilation,
-      uint32_t operationCount, bool* supported);
-
+  // Gets the supported operations in a model with specific optimized
+  // configures. This function must be called before calling
+  // NeuronCompilation_finish.
+  int (*NeuronCompilation_getSupportedOperations)(
+      NeuronCompilation* compilation, uint32_t operationCount, bool* supported);
 
   // Sets compiler optimization hint.
   int (*NeuronCompilation_setOptimizationHint)(NeuronCompilation* compilation,
@@ -184,10 +184,10 @@ struct NeuronApi {
 
   // Get the compiler hints which are used to apply the optimization strategy
   // according to the user specified arguments in a null-terminated string.
-  int (*NeuronCompilation_getOptimizationString)(NeuronCompilation* compilation,
-                                                 const char** optimizationString);
+  int (*NeuronCompilation_getOptimizationString)(
+      NeuronCompilation* compilation, const char** optimizationString);
   int (*NeuronCompilation_setOnlyAllowOptimizationString)(
-       NeuronCompilation* compilation, bool allow);
+      NeuronCompilation* compilation, bool allow);
 
   // Create a new execution instance by calling the NeuronExecution_create
   // function.
@@ -244,7 +244,7 @@ struct NeuronApi {
                                         uint64_t duration);
 
   int (*NeuronExecution_setCacheFlushHint)(NeuronExecution* execution,
-    uint8_t flushHint);
+                                           uint8_t flushHint);
 
   int (*NeuronCompilation_setOptimizationString)(
       NeuronCompilation* compilation, const char* optimizationString);
@@ -283,14 +283,15 @@ struct NeuronApi {
 
   int (*NeuronModel_setOperandExtensionData)(NeuronModel* model, int32_t index,
                                              const void* data, size_t length);
-  int (*NeuronModel_addOperationExtension)(NeuronModel* model, const char* name, const char* vendor,
-                                           const NeuronDevice* target,
-                                        uint32_t inputCount, const uint32_t* inputs,
-                                        uint32_t outputCount, const uint32_t* outputs);
+  int (*NeuronModel_addOperationExtension)(
+      NeuronModel* model, const char* name, const char* vendor,
+      const NeuronDevice* target, uint32_t inputCount, const uint32_t* inputs,
+      uint32_t outputCount, const uint32_t* outputs);
   // Create a shared memory region
   int (*ASharedMemory_create)(const char* name, size_t size);
 #if defined(__ANDROID__)
-  int (*NeuronMemory_createFromAHardwareBuffer)(const AHardwareBuffer* ahwb, NeuronMemory** memory);
+  int (*NeuronMemory_createFromAHardwareBuffer)(const AHardwareBuffer* ahwb,
+                                                NeuronMemory** memory);
 #endif
   int (*Neuron_getNeuroPilotMagicNumber)(int32_t* magic);
 };

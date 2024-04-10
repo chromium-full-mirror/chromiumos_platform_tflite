@@ -25,7 +25,7 @@
 
 #include <stdint.h>
 #include <stdio.h>
-//#include <android/hardware_buffer.h>
+// #include <android/hardware_buffer.h>
 
 // NeuronModel is an opaque type that contains a description of the mathematical
 // operations that constitute the model.
@@ -114,7 +114,8 @@ enum {
   NEURON_TENSOR_QUANT16_ASYMM = 12,
   NEURON_TENSOR_QUANT8_SYMM = 13,
   NEURON_TENSOR_QUANT8_ASYMM_SIGNED = 14,
-  /** Extended data type -A tensor of 16 bit signed integers that represent real numbers. */
+  /** Extended data type -A tensor of 16 bit signed integers that represent real
+     numbers. */
   NEURON_EXT_TENSOR_QUANT16_ASYMM_SIGNED = 9006,
 };
 
@@ -154,16 +155,19 @@ typedef struct NeuronSymmPerChannelQuantParams {
  * NEURON_TENSOR_QUANT8_ASYMM_PER_CHANNEL operand.
  */
 typedef struct NeuronPerChannelQuantParams {
-    /** The index of the channel dimension. */
-    uint32_t channelDim;
-    /** The size of the scale array. Should be equal to dimension[channelDim] of the Operand. */
-    uint32_t scaleCount;
-    /** The array of scaling values for each channel. Each value must be greater than zero. */
-    const float* scales;
-    /** The size of the zeroPoints. Should be equal to dimension[channelDim] of the Operand. */
-    uint32_t zeroPointCount;
-    /** The array of zero point values for each channel. */
-    const int32_t* zeroPoints;
+  /** The index of the channel dimension. */
+  uint32_t channelDim;
+  /** The size of the scale array. Should be equal to dimension[channelDim] of
+   * the Operand. */
+  uint32_t scaleCount;
+  /** The array of scaling values for each channel. Each value must be greater
+   * than zero. */
+  const float* scales;
+  /** The size of the zeroPoints. Should be equal to dimension[channelDim] of
+   * the Operand. */
+  uint32_t zeroPointCount;
+  /** The array of zero point values for each channel. */
+  const int32_t* zeroPoints;
 } NeuronPerChannelQuantParams;
 
 // This enum must be consistent with tflite/schema/schema_generated.h.
@@ -302,9 +306,9 @@ typedef struct {
  */
 typedef enum {
   /**
-  * Sync input buffer and invalidate output buffer.
-  * Available since 5.0.1
-  */
+   * Sync input buffer and invalidate output buffer.
+   * Available since 5.0.1
+   */
   NEURON_CACHE_FLUSH_ENABLE_ALL = 0,
   /**
    * Disable sync input buffer.
@@ -358,7 +362,6 @@ typedef int (*NeuronModel_getSupportedOperations_fn)(NeuronModel* model,
                                                      bool* supported,
                                                      uint32_t operationCount);
 
-
 // Get the supported operations for a specified set of devices.
 // If multiple devices are selected, the supported operation list
 // is a union of supported operations of all selected devices.
@@ -390,13 +393,14 @@ typedef int (*NeuronModel_setOperandSymmPerChannelQuantParams_fn)(
     const NeuronSymmPerChannelQuantParams* channelQuant);
 
 // Sets an operand's per channel quantization parameters
-// Sets parameters required by a tensor of type NEURON_TENSOR_QUANT8_SYMM_PER_CHANNEL
-// or NEURON_TENSOR_QUANT8_ASYMM_PER_CHANNEL.
-// This function must be called for every tensor of type
-// NEURON_TENSOR_QUANT8_SYMM_PER_CHANNEL or NEURON_TENSOR_QUANT8_ASYMM_PER_CHANNEL
-// before calling NeuronModel_finish.
+// Sets parameters required by a tensor of type
+// NEURON_TENSOR_QUANT8_SYMM_PER_CHANNEL or
+// NEURON_TENSOR_QUANT8_ASYMM_PER_CHANNEL. This function must be called for
+// every tensor of type NEURON_TENSOR_QUANT8_SYMM_PER_CHANNEL or
+// NEURON_TENSOR_QUANT8_ASYMM_PER_CHANNEL before calling NeuronModel_finish.
 typedef int (*NeuronModel_setOperandPerChannelQuantParams_fn)(
-    NeuronModel* model, int32_t index, const NeuronPerChannelQuantParams* channelQuant);
+    NeuronModel* model, int32_t index,
+    const NeuronPerChannelQuantParams* channelQuant);
 
 // Add an operation to a model.
 // The operands specified by inputs and outputs must have been previously
@@ -525,7 +529,7 @@ typedef int (*NeuronExecution_setLoopTimeout_fn)(NeuronExecution* execution,
 // Required before calling NeuronExecution_setInputFromMemory and
 // NeuronExecution_setOutputFromMemory.
 typedef int (*NeuronExecution_setCacheFlushHint_fn)(NeuronExecution* execution,
-    uint8_t flushHint);
+                                                    uint8_t flushHint);
 
 typedef int (*NeuronCompilation_setOptimizationString_fn)(
     NeuronCompilation* compilation, const char* optimizationString);
@@ -562,10 +566,10 @@ typedef int (*NeuronModel_getExtensionOperationType_fn)(
     NeuronModel* model, const char* extensionName,
     uint16_t operationCodeWithinExtension, int32_t* type);
 
-typedef int (*NeuronModel_addOperationExtension_fn)(NeuronModel* model, const char* name,
-                                                    const char* vendor, const NeuronDevice* target,
-                                        uint32_t inputCount, const uint32_t* inputs,
-                                        uint32_t outputCount, const uint32_t* outputs);
+typedef int (*NeuronModel_addOperationExtension_fn)(
+    NeuronModel* model, const char* name, const char* vendor,
+    const NeuronDevice* target, uint32_t inputCount, const uint32_t* inputs,
+    uint32_t outputCount, const uint32_t* outputs);
 typedef int (*NeuronModel_setOperandExtensionData_fn)(NeuronModel* model,
                                                       int32_t index,
                                                       const void* data,
@@ -574,8 +578,8 @@ typedef int (*NeuronModel_setOperandExtensionData_fn)(NeuronModel* model,
 // Create a shared memory region
 typedef int (*ASharedMemory_create_fn)(const char* name, size_t size);
 #if defined(__ANDROID__)
-typedef int (*NeuronMemory_createFromAHardwareBuffer_fn)(const AHardwareBuffer* ahwb,
-                                                         NeuronMemory** memory);
+typedef int (*NeuronMemory_createFromAHardwareBuffer_fn)(
+    const AHardwareBuffer* ahwb, NeuronMemory** memory);
 #endif
 typedef int (*Neuron_getNeuroPilotMagicNumber_fn)(int32_t* magic);
 

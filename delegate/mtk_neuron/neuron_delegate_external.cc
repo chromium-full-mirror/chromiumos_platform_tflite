@@ -25,14 +25,13 @@
 #include <utility>
 
 #include "delegate/mtk_neuron/neuron_delegate.h"
-
-#include "tensorflow/lite/c/c_api_types.h"
-#include "tensorflow/lite/c/common.h"
-#include "tensorflow/lite/acceleration/configuration/configuration_generated.h"
-#include "tensorflow/lite/delegates/utils/experimental/stable_delegate/stable_delegate_interface.h"
-#include "tensorflow/lite/delegates/utils/simple_opaque_delegate.h"
 #include "tensorflow/lite/acceleration/configuration/c/delegate_plugin.h"
 #include "tensorflow/lite/acceleration/configuration/c/stable_delegate.h"
+#include "tensorflow/lite/acceleration/configuration/configuration_generated.h"
+#include "tensorflow/lite/c/c_api_types.h"
+#include "tensorflow/lite/c/common.h"
+#include "tensorflow/lite/delegates/utils/experimental/stable_delegate/stable_delegate_interface.h"
+#include "tensorflow/lite/delegates/utils/simple_opaque_delegate.h"
 #include "tensorflow/lite/minimal_logging.h"
 
 namespace tflite {
@@ -101,22 +100,27 @@ TfLiteOpaqueDelegate* NeuronStableDelegateCreateFunc(const void* settings) {
   // Parse NeuronDelegateSettings to NeuronDelegateOptions
   if (neuron_delegate_settings) {
     // TODO(b:333500607): NEURON_LOW_POWER is impossible to set.
-    options.execution_preference = neuron_delegate_settings->execution_preference()
-        ? ConvertExecutionPrefence(neuron_delegate_settings->execution_preference())
-        : options.execution_preference;
-    options.execution_priority = neuron_delegate_settings->execution_priority()
-        ? ConvertExecutionPriority(neuron_delegate_settings->execution_priority())
-        : options.execution_priority;
-    options.optimization_hint = neuron_delegate_settings->optimization_hint()
-        ? (int32_t)(neuron_delegate_settings->optimization_hint())
-        : options.optimization_hint;
+    options.execution_preference =
+        neuron_delegate_settings->execution_preference()
+            ? ConvertExecutionPrefence(
+                  neuron_delegate_settings->execution_preference())
+            : options.execution_preference;
+    options.execution_priority =
+        neuron_delegate_settings->execution_priority()
+            ? ConvertExecutionPriority(
+                  neuron_delegate_settings->execution_priority())
+            : options.execution_priority;
+    options.optimization_hint =
+        neuron_delegate_settings->optimization_hint()
+            ? (int32_t)(neuron_delegate_settings->optimization_hint())
+            : options.optimization_hint;
     if ((int32_t)(neuron_delegate_settings->optimization_hint() >> 3)) {
-        TFLITE_LOG_PROD(tflite::TFLITE_LOG_INFO, "Unsupported hints: %d",
-            options.optimization_hint);
+      TFLITE_LOG_PROD(tflite::TFLITE_LOG_INFO, "Unsupported hints: %d",
+                      options.optimization_hint);
     }
     options.allow_fp16 = neuron_delegate_settings->allow_fp16()
-        ? neuron_delegate_settings->allow_fp16()
-        : options.allow_fp16;
+                             ? neuron_delegate_settings->allow_fp16()
+                             : options.allow_fp16;
     if (neuron_delegate_settings->cache_dir() &&
         neuron_delegate_settings->cache_dir()->size() != 0) {
       std::string cache_dir = neuron_delegate_settings->cache_dir()->str();
@@ -128,28 +132,35 @@ TfLiteOpaqueDelegate* NeuronStableDelegateCreateFunc(const void* settings) {
       options.model_token = model_token;
     }
     options.use_ahwb = neuron_delegate_settings->use_ahwb()
-        ? neuron_delegate_settings->use_ahwb()
-        : options.use_ahwb;
-    options.use_cacheable_buffer = neuron_delegate_settings->use_cacheable_buffer()
-        ? neuron_delegate_settings->use_cacheable_buffer()
-        : options.use_cacheable_buffer;
+                           ? neuron_delegate_settings->use_ahwb()
+                           : options.use_ahwb;
+    options.use_cacheable_buffer =
+        neuron_delegate_settings->use_cacheable_buffer()
+            ? neuron_delegate_settings->use_cacheable_buffer()
+            : options.use_cacheable_buffer;
     if (neuron_delegate_settings->compile_options() &&
         neuron_delegate_settings->compile_options()->size() != 0) {
-      std::string compile_options = neuron_delegate_settings->compile_options()->str();
+      std::string compile_options =
+          neuron_delegate_settings->compile_options()->str();
       options.compile_options = compile_options;
     }
     if (neuron_delegate_settings->accelerator_name() &&
         neuron_delegate_settings->accelerator_name()->size() != 0) {
-      std::string accelerator_name = neuron_delegate_settings->accelerator_name()->str();
+      std::string accelerator_name =
+          neuron_delegate_settings->accelerator_name()->str();
       options.accelerator_name = accelerator_name;
     }
-    options.operation_check_mode = neuron_delegate_settings->operation_check_mode()
-        ? ConvertOperationCheckMode(neuron_delegate_settings->operation_check_mode())
-        : options.operation_check_mode;
+    options.operation_check_mode =
+        neuron_delegate_settings->operation_check_mode()
+            ? ConvertOperationCheckMode(
+                  neuron_delegate_settings->operation_check_mode())
+            : options.operation_check_mode;
   } else {
-    TFLITE_LOG_PROD(tflite::TFLITE_LOG_INFO, "Use Default Neuron Delegate Options.");
+    TFLITE_LOG_PROD(tflite::TFLITE_LOG_INFO,
+                    "Use Default Neuron Delegate Options.");
   }
-  auto delegate = std::make_unique<tflite::neuron::NeuronStableDelegate>(options);
+  auto delegate =
+      std::make_unique<tflite::neuron::NeuronStableDelegate>(options);
   return tflite::TfLiteOpaqueDelegateFactory::CreateSimpleDelegate(
       std::move(delegate));
 }
@@ -171,14 +182,14 @@ const TfLiteOpaqueDelegatePlugin neuron_stable_delegate_plugin = {
     NeuronStableDelegateErrnoFunc};
 
 const TfLiteStableDelegate neuron_stable_delegate = {
-    /*delegate_abi_version=*/ TFL_STABLE_DELEGATE_ABI_VERSION,
-    /*delegate_name=*/ kNeuronStableDelegateName,
-    /*delegate_version=*/ kNeuronStableDelegateVersion,
-    /*delegate_plugin=*/ &neuron_stable_delegate_plugin};
+    /*delegate_abi_version=*/TFL_STABLE_DELEGATE_ABI_VERSION,
+    /*delegate_name=*/kNeuronStableDelegateName,
+    /*delegate_version=*/kNeuronStableDelegateVersion,
+    /*delegate_plugin=*/&neuron_stable_delegate_plugin};
 
-} // namespace
-} // namespace neuron
-} // namespace tflite
+}  // namespace
+}  // namespace neuron
+}  // namespace tflite
 
 extern "C" const TfLiteStableDelegate TFL_TheStableDelegate =
     tflite::neuron::neuron_stable_delegate;
