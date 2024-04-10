@@ -73,6 +73,16 @@ class Environment : public ::testing::Environment {
 
 Environment* g_env = nullptr;
 
+// Use a relaxed tolerance when comparing the computation results, as the
+// primary goal of this test is to verify the asynchronous kernel API flow.
+// Some delegates may internally use fp16 for fp32 arithmetic, making the
+// default EXPECT_FLOAT_EQ too strict for such cases.
+// TODO(shik): If we need checking fp16 results in more places, consider
+// implementing a generic fp16 GMock matcher that computes the difference in
+// ULPs (Units in the Last Place), similar to the current implementation of
+// EXPECT_FLOAT_EQ, to provide a more precise comparison.
+constexpr float kEps = 1e-2;
+
 TEST(AsyncDelegate, Inference) {
   using TensorArgs = SimpleModelBuilder::TensorArgs;
   const TensorArgs base_args = {
@@ -138,7 +148,7 @@ TEST(AsyncDelegate, Inference) {
 
   auto output = driver->GetOutputTensor<float>("d");
   for (int i = 0; i < n; ++i) {
-    EXPECT_FLOAT_EQ(output[i], d_data[i]);
+    EXPECT_NEAR(output[i], d_data[i], kEps);
   }
 }
 
