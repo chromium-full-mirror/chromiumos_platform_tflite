@@ -9,8 +9,25 @@ package(
 )
 
 cc_library(
+    name = "native_handle",
+    hdrs = ["native_handle.h"],
+)
+
+cc_library(
+    name = "native_handle_util",
+    srcs = ["native_handle_util.cc"],
+    hdrs = ["native_handle_util.h"],
+    deps = [
+        ":native_handle",
+    ],
+)
+
+cc_library(
     name = "hardware_buffer",
     hdrs = ["hardware_buffer.h"],
+    deps = [
+        ":native_handle",
+    ],
 )
 
 cc_binary(
@@ -24,6 +41,7 @@ cc_binary(
     deps = [
         ":hardware_buffer",
         ":libnativewindow.lds",
+        ":native_handle_util",
         "//common:log",
     ],
 )

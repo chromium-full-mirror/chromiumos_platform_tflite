@@ -10,6 +10,8 @@
 #include <stdint.h>
 #include <sys/cdefs.h>
 
+#include "android/native_handle.h"
+
 /**
  * This is a minimum AHardwareBuffer API shim ported from Android header
  * frameworks/native/libs/nativewindow/include/android/hardware_buffer.h and
@@ -24,16 +26,6 @@ __BEGIN_DECLS
  * argument type is ARect.
  */
 typedef struct ARect ARect;
-
-/**
- * Copied from system/core/libcutils/include/cutils/native_handle.h in Android.
- */
-typedef struct native_handle {
-  int version;  // sizeof(native_handle_t)
-  int numFds;   // number of file-descriptors at &data[0]
-  int numInts;  // number of ints at &data[numFds]
-  int data[0];  // numFds + numInts ints
-} native_handle_t;
 
 /**
  * Buffer pixel formats.

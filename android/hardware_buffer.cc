@@ -20,8 +20,10 @@
 #include <new>
 #include <utility>
 
+#include "android/native_handle_util.h"
 #include "common/log.h"
 
+namespace tflite::cros {
 namespace {
 
 // TODO(shik): Move this into its own file.
@@ -62,40 +64,6 @@ class ScopedFd {
  private:
   int fd_ = kInvalidFd;
 };
-
-std::unique_ptr<native_handle_t> CreateNativeHandle(int fd) {
-  size_t size = sizeof(native_handle_t) + sizeof(int);
-  auto* handle = static_cast<native_handle_t*>(operator new(size));
-  *handle = {
-      .version = sizeof(native_handle_t),
-      .numFds = 1,
-      .numInts = 0,
-  };
-  handle->data[0] = fd;
-  return std::unique_ptr<native_handle_t>(handle);
-}
-
-std::unique_ptr<native_handle_t> CloneNativeHandle(
-    const native_handle_t* handle) {
-  if (handle == nullptr) {
-    return nullptr;
-  }
-
-  size_t size = sizeof(native_handle_t) +
-                sizeof(int) * (handle->numFds + handle->numInts);
-  auto* cloned = static_cast<native_handle_t*>(operator new(size));
-
-  *cloned = {
-      .version = sizeof(native_handle_t),
-      .numFds = handle->numFds,
-      .numInts = handle->numInts,
-  };
-  for (int i = 0; i < handle->numFds + handle->numInts; ++i) {
-    cloned->data[i] = handle->data[i];
-  }
-
-  return std::unique_ptr<native_handle_t>(cloned);
-}
 
 bool IsDmaBuf(int fd) {
   // Do a no-op sync intentionally.
@@ -418,6 +386,9 @@ class Allocator {
 };
 
 }  // namespace
+}  // namespace tflite::cros
+
+using Allocator = tflite::cros::Allocator;
 
 int AHardwareBuffer_allocate(const AHardwareBuffer_Desc* _Nonnull desc,
                              AHardwareBuffer* _Nullable* _Nonnull outBuffer) {
