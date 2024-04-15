@@ -43,6 +43,7 @@ cc_binary(
         ":libnativewindow.lds",
         ":native_handle_util",
         "//common:log",
+        "//common:scoped_fd",
     ],
 )
 

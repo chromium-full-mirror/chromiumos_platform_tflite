@@ -22,48 +22,10 @@
 
 #include "android/native_handle_util.h"
 #include "common/log.h"
+#include "common/scoped_fd.h"
 
 namespace tflite::cros {
 namespace {
-
-// TODO(shik): Move this into its own file.
-class ScopedFd {
- public:
-  static const int kInvalidFd = -1;
-
-  ScopedFd() : ScopedFd(kInvalidFd) {}
-  explicit ScopedFd(int fd) : fd_(fd) {}
-
-  ScopedFd(ScopedFd&& other) { *this = std::move(other); }
-
-  ScopedFd& operator=(ScopedFd&& other) {
-    reset(other.fd_);
-    other.fd_ = kInvalidFd;
-    return *this;
-  }
-
-  ~ScopedFd() { reset(); }
-
-  // Move-only.
-  ScopedFd(const ScopedFd&) = delete;
-  ScopedFd& operator=(const ScopedFd&) = delete;
-
-  void reset(int fd = kInvalidFd) {
-    if (fd_ >= 0) {
-      close(fd_);
-    }
-    fd_ = fd;
-  }
-
-  int get() const { return fd_; }
-
-  operator int() const { return get(); }
-
-  bool is_valid() { return fd_ != kInvalidFd; }
-
- private:
-  int fd_ = kInvalidFd;
-};
 
 bool IsDmaBuf(int fd) {
   // Do a no-op sync intentionally.
