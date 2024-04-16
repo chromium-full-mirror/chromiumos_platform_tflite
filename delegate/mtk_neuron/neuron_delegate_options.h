@@ -87,6 +87,9 @@ typedef struct {
   std::string accelerator_name;
   // Whether to use supported operation check or not.
   NeuronOperationCheckMode operation_check_mode;
+  // Optional path to the platform-dependent Neuron configuration file.
+  // Unused on ChromeOS.
+  std::string neuron_config_path;
 } NeuronDelegateOptions;
 
 }  // namespace neuron

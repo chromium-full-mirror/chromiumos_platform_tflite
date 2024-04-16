@@ -35,10 +35,8 @@ maybe(
         "//patch:tensorflow-2.15.0-0015-UPSTREAM-7cf223d-removed_usage_of_qcom_hints_in_clvk.patch",
         "//patch:tensorflow-2.15.0-0016-memory-usage-monitor.patch",
 
-        # TODO: b/305999831 - Temporary patch. MediaTek must submit their
-        # settings schema (configuration.proto) changes to upstream TensorFlow
-        # repo to work with Google internal TFLite libraries and avoid
-        # potential ordinal collisions.
+        # TODO: b/331910293 - Check the final upstream version is consistent
+        # with this patch.
         "//patch:tensorflow-2.15.0-0017-mtk-neuron.patch",
         "//patch:tensorflow-2.15.0-0018-absl-log.patch",
     ],

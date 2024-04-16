@@ -20,8 +20,8 @@
  * SOFTWARE.
  */
 
-#include <cstdlib>
 #include <memory>
+#include <sstream>
 #include <utility>
 
 #include "delegate/mtk_neuron/neuron_delegate.h"
@@ -38,19 +38,37 @@ namespace tflite {
 namespace neuron {
 namespace {
 
+// Joins the string vector from FlatBuffers with the provided separator as a
+// single string.
+std::string JoinFlatBuffersStringVector(
+    const flatbuffers::Vector<flatbuffers::Offset<flatbuffers::String>>&
+        fb_string_vector,
+    std::string_view sep) {
+  std::stringstream ss;
+  for (int i = 0; i < fb_string_vector.size(); ++i) {
+    if (i > 0) {
+      ss << sep;
+    }
+    ss << fb_string_vector[i]->c_str();
+  }
+  return ss.str();
+}
+
 tflite::neuron::ExecutionPreference ConvertExecutionPrefence(
-    tflite::NeuronExecutionPreference neuron_execution_preference) {
+    tflite::MtkNeuronSettings_::ExecutionPreference
+        neuron_execution_preference) {
+  using enum tflite::MtkNeuronSettings_::ExecutionPreference;
   using TflitePreference = tflite::neuron::ExecutionPreference;
   switch (neuron_execution_preference) {
-    case NeuronExecutionPreference_NEURON_UNDEFINED:
+    case ExecutionPreference_PREFERENCE_UNDEFINED:
       return TflitePreference::kUndefined;
-    case NeuronExecutionPreference_NEURON_LOW_POWER:
+    case ExecutionPreference_PREFERENCE_LOW_POWER:
       return TflitePreference::kLowPower;
-    case NeuronExecutionPreference_NEURON_FAST_SINGLE_ANSWER:
+    case ExecutionPreference_PREFERENCE_FAST_SINGLE_ANSWER:
       return TflitePreference::kFastSingleAnswer;
-    case NeuronExecutionPreference_NEURON_SUSTAINED_SPEED:
+    case ExecutionPreference_PREFERENCE_SUSTAINED_SPEED:
       return TflitePreference::kSustainedSpeed;
-    case NeuronExecutionPreference_NEURON_TURBO_BOOST:
+    case ExecutionPreference_PREFERENCE_TURBO_BOOST:
       return TflitePreference::kTurboBoost;
     default:
       return TflitePreference::kFastSingleAnswer;
@@ -58,31 +76,52 @@ tflite::neuron::ExecutionPreference ConvertExecutionPrefence(
 }
 
 tflite::neuron::ExecutionPriority ConvertExecutionPriority(
-    tflite::NeuronExecutionPriority neuron_execution_priority) {
+    tflite::MtkNeuronSettings_::ExecutionPriority neuron_execution_priority) {
+  using enum tflite::MtkNeuronSettings_::ExecutionPriority;
   using TflitePriority = tflite::neuron::ExecutionPriority;
   switch (neuron_execution_priority) {
-    case NeuronExecutionPriority_NEURON_PRIORITY_UNDEFINED:
+    case ExecutionPriority_PRIORITY_UNDEFINED:
       return TflitePriority::kPriorityUndefined;
-    case NeuronExecutionPriority_NEURON_PRIORITY_LOW:
+    case ExecutionPriority_PRIORITY_LOW:
       return TflitePriority::kPriorityLow;
-    case NeuronExecutionPriority_NEURON_PRIORITY_MEDIUM:
+    case ExecutionPriority_PRIORITY_MEDIUM:
       return TflitePriority::kPriorityMedium;
-    case NeuronExecutionPriority_NEURON_PRIORITY_HIGH:
+    case ExecutionPriority_PRIORITY_HIGH:
       return TflitePriority::kPriorityHigh;
     default:
       return TflitePriority::kPriorityHigh;
   }
 }
 
+tflite::neuron::OptimizationHint ConvertOptimizationHint(
+    tflite::MtkNeuronSettings_::OptimizationHint neuron_optimization_hint) {
+  using enum tflite::MtkNeuronSettings_::OptimizationHint;
+  using TfLiteHint = tflite::neuron::OptimizationHint;
+  switch (neuron_optimization_hint) {
+    case OptimizationHint_OPTIMIZATION_NONE:
+      return TfLiteHint::kOptimizationNone;
+    case OptimizationHint_OPTIMIZATION_LOW_LATENCY:
+      return TfLiteHint::kOptimizationLowLatency;
+    case OptimizationHint_OPTIMIZATION_DEEP_FUSION:
+      return TfLiteHint::kOptimizationDeepFusion;
+    case OptimizationHint_OPTIMIZATION_BATCH_PROCESSING:
+      return TfLiteHint::kOptimizationBatchProcessor;
+    default:
+      return TfLiteHint::kOptimizationNone;
+  }
+}
+
 tflite::neuron::NeuronOperationCheckMode ConvertOperationCheckMode(
-    tflite::NeuronOperationCheckMode neuron_operation_check_mode) {
+    tflite::MtkNeuronSettings_::OperationCheckMode
+        neuron_operation_check_mode) {
+  using enum tflite::MtkNeuronSettings_::OperationCheckMode;
   using NeuronOperationCheckMode = tflite::neuron::NeuronOperationCheckMode;
   switch (neuron_operation_check_mode) {
-    case NeuronOperationCheckMode_NO_OPERATION_CHECK:
+    case OperationCheckMode_NO_OPERATION_CHECK:
       return NeuronOperationCheckMode::kNoOperationCheck;
-    case NeuronOperationCheckMode_PER_NODE_OPERATION_CHECK:
+    case OperationCheckMode_PER_NODE_OPERATION_CHECK:
       return NeuronOperationCheckMode::kPerNodeOperationCheck;
-    case NeuronOperationCheckMode_PRE_OPERATION_CHECK:
+    case OperationCheckMode_PRE_OPERATION_CHECK:
       return NeuronOperationCheckMode::kPreOperationCheck;
     default:
       return NeuronOperationCheckMode::kNoOperationCheck;
@@ -92,73 +131,65 @@ tflite::neuron::NeuronOperationCheckMode ConvertOperationCheckMode(
 TfLiteOpaqueDelegate* NeuronStableDelegateCreateFunc(const void* settings) {
   const ::tflite::TFLiteSettings* tflite_settings =
       static_cast<const ::tflite::TFLiteSettings*>(settings);
-  const ::tflite::NeuronDelegateSettings* neuron_delegate_settings =
-      tflite_settings->neuron_delegate_settings();
-
   NeuronDelegateOptions options = TfLiteNeuronDelegateOptionsDefault();
 
-  // Parse NeuronDelegateSettings to NeuronDelegateOptions
-  if (neuron_delegate_settings) {
-    // TODO(b:333500607): NEURON_LOW_POWER is impossible to set.
-    options.execution_preference =
-        neuron_delegate_settings->execution_preference()
-            ? ConvertExecutionPrefence(
-                  neuron_delegate_settings->execution_preference())
-            : options.execution_preference;
-    options.execution_priority =
-        neuron_delegate_settings->execution_priority()
-            ? ConvertExecutionPriority(
-                  neuron_delegate_settings->execution_priority())
-            : options.execution_priority;
-    options.optimization_hint =
-        neuron_delegate_settings->optimization_hint()
-            ? (int32_t)(neuron_delegate_settings->optimization_hint())
-            : options.optimization_hint;
-    if ((int32_t)(neuron_delegate_settings->optimization_hint() >> 3)) {
-      TFLITE_LOG_PROD(tflite::TFLITE_LOG_INFO, "Unsupported hints: %d",
-                      options.optimization_hint);
+  // Parse MtkNeuronSettings to NeuronDelegateOptions
+  if (const auto* neuron_settings = tflite_settings->mtk_neuron_settings();
+      neuron_settings != nullptr) {
+    if (neuron_settings->execution_preference()) {
+      options.execution_preference =
+          ConvertExecutionPrefence(neuron_settings->execution_preference());
     }
-    options.allow_fp16 = neuron_delegate_settings->allow_fp16()
-                             ? neuron_delegate_settings->allow_fp16()
-                             : options.allow_fp16;
-    if (neuron_delegate_settings->cache_dir() &&
-        neuron_delegate_settings->cache_dir()->size() != 0) {
-      std::string cache_dir = neuron_delegate_settings->cache_dir()->str();
-      options.cache_dir = cache_dir;
+    if (neuron_settings->execution_priority()) {
+      options.execution_priority =
+          ConvertExecutionPriority(neuron_settings->execution_priority());
     }
-    if (neuron_delegate_settings->model_token() &&
-        neuron_delegate_settings->model_token()->size() != 0) {
-      std::string model_token = neuron_delegate_settings->model_token()->str();
-      options.model_token = model_token;
+    if (const auto* hints = neuron_settings->optimization_hints();
+        hints != nullptr && hints->size() != 0) {
+      // Convert the repeated hints field into corresponding bitwise flags.
+      options.optimization_hint = 0;
+      for (int hint : *neuron_settings->optimization_hints()) {
+        options.optimization_hint |= ConvertOptimizationHint(
+            static_cast<MtkNeuronSettings_::OptimizationHint>(hint));
+      }
     }
-    options.use_ahwb = neuron_delegate_settings->use_ahwb()
-                           ? neuron_delegate_settings->use_ahwb()
-                           : options.use_ahwb;
-    options.use_cacheable_buffer =
-        neuron_delegate_settings->use_cacheable_buffer()
-            ? neuron_delegate_settings->use_cacheable_buffer()
-            : options.use_cacheable_buffer;
-    if (neuron_delegate_settings->compile_options() &&
-        neuron_delegate_settings->compile_options()->size() != 0) {
-      std::string compile_options =
-          neuron_delegate_settings->compile_options()->str();
-      options.compile_options = compile_options;
+    if (neuron_settings->operation_check_mode()) {
+      options.operation_check_mode =
+          ConvertOperationCheckMode(neuron_settings->operation_check_mode());
     }
-    if (neuron_delegate_settings->accelerator_name() &&
-        neuron_delegate_settings->accelerator_name()->size() != 0) {
-      std::string accelerator_name =
-          neuron_delegate_settings->accelerator_name()->str();
-      options.accelerator_name = accelerator_name;
+    options.allow_fp16 = neuron_settings->allow_fp16_precision_for_fp32();
+    options.use_ahwb = neuron_settings->use_ahwb();
+    options.use_cacheable_buffer = neuron_settings->use_cacheable_buffer();
+    if (const auto* opts = neuron_settings->compile_options();
+        opts != nullptr && opts->size() != 0) {
+      options.compile_options = JoinFlatBuffersStringVector(*opts, " ");
     }
-    options.operation_check_mode =
-        neuron_delegate_settings->operation_check_mode()
-            ? ConvertOperationCheckMode(
-                  neuron_delegate_settings->operation_check_mode())
-            : options.operation_check_mode;
+    if (const auto* names = neuron_settings->accelerator_names();
+        names != nullptr && names->size() != 0) {
+      options.accelerator_name = JoinFlatBuffersStringVector(*names, ",");
+    }
+    if (const auto* path = neuron_settings->neuron_config_path();
+        path != nullptr && path->size() != 0) {
+      options.neuron_config_path = path->str();
+    }
   } else {
     TFLITE_LOG_PROD(tflite::TFLITE_LOG_INFO,
                     "Use Default Neuron Delegate Options.");
   }
+
+  if (const auto* caching_settings =
+          tflite_settings->compilation_caching_settings();
+      caching_settings != nullptr) {
+    if (const auto* dir = caching_settings->cache_dir();
+        dir != nullptr && dir->size() != 0) {
+      options.cache_dir = dir->str();
+    }
+    if (const auto* token = caching_settings->model_token();
+        token != nullptr && token->size() != 0) {
+      options.model_token = token->str();
+    }
+  }
+
   auto delegate =
       std::make_unique<tflite::neuron::NeuronStableDelegate>(options);
   return tflite::TfLiteOpaqueDelegateFactory::CreateSimpleDelegate(
