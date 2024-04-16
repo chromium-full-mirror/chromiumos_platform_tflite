@@ -4,10 +4,27 @@
  * found in the LICENSE file.
  */
 
-#ifndef COMMON_DBG_H_
-#define COMMON_DBG_H_
+#ifndef COMMON_DUMP_H_
+#define COMMON_DUMP_H_
 
-// DBG() is a convenience macro for printf-style debugging, which prints all the
+// This header provides 2 convenience macros for writing variables and/or
+// expressions to logs: DUMP() and DBG().
+//
+// DUMP() converts all the arguments as a string with key-value pairs.
+//
+// Example:
+// ```cpp
+// std::string GetNameById(int id) {
+//   std::string name = (id == 42 ? "apple" : "banana");
+//   LOG(INFO) << DUMP(id, name);
+//   return name;
+// }
+// GetNameById(42);
+// ```
+//
+// The above code will print `id = 42, name = "apple"` into log.
+//
+// DBG() is a shortcut for printf-style debugging, which prints all the
 // arguments as key-value pairs with location information into std::cerr.
 //
 // Example:
@@ -21,15 +38,10 @@
 // ```
 //
 // The above code will print (assuming DBG() is located at line 10):
-// [example.cc:10:GetNameById] id = 42
-// [example.cc:10:GetNameById] name = "apple"
+// [example.cc:10:GetNameById] id = 42, name = "apple"
 //
-// This macro MUST NOT be used in production. Uncomment the `defines` line in
-// BUILD.bazel to enable it for local debugging.
-
-#if defined(NDEBUG) && !defined(DBG_FORCE_ENABLE)
-#error "dbg.h MUST NOT be used in production"
-#endif
+// The DBG() macro MUST NOT be used in production. Uncomment the `defines` line
+// in BUILD.bazel to enable it for local debugging.
 
 #include <iostream>
 #include <ranges>  // NOLINT(build/include_order) - C++20 header is not recognized yet
@@ -101,7 +113,7 @@ constexpr auto AsTuple(const T& value) {
   DBG_AS_TUPLE(e1, e2, e3, e4, e5, e6, e7, e8, e9, e10, e11, e12, e13, e14, e15)
 }
 
-#undef DBG_AS_TUPLE_IMPL
+#undef DBG_AS_TUPLE
 #undef DBG_IS_BINDABLE
 
 // A helper type for templated overloads resolution.
@@ -111,11 +123,11 @@ struct PriorityTag : PriorityTag<N - 1> {};
 template <>
 struct PriorityTag<0> {};
 
-class DebugPrinter {
+class Printer {
  public:
   template <typename T>
   static std::string Stringify(T&& value) {
-    DebugPrinter printer;
+    Printer printer;
     printer.Print(std::forward<T>(value));
     return printer.GetString();
   }
@@ -217,26 +229,35 @@ class DebugPrinter {
   std::stringstream stream_;
 };
 
-};  // namespace impl
-
-template <typename T>
-std::string Stringify(T&& value) {
-  return impl::DebugPrinter::Stringify(std::forward<T>(value));
+inline void DebugPrint(std::string_view file,
+                       int line,
+                       std::string_view func,
+                       std::string_view args) {
+  // TODO(shik): Use ANSI escape code to print colorized output, which will make
+  // DBG() easier to spot in the logs.
+  std::cerr << "[" << file << ":" << line << ":" << func << "] " << args
+            << std::endl;
 }
 
 template <typename... T>
-void DebugPrint(std::string_view file,
-                int line,
-                std::string_view func,
-                std::initializer_list<std::string_view> names,
-                T&&... values) {
-  auto value_strings = std::initializer_list<std::string>{Stringify(values)...};
+std::string Dump(std::initializer_list<std::string_view> names, T&&... values) {
+  auto value_strings =
+      std::initializer_list<std::string>{Printer::Stringify(values)...};
+  std::stringstream stream;
   auto name_it = names.begin();
   auto value_it = value_strings.begin();
   for (size_t i = 0; i < names.size(); ++i) {
-    std::cerr << "[" << file << ":" << line << ":" << func << "] " << *name_it++
-              << " = " << *value_it++ << std::endl;
+    stream << (i > 0 ? ", " : "") << *name_it++ << " = " << *value_it++;
   }
+  return stream.str();
+}
+
+};  // namespace impl
+
+// Converts the value to a pretty-printed string.
+template <typename T>
+std::string Stringify(T&& value) {
+  return impl::Printer::Stringify(std::forward<T>(value));
 }
 
 }  // namespace dbg
@@ -261,8 +282,14 @@ void DebugPrint(std::string_view file,
 // DBG_MAP(foo) => "foo"
 #define DBG_STRINGIFY(x) #x
 
-#define DBG(...)                                    \
-  dbg::DebugPrint(__FILE__, __LINE__, __FUNCTION__, \
-                  {DBG_MAP(DBG_STRINGIFY, __VA_ARGS__)}, __VA_ARGS__)
+#define DUMP(...) \
+  dbg::impl::Dump({DBG_MAP(DBG_STRINGIFY, __VA_ARGS__)}, __VA_ARGS__)
 
-#endif  // COMMON_DBG_H_
+#if defined(NDEBUG) && !defined(DBG_FORCE_ENABLE)
+#define DBG(...) static_assert(false, "DBG() MUST NOT be used in production")
+#else
+#define DBG(...) \
+  dbg::impl::DebugPrint(__FILE__, __LINE__, __FUNCTION__, DUMP(__VA_ARGS__))
+#endif
+
+#endif  // COMMON_DUMP_H_

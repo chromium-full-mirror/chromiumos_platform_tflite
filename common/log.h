@@ -9,6 +9,9 @@
 
 #include "absl/log/absl_log.h"  // IWYU pragma: keep
 
+// Exports DUMP() here to allow `LOG(INFO) << DUMP(...)` usage.
+#include "common/dump.h"  // IWYU pragma: export
+
 #define LOG_IMPL_ABSL(macro, ...) \
   ABSL_##macro(__VA_ARGS__)       \
       .NoPrefix()                 \

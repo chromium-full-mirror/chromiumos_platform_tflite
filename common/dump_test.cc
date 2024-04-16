@@ -4,7 +4,7 @@
  * found in the LICENSE file.
  */
 
-#include "common/dbg.h"
+#include "common/dump.h"
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -44,14 +44,7 @@ class DbgTest : public testing::Test {
   std::stringstream stream_;
 };
 
-TEST_F(DbgTest, Location) {
-  DBG("here");
-  EXPECT_THAT(ConsumeOutput(), AllOf(HasSubstr(__FILE__),
-                                     HasSubstr(std::to_string(__LINE__ - 2)),
-                                     HasSubstr(__FUNCTION__)));
-}
-
-TEST_F(DbgTest, BasicTypes) {
+TEST(Dump, BasicTypes) {
   int num = 42;
   bool ok = true;
   char ch = 'A';
@@ -63,70 +56,43 @@ TEST_F(DbgTest, BasicTypes) {
   std::pair<int, int> pair = {5, 14};
   std::tuple<int, bool, char> tuple = {42, true, 'A'};
 
-  DBG(num);
-  EXPECT_THAT(ConsumeOutput(), HasSubstr("num = 42"));
-
-  DBG(ok);
-  EXPECT_THAT(ConsumeOutput(), HasSubstr("ok = true"));
-
-  DBG(ch);
-  EXPECT_THAT(ConsumeOutput(), HasSubstr("ch = 'A'"));
-
-  DBG(str);
-  EXPECT_THAT(ConsumeOutput(), HasSubstr("str = \"foo\""));
-
-  DBG(c_str);
-  EXPECT_THAT(ConsumeOutput(), HasSubstr(R"(c_str = "hey\napple")"));
-
-  DBG(sv);
-  EXPECT_THAT(ConsumeOutput(), HasSubstr("sv = \"string_view\""));
-
-  DBG(pair);
-  EXPECT_THAT(ConsumeOutput(), HasSubstr("pair = (5, 14)"));
-
-  DBG(tuple);
-  EXPECT_THAT(ConsumeOutput(), HasSubstr("tuple = (42, true, 'A')"));
+  EXPECT_EQ(DUMP(num), "num = 42");
+  EXPECT_EQ(DUMP(ok), "ok = true");
+  EXPECT_EQ(DUMP(ch), "ch = 'A'");
+  EXPECT_EQ(DUMP(str), "str = \"foo\"");
+  EXPECT_EQ(DUMP(c_str), R"(c_str = "hey\napple")");
+  EXPECT_EQ(DUMP(sv), "sv = \"string_view\"");
+  EXPECT_EQ(DUMP(pair), "pair = (5, 14)");
+  EXPECT_EQ(DUMP(tuple), "tuple = (42, true, 'A')");
 }
 
-TEST_F(DbgTest, MultipleArgs) {
+TEST(Dump, MultipleArgs) {
   int num = 42;
   std::string str = "foo";
 
-  DBG(num, str);
-  EXPECT_THAT(ConsumeOutput(),
-              AllOf(HasSubstr("num = 42"), HasSubstr("str = \"foo\"")));
+  EXPECT_EQ(DUMP(num, str), "num = 42, str = \"foo\"");
 
   // Should support at least 16 arguments.
-  DBG(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16);
-  EXPECT_THAT(ConsumeOutput(), AllOf(HasSubstr("1 = 1"), HasSubstr("16 = 16")));
+  EXPECT_THAT(DUMP(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16),
+              AllOf(HasSubstr("1 = 1"), HasSubstr("16 = 16")));
 }
 
-TEST_F(DbgTest, Expression) {
-  DBG(1 + 2);
-  EXPECT_THAT(ConsumeOutput(), HasSubstr("1 + 2 = 3"));
+TEST(Dump, Expression) {
+  EXPECT_EQ(DUMP(1 + 2), "1 + 2 = 3");
 }
 
-TEST_F(DbgTest, Containers) {
+TEST(Dump, Containers) {
   int c_arr[] = {1, 2, 3};
   std::array<int, 3> arr = {1, 2, 3};
   std::vector<int> vec = {1, 2, 3};
   std::set<std::string> set = {"a", "b", "c"};
   std::map<int, std::string> map = {{1, "a"}, {2, "b"}};
 
-  DBG(c_arr);
-  EXPECT_THAT(ConsumeOutput(), HasSubstr("c_arr = [1, 2, 3]"));
-
-  DBG(arr);
-  EXPECT_THAT(ConsumeOutput(), HasSubstr("arr = [1, 2, 3]"));
-
-  DBG(vec);
-  EXPECT_THAT(ConsumeOutput(), HasSubstr("vec = [1, 2, 3]"));
-
-  DBG(set);
-  EXPECT_THAT(ConsumeOutput(), HasSubstr(R"(set = ["a", "b", "c"])"));
-
-  DBG(map);
-  EXPECT_THAT(ConsumeOutput(), HasSubstr(R"(map = [(1, "a"), (2, "b")])"));
+  EXPECT_EQ(DUMP(c_arr), "c_arr = [1, 2, 3]");
+  EXPECT_EQ(DUMP(arr), "arr = [1, 2, 3]");
+  EXPECT_EQ(DUMP(vec), "vec = [1, 2, 3]");
+  EXPECT_EQ(DUMP(set), R"(set = ["a", "b", "c"])");
+  EXPECT_EQ(DUMP(map), R"(map = [(1, "a"), (2, "b")])");
 }
 
 struct Student {
@@ -163,7 +129,7 @@ class MoveOnly {
 
 struct Empty {};
 
-TEST_F(DbgTest, Struct) {
+TEST(Dump, Struct) {
   Student student;
   Course course;
   HasArr has_arr;
@@ -174,23 +140,19 @@ TEST_F(DbgTest, Struct) {
   MoveOnly move_only;
   Empty empty;
 
-  DBG(student);
-  EXPECT_THAT(ConsumeOutput(), HasSubstr(R"(student = {42, "shik"})"));
+  EXPECT_EQ(DUMP(student), R"(student = {42, "shik"})");
+  EXPECT_EQ(DUMP(course), R"(course = {514, [{42, "shik"}]})");
+  EXPECT_EQ(DUMP(has_arr), "has_arr = {[1, 2, 3]}");
+  EXPECT_EQ(DUMP(has_ref), "has_ref = {1, 2, 3, 4}");
+  EXPECT_EQ(DUMP(move_only), "move_only = {42}");
+  EXPECT_EQ(DUMP(empty), "empty = {}");
+}
 
-  DBG(course);
-  EXPECT_THAT(ConsumeOutput(), HasSubstr(R"(course = {514, [{42, "shik"}]})"));
-
-  DBG(has_arr);
-  EXPECT_THAT(ConsumeOutput(), HasSubstr("has_arr = {[1, 2, 3]}"));
-
-  DBG(has_ref);
-  EXPECT_THAT(ConsumeOutput(), HasSubstr("has_ref = {1, 2, 3, 4}"));
-
-  DBG(move_only);
-  EXPECT_THAT(ConsumeOutput(), HasSubstr("move_only = {42}"));
-
-  DBG(empty);
-  EXPECT_THAT(ConsumeOutput(), HasSubstr("empty = {}"));
+TEST_F(DbgTest, Location) {
+  DBG("here");
+  EXPECT_THAT(ConsumeOutput(), AllOf(HasSubstr(__FILE__),
+                                     HasSubstr(std::to_string(__LINE__ - 2)),
+                                     HasSubstr(__FUNCTION__)));
 }
 
 // The example used in the file comment of dbg.h.

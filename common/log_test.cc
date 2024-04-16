@@ -101,6 +101,12 @@ TEST_F(LogTest, FunctionName) {
   EXPECT_THAT(ConsumeOutput(), HasSubstr("TestBody: egg: Success [0]"));
 }
 
+TEST_F(LogTest, DUMP) {
+  std::string name = "fox";
+  LOG(INFO) << DUMP(1 + 2, name);
+  EXPECT_THAT(ConsumeOutput(), HasSubstr("1 + 2 = 3, name = \"fox\""));
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
