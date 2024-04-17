@@ -43,6 +43,9 @@
 // The DBG() macro MUST NOT be used in production. Uncomment the `defines` line
 // in BUILD.bazel to enable it for local debugging.
 
+#include <unistd.h>
+
+#include <cstdio>
 #include <iostream>
 #include <ranges>  // NOLINT(build/include_order) - C++20 header is not recognized yet
 #include <sstream>
@@ -233,10 +236,18 @@ inline void DebugPrint(std::string_view file,
                        int line,
                        std::string_view func,
                        std::string_view args) {
-  // TODO(shik): Use ANSI escape code to print colorized output, which will make
-  // DBG() easier to spot in the logs.
-  std::cerr << "[" << file << ":" << line << ":" << func << "] " << args
-            << std::endl;
+  // ANSI color escape codes are applied for highlighting when stderr is a tty.
+  constexpr char kBrightBlack[] = "\e[1;30m";
+  constexpr char kBrightWhite[] = "\e[1;37m";
+  constexpr char kReset[] = "\e[0m";
+  static bool use_color = [] { return isatty(fileno(stderr)); }();
+  auto may_colorize = [](const char* ansi) { return use_color ? ansi : ""; };
+
+  // Output in the following format:
+  // [file:line:func] k1 = v1, k2 = v2, ...
+  std::cerr << may_colorize(kBrightBlack) << "[" << file << ":" << line << ":"
+            << func << "] " << may_colorize(kBrightWhite) << args
+            << may_colorize(kReset) << std::endl;
 }
 
 template <typename... T>
