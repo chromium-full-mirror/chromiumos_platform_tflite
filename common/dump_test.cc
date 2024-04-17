@@ -11,6 +11,7 @@
 
 #include <array>
 #include <map>
+#include <memory>
 #include <set>
 #include <string>
 #include <string_view>
@@ -21,6 +22,7 @@ namespace {
 
 using ::testing::AllOf;
 using ::testing::HasSubstr;
+using ::testing::MatchesRegex;
 
 // A fixture to redirect std::cerr to a std::stringstream for testing.
 class DbgTest : public testing::Test {
@@ -51,6 +53,7 @@ TEST(Dump, BasicTypes) {
 
   std::string str = "foo";
   const char* c_str = "hey\napple";
+  const char* null_c_str = nullptr;
   std::string_view sv = "string_view";
 
   std::pair<int, int> pair = {5, 14};
@@ -61,6 +64,7 @@ TEST(Dump, BasicTypes) {
   EXPECT_EQ(DUMP(ch), "ch = 'A'");
   EXPECT_EQ(DUMP(str), "str = \"foo\"");
   EXPECT_EQ(DUMP(c_str), R"(c_str = "hey\napple")");
+  EXPECT_EQ(DUMP(null_c_str), "null_c_str = nullptr");
   EXPECT_EQ(DUMP(sv), "sv = \"string_view\"");
   EXPECT_EQ(DUMP(pair), "pair = (5, 14)");
   EXPECT_EQ(DUMP(tuple), "tuple = (42, true, 'A')");
@@ -146,6 +150,34 @@ TEST(Dump, Struct) {
   EXPECT_EQ(DUMP(has_ref), "has_ref = {1, 2, 3, 4}");
   EXPECT_EQ(DUMP(move_only), "move_only = {42}");
   EXPECT_EQ(DUMP(empty), "empty = {}");
+}
+
+TEST(Dump, Pointer) {
+  int num = 42;
+
+  void* vptr = &num;
+  int* iptr = &num;
+  int* null_iptr = nullptr;
+  EXPECT_THAT(DUMP(vptr), MatchesRegex("vptr = 0x[0-9a-f]+"));
+  EXPECT_THAT(DUMP(iptr), MatchesRegex("iptr = 0x[0-9a-f]+"));
+  EXPECT_THAT(DUMP(null_iptr), MatchesRegex("null_iptr = nullptr"));
+
+  auto iuptr = std::make_unique<int>(num);
+  std::unique_ptr<int> null_iuptr = nullptr;
+  EXPECT_THAT(DUMP(iuptr), MatchesRegex("iuptr = 0x[0-9a-f]+ \\(42\\)"));
+  EXPECT_THAT(DUMP(null_iuptr), MatchesRegex("null_iuptr = nullptr"));
+
+  auto isptr = std::make_shared<int>(num);
+  std::shared_ptr<int> null_isptr = nullptr;
+  EXPECT_THAT(DUMP(isptr), MatchesRegex("isptr = 0x[0-9a-f]+ \\(42\\)"));
+  EXPECT_THAT(DUMP(null_isptr), MatchesRegex("null_isptr = nullptr"));
+
+  Student students[3];
+  auto sptr = std::end(students);
+  auto suptr = std::make_unique<Student>();
+  EXPECT_THAT(DUMP(sptr), MatchesRegex("sptr = 0x[0-9a-f]+"));
+  EXPECT_THAT(DUMP(suptr),
+              MatchesRegex(R"(suptr = 0x[0-9a-f]+ \(\{42, "shik"\}\))"));
 }
 
 TEST_F(DbgTest, Location) {

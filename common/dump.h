@@ -140,25 +140,33 @@ class Printer {
 
   template <typename T>
   void Print(T&& value) {
-    Print(std::forward<T>(value), PriorityTag<6>());
+    Print(std::forward<T>(value), PriorityTag<9>());
   }
 
-  // TODO(shik): Support pointers.
   // TODO(shik): Support bytes with hex output.
   // TODO(shik): Be more careful with char*, which may not have null terminator
   // and we should limit the printing length.
+  // TODO(shik): Add a "unprintable" fallback.
+  // TODO(shik): Handle cycle in recursive type.
 
   // Boolean value is printed as "true" or "false".
   template <typename T>
     requires std::same_as<std::decay_t<T>, bool>
-  void Print(T&& value, PriorityTag<6>) {
+  void Print(T&& value, PriorityTag<9>) {
     stream_ << (value ? "true" : "false");
+  }
+
+  // nullptr_t is printed as "nullptr".
+  template <typename T>
+    requires std::same_as<std::decay_t<T>, std::nullptr_t>
+  void Print(T&& value, PriorityTag<8>) {
+    stream_ << "nullptr";
   }
 
   // Char-like value is quoted and escaped as 'x' and '\n'.
   template <typename T>
     requires std::same_as<std::decay_t<T>, char>
-  void Print(T&& value, PriorityTag<5>) {
+  void Print(T&& value, PriorityTag<7>) {
     std::decay_t<T> ch = value;
     std::string_view view(&ch, 1);
     stream_ << "'" << absl::Utf8SafeCEscape(view) << "'";
@@ -167,7 +175,16 @@ class Printer {
   // String-like value is quoted and escaped as "foo\nbar".
   template <typename T>
     requires std::convertible_to<T, std::string_view>
-  void Print(T&& str, PriorityTag<4>) {
+  void Print(T&& str, PriorityTag<6>) {
+    if constexpr (std::is_pointer_v<std::decay_t<T>>) {
+      // It's invalid to construct a std::string_view from nullptr until P0903
+      // "Define basic_string_view(nullptr)" is accepted. See
+      // https://open-std.org/JTC1/SC22/WG21/docs/papers/2018/p0903r2.pdf
+      if (str == nullptr) {
+        stream_ << "nullptr";
+        return;
+      }
+    }
     auto view = static_cast<std::string_view>(str);
     stream_ << '"' << absl::Utf8SafeCEscape(view) << '"';
   }
@@ -175,7 +192,7 @@ class Printer {
   // Container-like range value is printed as [v1, v2, ...].
   template <typename T>
     requires std::ranges::range<T>
-  void Print(T&& range, PriorityTag<3>) {
+  void Print(T&& range, PriorityTag<5>) {
     auto begin = std::ranges::begin(range);
     auto end = std::ranges::end(range);
     stream_ << "[";
@@ -192,7 +209,7 @@ class Printer {
   // This is put after container overload to match std::array as a container.
   template <typename T>
     requires requires { typename std::tuple_size<std::decay_t<T>>::type; }
-  void Print(T&& tuple, PriorityTag<2>) {
+  void Print(T&& tuple, PriorityTag<4>) {
     stream_ << "(";
     std::apply(
         [&](const auto&... element) {
@@ -207,7 +224,7 @@ class Printer {
   template <typename T>
     requires(std::is_class_v<std::decay_t<T>> &&
              !std::is_same_v<void, decltype(AsTuple(std::declval<T>()))>)
-  void Print(T&& value, PriorityTag<1>) {
+  void Print(T&& value, PriorityTag<3>) {
     stream_ << "{";
     std::apply(
         [&](const auto&... element) {
@@ -216,6 +233,39 @@ class Printer {
         },
         AsTuple(std::forward<T>(value)));
     stream_ << "}";
+  }
+
+  // Raw pointer value is printed as "nullptr" or a hexadecimal integer.
+  // Note that we cannot print the pointee, since it's valid to have a raw
+  // pointer that points to one past the last element of the array, which is
+  // invalid to dereference.
+  template <typename T>
+    requires(std::is_pointer_v<std::decay_t<T>>)
+  void Print(T&& ptr, PriorityTag<2>) {
+    if (ptr == nullptr) {
+      stream_ << "nullptr";
+    } else {
+      stream_ << "0x" << std::hex << reinterpret_cast<uintptr_t>(ptr)
+              << std::dec;
+    }
+  }
+
+  // Smart pointer such as std::unique_ptr or std::shared_ptr is printed as a
+  // raw pointer with its pointee.
+  template <typename T>
+    requires requires(T ptr) {
+      typename std::decay_t<T>::element_type;
+      { *ptr };  // NOLINT(readability/braces) - `;` is required here.
+      { ptr.get() } -> std::convertible_to<const void*>;
+    }
+  void Print(T&& ptr, PriorityTag<1>) {
+    const void* raw = ptr.get();
+    Print(raw);
+    if (raw != nullptr) {
+      stream_ << " (";
+      Print(*ptr);
+      stream_ << ")";
+    }
   }
 
   // Use operator<< if it's not specialized above. The requires statement is
