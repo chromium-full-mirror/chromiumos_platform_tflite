@@ -18,8 +18,6 @@
 #include <tuple>
 #include <vector>
 
-namespace {
-
 using ::testing::AllOf;
 using ::testing::HasSubstr;
 using ::testing::MatchesRegex;
@@ -133,6 +131,11 @@ class MoveOnly {
 
 struct Empty {};
 
+class HasPrivateMember {
+ private:
+  [[maybe_unused]] int i = 0;
+};
+
 TEST(Dump, Struct) {
   Student student;
   Course course;
@@ -144,12 +147,15 @@ TEST(Dump, Struct) {
   MoveOnly move_only;
   Empty empty;
 
+  HasPrivateMember has_private;
+
   EXPECT_EQ(DUMP(student), R"(student = {42, "shik"})");
   EXPECT_EQ(DUMP(course), R"(course = {514, [{42, "shik"}]})");
   EXPECT_EQ(DUMP(has_arr), "has_arr = {[1, 2, 3]}");
   EXPECT_EQ(DUMP(has_ref), "has_ref = {1, 2, 3, 4}");
   EXPECT_EQ(DUMP(move_only), "move_only = {42}");
   EXPECT_EQ(DUMP(empty), "empty = {}");
+  EXPECT_EQ(DUMP(has_private), "has_private = <unprintable HasPrivateMember>");
 }
 
 TEST(Dump, Pointer) {
@@ -199,8 +205,6 @@ TEST_F(DbgTest, Example) {
   EXPECT_THAT(ConsumeOutput(),
               AllOf(HasSubstr("id = 42"), HasSubstr("name = \"apple\"")));
 }
-
-}  // namespace
 
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);

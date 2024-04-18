@@ -59,6 +59,25 @@ namespace dbg {
 
 namespace impl {
 
+template <typename T>
+consteval std::string_view PrettyFunctionName() {
+  return __PRETTY_FUNCTION__;
+}
+
+// A helper function for retrieving type name from templated type argument.
+template <typename T>
+consteval auto TypeName() {
+  // Using compile-time constant evaluation instead of a hard-coded value here
+  // for robustness and portability. On clang, this looks like:
+  // std::string_view PrettyFunctionName() [T = void]
+  std::string_view kVoidName = PrettyFunctionName<void>();
+  size_t kPrefix = kVoidName.find("void");
+  size_t kSuffix = kVoidName.size() - kPrefix - 4;
+
+  std::string_view name = PrettyFunctionName<T>();
+  return name.substr(kPrefix, name.size() - kPrefix - kSuffix);
+}
+
 // A helper type to utilize overload resolution with lambdas.
 template <class... Ts>
 struct Overloads : Ts... {
@@ -140,33 +159,32 @@ class Printer {
 
   template <typename T>
   void Print(T&& value) {
-    Print(std::forward<T>(value), PriorityTag<9>());
+    Print(std::forward<T>(value), PriorityTag<10>());
   }
 
   // TODO(shik): Support bytes with hex output.
   // TODO(shik): Be more careful with char*, which may not have null terminator
   // and we should limit the printing length.
-  // TODO(shik): Add a "unprintable" fallback.
   // TODO(shik): Handle cycle in recursive type.
 
   // Boolean value is printed as "true" or "false".
   template <typename T>
     requires std::same_as<std::decay_t<T>, bool>
-  void Print(T&& value, PriorityTag<9>) {
+  void Print(T&& value, PriorityTag<10>) {
     stream_ << (value ? "true" : "false");
   }
 
   // nullptr_t is printed as "nullptr".
   template <typename T>
     requires std::same_as<std::decay_t<T>, std::nullptr_t>
-  void Print(T&& value, PriorityTag<8>) {
+  void Print(T&& value, PriorityTag<9>) {
     stream_ << "nullptr";
   }
 
   // Char-like value is quoted and escaped as 'x' and '\n'.
   template <typename T>
     requires std::same_as<std::decay_t<T>, char>
-  void Print(T&& value, PriorityTag<7>) {
+  void Print(T&& value, PriorityTag<8>) {
     std::decay_t<T> ch = value;
     std::string_view view(&ch, 1);
     stream_ << "'" << absl::Utf8SafeCEscape(view) << "'";
@@ -175,7 +193,7 @@ class Printer {
   // String-like value is quoted and escaped as "foo\nbar".
   template <typename T>
     requires std::convertible_to<T, std::string_view>
-  void Print(T&& str, PriorityTag<6>) {
+  void Print(T&& str, PriorityTag<7>) {
     if constexpr (std::is_pointer_v<std::decay_t<T>>) {
       // It's invalid to construct a std::string_view from nullptr until P0903
       // "Define basic_string_view(nullptr)" is accepted. See
@@ -192,7 +210,7 @@ class Printer {
   // Container-like range value is printed as [v1, v2, ...].
   template <typename T>
     requires std::ranges::range<T>
-  void Print(T&& range, PriorityTag<5>) {
+  void Print(T&& range, PriorityTag<6>) {
     auto begin = std::ranges::begin(range);
     auto end = std::ranges::end(range);
     stream_ << "[";
@@ -209,7 +227,7 @@ class Printer {
   // This is put after container overload to match std::array as a container.
   template <typename T>
     requires requires { typename std::tuple_size<std::decay_t<T>>::type; }
-  void Print(T&& tuple, PriorityTag<4>) {
+  void Print(T&& tuple, PriorityTag<5>) {
     stream_ << "(";
     std::apply(
         [&](const auto&... element) {
@@ -224,7 +242,7 @@ class Printer {
   template <typename T>
     requires(std::is_class_v<std::decay_t<T>> &&
              !std::is_same_v<void, decltype(AsTuple(std::declval<T>()))>)
-  void Print(T&& value, PriorityTag<3>) {
+  void Print(T&& value, PriorityTag<4>) {
     stream_ << "{";
     std::apply(
         [&](const auto&... element) {
@@ -241,7 +259,7 @@ class Printer {
   // invalid to dereference.
   template <typename T>
     requires(std::is_pointer_v<std::decay_t<T>>)
-  void Print(T&& ptr, PriorityTag<2>) {
+  void Print(T&& ptr, PriorityTag<3>) {
     if (ptr == nullptr) {
       stream_ << "nullptr";
     } else {
@@ -258,7 +276,7 @@ class Printer {
       { *ptr };  // NOLINT(readability/braces) - `;` is required here.
       { ptr.get() } -> std::convertible_to<const void*>;
     }
-  void Print(T&& ptr, PriorityTag<1>) {
+  void Print(T&& ptr, PriorityTag<2>) {
     const void* raw = ptr.get();
     Print(raw);
     if (raw != nullptr) {
@@ -275,8 +293,14 @@ class Printer {
     requires requires(std::ostream& os, T value) {
       { os << value } -> std::convertible_to<std::ostream&>;
     }
-  void Print(T&& value, PriorityTag<0>) {
+  void Print(T&& value, PriorityTag<1>) {
     stream_ << value;
+  }
+
+  // If the value is unprintable at all, simply shows "<unprintable TypeName>".
+  template <typename T>
+  void Print(T&& value, PriorityTag<0>) {
+    stream_ << "<unprintable " << TypeName<std::decay_t<T>>() << ">";
   }
 
   std::stringstream stream_;
