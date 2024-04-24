@@ -3,41 +3,46 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "tensorflow/lite/core/acceleration/configuration/c/delegate_plugin.h"
-#include "tensorflow/lite/core/acceleration/configuration/c/stable_delegate.h"
+#include <memory>
+#include <utility>
+
+#include "openvino_delegate.h"
+#include "tensorflow/lite/acceleration/configuration/c/delegate_plugin.h"
+#include "tensorflow/lite/acceleration/configuration/c/stable_delegate.h"
+#include "tensorflow/lite/c/c_api_types.h"
 #include "tensorflow/lite/delegates/utils/experimental/stable_delegate/stable_delegate_interface.h"
+#include "tensorflow/lite/delegates/utils/simple_opaque_delegate.h"
 
 namespace {
 
-// TODO(b/336951015): Replace with real implementation.
-
-TfLiteOpaqueDelegate* OpenVINOStableDelegateCreateFunc(
-    const void* tflite_settings) {
-  return nullptr;
+TfLiteOpaqueDelegate *OpenVINOStableDelegateCreateFunc(
+    const void *tflite_settings) {
+  TfLiteOpenVINODelegateOptions options;
+  auto delegate =
+      std::make_unique<tflite::openvinodelegate::OpenVINODelegate>(&options);
+  return tflite::TfLiteOpaqueDelegateFactory::CreateSimpleDelegate(
+      std::move(delegate));
 }
 
 void OpenVINOStableDelegateDestroyFunc(
-    TfLiteOpaqueDelegate* openvino_stable_delegate) {
-  return;
+    TfLiteOpaqueDelegate *openvino_stable_delegate) {
+  tflite::TfLiteOpaqueDelegateFactory::DeleteSimpleDelegate(
+      openvino_stable_delegate);
 }
 
 int OpenVINOStableDelegateErrnoFunc(
-    TfLiteOpaqueDelegate* openvino_stable_delegate) {
+    TfLiteOpaqueDelegate *openvino_stable_delegate) {
+  // no-op
   return 0;
 }
 
-constexpr TfLiteOpaqueDelegatePlugin openvino_stable_delegate_plugin = {
-    .create = OpenVINOStableDelegateCreateFunc,
-    .destroy = OpenVINOStableDelegateDestroyFunc,
-    .get_delegate_errno = OpenVINOStableDelegateErrnoFunc,
-};
+const TfLiteOpaqueDelegatePlugin openvino_stable_delegate_plugin = {
+    OpenVINOStableDelegateCreateFunc, OpenVINOStableDelegateDestroyFunc,
+    OpenVINOStableDelegateErrnoFunc};
 
-constexpr TfLiteStableDelegate openvino_stable_delegate = {
-    .delegate_abi_version = TFL_STABLE_DELEGATE_ABI_VERSION,
-    .delegate_name = "Stub OpenVINO Delegate",
-    .delegate_version = "0.0.0",
-    .delegate_plugin = &openvino_stable_delegate_plugin,
-};
+const TfLiteStableDelegate openvino_stable_delegate = {
+    TFL_STABLE_DELEGATE_ABI_VERSION, kOpenVINOStableDelegateName,
+    kOpenVINOStableDelegateVersion, &openvino_stable_delegate_plugin};
 
 }  // namespace
 

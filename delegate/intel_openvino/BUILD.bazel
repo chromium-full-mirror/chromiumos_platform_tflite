@@ -1,19 +1,89 @@
-# Copyright 2024 The ChromiumOS Authors
-# Use of this source code is governed by a BSD-style license that can be
-# found in the LICENSE file.
-
+load("@org_tensorflow//tensorflow:tensorflow.bzl", "get_compatible_with_portable")
 load("@org_tensorflow//tensorflow/lite:build_def.bzl", "tflite_cc_shared_object", "tflite_copts")
+load("@org_tensorflow//tensorflow/lite:special_rules.bzl", "internal_visibility_allowlist")
 load("@org_tensorflow//tensorflow/lite/core/shims:cc_library_with_tflite.bzl", "cc_library_with_tflite")
 load("@rules_cc//cc:defs.bzl", "cc_binary")
 
-cc_binary(
-    name = "openvino_smoke_test",
-    testonly = True,
-    srcs = ["openvino_smoke_test.cc"],
+package(
+    default_visibility = ["//visibility:public"],
+    licenses = ["notice"],
+)
+
+cc_library_with_tflite(
+    name = "openvino_graph_builder",
+    srcs = ["openvino_graph_builder.cc"],
+    hdrs = ["openvino_graph_builder.h"],
     copts = tflite_copts(),
     deps = [
-        "@com_google_googletest//:gtest",
+        "@cros_tflite//delegate/intel_openvino/operations:operations_base",
         "@intel_openvino//:openvino",
+        "@org_tensorflow//tensorflow/lite:kernel_api",
+        "@org_tensorflow//tensorflow/lite/c:c_api",
+        "@org_tensorflow//tensorflow/lite/c:c_api_experimental",
+        "@org_tensorflow//tensorflow/lite/c:c_api_types",
+        "@org_tensorflow//tensorflow/lite/c:common",
+        "@org_tensorflow//tensorflow/lite/kernels:builtin_ops",
+        "@org_tensorflow//tensorflow/lite/kernels:kernel_util",
+        "@org_tensorflow//tensorflow/lite/tools:logging",
+    ],
+)
+
+cc_library_with_tflite(
+    name = "openvino_delegate_core",
+    srcs = ["openvino_delegate_core.cc"],
+    hdrs = ["openvino_delegate_core.h"],
+    copts = tflite_copts(),
+    deps = [
+        ":openvino_graph_builder",
+        "@intel_openvino//:openvino",
+        "@org_tensorflow//tensorflow/lite:kernel_api",
+        "@org_tensorflow//tensorflow/lite/c:c_api",
+        "@org_tensorflow//tensorflow/lite/c:c_api_experimental",
+        "@org_tensorflow//tensorflow/lite/c:c_api_types",
+        "@org_tensorflow//tensorflow/lite/c:common",
+        "@org_tensorflow//tensorflow/lite/kernels:kernel_util",
+        "@org_tensorflow//tensorflow/lite/tools:logging",
+    ],
+)
+
+cc_library_with_tflite(
+    name = "openvino_delegate_kernel",
+    srcs = ["openvino_delegate_kernel.cc"],
+    hdrs = ["openvino_delegate_kernel.h"],
+    copts = tflite_copts(),
+    deps = [
+        ":openvino_delegate_core",
+        "@intel_openvino//:openvino",
+        "@org_tensorflow//tensorflow/lite:kernel_api",
+        "@org_tensorflow//tensorflow/lite/c:c_api",
+        "@org_tensorflow//tensorflow/lite/c:c_api_experimental",
+        "@org_tensorflow//tensorflow/lite/c:c_api_types",
+        "@org_tensorflow//tensorflow/lite/c:common",
+        "@org_tensorflow//tensorflow/lite/delegates/utils:simple_delegate",
+        "@org_tensorflow//tensorflow/lite/delegates/utils:simple_opaque_delegate",
+        "@org_tensorflow//tensorflow/lite/kernels:kernel_util",
+        "@org_tensorflow//tensorflow/lite/tools:logging",
+    ],
+)
+
+cc_library_with_tflite(
+    name = "openvino_delegate",
+    srcs = ["openvino_delegate.cc"],
+    hdrs = ["openvino_delegate.h"],
+    copts = tflite_copts(),
+    deps = [
+        ":openvino_delegate_kernel",
+        "@intel_openvino//:openvino",
+        "@org_tensorflow//tensorflow/lite:kernel_api",
+        "@org_tensorflow//tensorflow/lite/c:c_api",
+        "@org_tensorflow//tensorflow/lite/c:c_api_experimental",
+        "@org_tensorflow//tensorflow/lite/c:c_api_types",
+        "@org_tensorflow//tensorflow/lite/c:common",
+        "@org_tensorflow//tensorflow/lite/delegates/utils:simple_opaque_delegate",
+        "@org_tensorflow//tensorflow/lite/kernels:builtin_ops",
+        "@org_tensorflow//tensorflow/lite/kernels:padding",
+        "@org_tensorflow//tensorflow/lite/kernels/internal:compatibility",
+        "@org_tensorflow//tensorflow/lite/kernels/internal:tensor",
     ],
 )
 
@@ -22,11 +92,20 @@ cc_library_with_tflite(
     srcs = [
         "openvino_delegate_external.cc",
     ],
-    copts = tflite_copts(),
+    copts = tflite_copts() + ["-fexceptions"],
     deps = [
+        ":openvino_delegate",
         "@org_tensorflow//tensorflow/lite/acceleration/configuration/c:delegate_plugin",
         "@org_tensorflow//tensorflow/lite/acceleration/configuration/c:stable_delegate",
+        "@org_tensorflow//tensorflow/lite/c:c_api",
+        "@org_tensorflow//tensorflow/lite/c:c_api_experimental",
+        "@org_tensorflow//tensorflow/lite/c:c_api_types",
+        "@org_tensorflow//tensorflow/lite/c:common",
+        "@org_tensorflow//tensorflow/lite/delegates/external:external_delegate_interface",
+        "@org_tensorflow//tensorflow/lite/delegates/utils:simple_opaque_delegate",
+        "@org_tensorflow//tensorflow/lite/delegates/utils/experimental/stable_delegate:delegate_loader",
         "@org_tensorflow//tensorflow/lite/delegates/utils/experimental/stable_delegate:stable_delegate_interface",
+        "@org_tensorflow//tensorflow/lite/tools:logging",
     ],
 )
 
@@ -34,12 +113,85 @@ tflite_cc_shared_object(
     name = "tensorflowlite_intel_openvino_delegate",
     linkopts = [
         "-Wl,--no-undefined",
-        # Expose necessary symbols only.
         "-Wl,--version-script,$(location @org_tensorflow//tensorflow/lite/delegates/utils/experimental/stable_delegate:version_script.lds)",
     ],
     visibility = ["//:__pkg__"],
     deps = [
         ":openvino_external_delegate",
         "@org_tensorflow//tensorflow/lite/delegates/utils/experimental/stable_delegate:version_script.lds",
+    ],
+)
+
+cc_binary(
+    name = "openvino_delegate_core_test",
+    testonly = True,
+    srcs = ["openvino_delegate_core_test.cc"],
+    copts = tflite_copts(),
+    data = [
+        ":intel_openvino_stable_settings.json",
+        ":tensorflowlite_intel_openvino_delegate",
+        "@org_tensorflow//tensorflow/lite:testdata/add.bin",
+    ],
+    deps = [
+        ":openvino_delegate_core",
+        "@com_google_googletest//:gtest_main",
+        "@org_tensorflow//tensorflow/lite/delegates/utils/experimental/stable_delegate:tflite_settings_json_parser",
+    ],
+)
+
+cc_library_with_tflite(
+    name = "openvino_delegate_hdrs_only",
+    hdrs = ["openvino_delegate.h"],
+    compatible_with = get_compatible_with_portable(),
+    visibility = internal_visibility_allowlist(),
+    deps = [
+        "@org_tensorflow//tensorflow/lite/c:common",
+    ],
+)
+
+cc_binary(
+    name = "openvino_graph_builder_test",
+    testonly = True,
+    srcs = ["openvino_graph_builder_test.cc"],
+    copts = tflite_copts(),
+    data = [
+        ":intel_openvino_stable_settings.json",
+        ":tensorflowlite_intel_openvino_delegate",
+        "@org_tensorflow//tensorflow/lite:testdata/add.bin",
+    ],
+    deps = [
+        ":openvino_graph_builder",
+        "@com_google_googletest//:gtest_main",
+        "@org_tensorflow//tensorflow/lite/delegates/utils/experimental/stable_delegate:tflite_settings_json_parser",
+    ],
+)
+
+cc_binary(
+    name = "openvino_delegate_test",
+    testonly = True,
+    srcs = ["openvino_delegate_test.cc"],
+    copts = tflite_copts(),
+    data = [
+        ":intel_openvino_stable_settings.json",
+        ":tensorflowlite_intel_openvino_delegate",
+        "@org_tensorflow//tensorflow/lite:testdata/add.bin",
+    ],
+    deps = [
+        ":openvino_delegate",
+        "@com_google_googletest//:gtest_main",
+        "@org_tensorflow//tensorflow/lite/c:c_api",
+        "@org_tensorflow//tensorflow/lite/delegates/utils/experimental/stable_delegate:delegate_loader",
+        "@org_tensorflow//tensorflow/lite/delegates/utils/experimental/stable_delegate:tflite_settings_json_parser",
+    ],
+)
+
+filegroup(
+    name = "openvino_delegate_tests",
+    testonly = True,
+    srcs = [
+        "openvino_delegate_core_test",
+        "openvino_delegate_external_test",
+        "openvino_delegate_test",
+        "openvino_graph_builder_test",
     ],
 )
