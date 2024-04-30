@@ -41,6 +41,7 @@ cc_library_with_tflite(
     deps = [
         "//android:hardware_buffer",
         "@com_google_absl//absl/cleanup",
+        "@com_google_absl//absl/synchronization",
         "@org_tensorflow//tensorflow/lite/async:backend_async_kernel_interface",
         "@org_tensorflow//tensorflow/lite/async/interop/c:constants",
         "@org_tensorflow//tensorflow/lite/core/async/c:task",
