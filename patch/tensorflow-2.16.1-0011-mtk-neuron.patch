@@ -1,5 +1,5 @@
 diff --git a/tensorflow/lite/acceleration/configuration/configuration.proto b/tensorflow/lite/acceleration/configuration/configuration.proto
-index 6a053fb9c37..469b5a90f7d 100644
+index 4456d031970..a2bbd88004f 100644
 --- a/tensorflow/lite/acceleration/configuration/configuration.proto
 +++ b/tensorflow/lite/acceleration/configuration/configuration.proto
 @@ -99,6 +99,8 @@ enum Delegate {
@@ -11,7 +11,7 @@ index 6a053fb9c37..469b5a90f7d 100644
  }
  
  enum NNAPIExecutionPreference {
-@@ -648,6 +650,111 @@ message ArmNNSettings {
+@@ -664,6 +666,111 @@ message ArmNNSettings {
    optional string additional_parameters = 3;
  }
  
@@ -123,7 +123,7 @@ index 6a053fb9c37..469b5a90f7d 100644
  // How to configure TFLite.
  message TFLiteSettings {
    // Which delegate to use.
-@@ -705,6 +812,9 @@ message TFLiteSettings {
+@@ -721,6 +828,9 @@ message TFLiteSettings {
  
    // For configuring the Arm NN delegate.
    optional ArmNNSettings armnn_settings = 16;
@@ -134,7 +134,7 @@ index 6a053fb9c37..469b5a90f7d 100644
  
  // Whether to automatically fallback to TFLite CPU path on delegation errors.
 diff --git a/tensorflow/lite/acceleration/configuration/configuration_generated.h b/tensorflow/lite/acceleration/configuration/configuration_generated.h
-index 3547e8ca0d1..fb6401a262b 100644
+index 675dfc9d8c9..aa6d94af9e3 100644
 --- a/tensorflow/lite/acceleration/configuration/configuration_generated.h
 +++ b/tensorflow/lite/acceleration/configuration/configuration_generated.h
 @@ -89,6 +89,10 @@ struct ArmNNSettings;
@@ -205,7 +205,7 @@ index 3547e8ca0d1..fb6401a262b 100644
    const size_t index = static_cast<size_t>(e);
    return EnumNamesDelegate()[index];
  }
-@@ -838,6 +847,147 @@ inline const char *EnumNamePerformance(Performance e) {
+@@ -874,6 +883,147 @@ inline const char *EnumNamePerformance(Performance e) {
  
  }  // namespace CoralSettings_
  
@@ -353,7 +353,7 @@ index 3547e8ca0d1..fb6401a262b 100644
  enum BenchmarkEventType : int32_t {
    BenchmarkEventType_UNDEFINED_BENCHMARK_EVENT_TYPE = 0,
    BenchmarkEventType_START = 1,
-@@ -2584,6 +2734,193 @@ inline ::flatbuffers::Offset<ArmNNSettings> CreateArmNNSettingsDirect(
+@@ -2633,6 +2783,193 @@ inline ::flatbuffers::Offset<ArmNNSettings> CreateArmNNSettingsDirect(
  
  ::flatbuffers::Offset<ArmNNSettings> CreateArmNNSettings(::flatbuffers::FlatBufferBuilder &_fbb, const ArmNNSettingsT *_o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
  
@@ -547,7 +547,7 @@ index 3547e8ca0d1..fb6401a262b 100644
  struct TFLiteSettingsT : public ::flatbuffers::NativeTable {
    typedef TFLiteSettings TableType;
    tflite::Delegate delegate = tflite::Delegate_NONE;
-@@ -2602,6 +2939,7 @@ struct TFLiteSettingsT : public ::flatbuffers::NativeTable {
+@@ -2651,6 +2988,7 @@ struct TFLiteSettingsT : public ::flatbuffers::NativeTable {
    std::unique_ptr<tflite::GoogleEdgeTpuSettingsT> google_edgetpu_settings{};
    std::unique_ptr<tflite::CompilationCachingSettingsT> compilation_caching_settings{};
    std::unique_ptr<tflite::ArmNNSettingsT> armnn_settings{};
@@ -555,7 +555,7 @@ index 3547e8ca0d1..fb6401a262b 100644
    TFLiteSettingsT() = default;
    TFLiteSettingsT(const TFLiteSettingsT &o);
    TFLiteSettingsT(TFLiteSettingsT&&) FLATBUFFERS_NOEXCEPT = default;
-@@ -2627,7 +2965,8 @@ struct TFLiteSettings FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+@@ -2676,7 +3014,8 @@ struct TFLiteSettings FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
      VT_STABLE_DELEGATE_LOADER_SETTINGS = 28,
      VT_GOOGLE_EDGETPU_SETTINGS = 30,
      VT_COMPILATION_CACHING_SETTINGS = 32,
@@ -565,7 +565,7 @@ index 3547e8ca0d1..fb6401a262b 100644
    };
    tflite::Delegate delegate() const {
      return static_cast<tflite::Delegate>(GetField<int32_t>(VT_DELEGATE, 0));
-@@ -2677,6 +3016,9 @@ struct TFLiteSettings FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+@@ -2726,6 +3065,9 @@ struct TFLiteSettings FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
    const tflite::ArmNNSettings *armnn_settings() const {
      return GetPointer<const tflite::ArmNNSettings *>(VT_ARMNN_SETTINGS);
    }
@@ -575,7 +575,7 @@ index 3547e8ca0d1..fb6401a262b 100644
    bool Verify(::flatbuffers::Verifier &verifier) const {
      return VerifyTableStart(verifier) &&
             VerifyField<int32_t>(verifier, VT_DELEGATE, 4) &&
-@@ -2708,6 +3050,8 @@ struct TFLiteSettings FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
+@@ -2757,6 +3099,8 @@ struct TFLiteSettings FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
             verifier.VerifyTable(compilation_caching_settings()) &&
             VerifyOffset(verifier, VT_ARMNN_SETTINGS) &&
             verifier.VerifyTable(armnn_settings()) &&
@@ -584,7 +584,7 @@ index 3547e8ca0d1..fb6401a262b 100644
             verifier.EndTable();
    }
    TFLiteSettingsT *UnPack(const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
-@@ -2767,6 +3111,9 @@ struct TFLiteSettingsBuilder {
+@@ -2816,6 +3160,9 @@ struct TFLiteSettingsBuilder {
    void add_armnn_settings(::flatbuffers::Offset<tflite::ArmNNSettings> armnn_settings) {
      fbb_.AddOffset(TFLiteSettings::VT_ARMNN_SETTINGS, armnn_settings);
    }
@@ -594,7 +594,7 @@ index 3547e8ca0d1..fb6401a262b 100644
    explicit TFLiteSettingsBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
          : fbb_(_fbb) {
      start_ = fbb_.StartTable();
-@@ -2795,8 +3142,10 @@ inline ::flatbuffers::Offset<TFLiteSettings> CreateTFLiteSettings(
+@@ -2844,8 +3191,10 @@ inline ::flatbuffers::Offset<TFLiteSettings> CreateTFLiteSettings(
      ::flatbuffers::Offset<tflite::StableDelegateLoaderSettings> stable_delegate_loader_settings = 0,
      ::flatbuffers::Offset<tflite::GoogleEdgeTpuSettings> google_edgetpu_settings = 0,
      ::flatbuffers::Offset<tflite::CompilationCachingSettings> compilation_caching_settings = 0,
@@ -606,7 +606,7 @@ index 3547e8ca0d1..fb6401a262b 100644
    builder_.add_armnn_settings(armnn_settings);
    builder_.add_compilation_caching_settings(compilation_caching_settings);
    builder_.add_google_edgetpu_settings(google_edgetpu_settings);
-@@ -5075,6 +5424,79 @@ inline ::flatbuffers::Offset<ArmNNSettings> CreateArmNNSettings(::flatbuffers::F
+@@ -5130,6 +5479,79 @@ inline ::flatbuffers::Offset<ArmNNSettings> CreateArmNNSettings(::flatbuffers::F
  }
  
  
@@ -686,7 +686,7 @@ index 3547e8ca0d1..fb6401a262b 100644
  inline bool operator==(const TFLiteSettingsT &lhs, const TFLiteSettingsT &rhs) {
    return
        (lhs.delegate == rhs.delegate) &&
-@@ -5092,7 +5514,8 @@ inline bool operator==(const TFLiteSettingsT &lhs, const TFLiteSettingsT &rhs) {
+@@ -5147,7 +5569,8 @@ inline bool operator==(const TFLiteSettingsT &lhs, const TFLiteSettingsT &rhs) {
        ((lhs.stable_delegate_loader_settings == rhs.stable_delegate_loader_settings) || (lhs.stable_delegate_loader_settings && rhs.stable_delegate_loader_settings && *lhs.stable_delegate_loader_settings == *rhs.stable_delegate_loader_settings)) &&
        ((lhs.google_edgetpu_settings == rhs.google_edgetpu_settings) || (lhs.google_edgetpu_settings && rhs.google_edgetpu_settings && *lhs.google_edgetpu_settings == *rhs.google_edgetpu_settings)) &&
        ((lhs.compilation_caching_settings == rhs.compilation_caching_settings) || (lhs.compilation_caching_settings && rhs.compilation_caching_settings && *lhs.compilation_caching_settings == *rhs.compilation_caching_settings)) &&
@@ -696,7 +696,7 @@ index 3547e8ca0d1..fb6401a262b 100644
  }
  
  inline bool operator!=(const TFLiteSettingsT &lhs, const TFLiteSettingsT &rhs) {
-@@ -5116,7 +5539,8 @@ inline TFLiteSettingsT::TFLiteSettingsT(const TFLiteSettingsT &o)
+@@ -5171,7 +5594,8 @@ inline TFLiteSettingsT::TFLiteSettingsT(const TFLiteSettingsT &o)
          stable_delegate_loader_settings((o.stable_delegate_loader_settings) ? new tflite::StableDelegateLoaderSettingsT(*o.stable_delegate_loader_settings) : nullptr),
          google_edgetpu_settings((o.google_edgetpu_settings) ? new tflite::GoogleEdgeTpuSettingsT(*o.google_edgetpu_settings) : nullptr),
          compilation_caching_settings((o.compilation_caching_settings) ? new tflite::CompilationCachingSettingsT(*o.compilation_caching_settings) : nullptr),
@@ -706,7 +706,7 @@ index 3547e8ca0d1..fb6401a262b 100644
  }
  
  inline TFLiteSettingsT &TFLiteSettingsT::operator=(TFLiteSettingsT o) FLATBUFFERS_NOEXCEPT {
-@@ -5136,6 +5560,7 @@ inline TFLiteSettingsT &TFLiteSettingsT::operator=(TFLiteSettingsT o) FLATBUFFER
+@@ -5191,6 +5615,7 @@ inline TFLiteSettingsT &TFLiteSettingsT::operator=(TFLiteSettingsT o) FLATBUFFER
    std::swap(google_edgetpu_settings, o.google_edgetpu_settings);
    std::swap(compilation_caching_settings, o.compilation_caching_settings);
    std::swap(armnn_settings, o.armnn_settings);
@@ -714,7 +714,7 @@ index 3547e8ca0d1..fb6401a262b 100644
    return *this;
  }
  
-@@ -5164,6 +5589,7 @@ inline void TFLiteSettings::UnPackTo(TFLiteSettingsT *_o, const ::flatbuffers::r
+@@ -5219,6 +5644,7 @@ inline void TFLiteSettings::UnPackTo(TFLiteSettingsT *_o, const ::flatbuffers::r
    { auto _e = google_edgetpu_settings(); if (_e) { if(_o->google_edgetpu_settings) { _e->UnPackTo(_o->google_edgetpu_settings.get(), _resolver); } else { _o->google_edgetpu_settings = std::unique_ptr<tflite::GoogleEdgeTpuSettingsT>(_e->UnPack(_resolver)); } } else if (_o->google_edgetpu_settings) { _o->google_edgetpu_settings.reset(); } }
    { auto _e = compilation_caching_settings(); if (_e) { if(_o->compilation_caching_settings) { _e->UnPackTo(_o->compilation_caching_settings.get(), _resolver); } else { _o->compilation_caching_settings = std::unique_ptr<tflite::CompilationCachingSettingsT>(_e->UnPack(_resolver)); } } else if (_o->compilation_caching_settings) { _o->compilation_caching_settings.reset(); } }
    { auto _e = armnn_settings(); if (_e) { if(_o->armnn_settings) { _e->UnPackTo(_o->armnn_settings.get(), _resolver); } else { _o->armnn_settings = std::unique_ptr<tflite::ArmNNSettingsT>(_e->UnPack(_resolver)); } } else if (_o->armnn_settings) { _o->armnn_settings.reset(); } }
@@ -722,7 +722,7 @@ index 3547e8ca0d1..fb6401a262b 100644
  }
  
  inline ::flatbuffers::Offset<TFLiteSettings> TFLiteSettings::Pack(::flatbuffers::FlatBufferBuilder &_fbb, const TFLiteSettingsT* _o, const ::flatbuffers::rehasher_function_t *_rehasher) {
-@@ -5190,6 +5616,7 @@ inline ::flatbuffers::Offset<TFLiteSettings> CreateTFLiteSettings(::flatbuffers:
+@@ -5245,6 +5671,7 @@ inline ::flatbuffers::Offset<TFLiteSettings> CreateTFLiteSettings(::flatbuffers:
    auto _google_edgetpu_settings = _o->google_edgetpu_settings ? CreateGoogleEdgeTpuSettings(_fbb, _o->google_edgetpu_settings.get(), _rehasher) : 0;
    auto _compilation_caching_settings = _o->compilation_caching_settings ? CreateCompilationCachingSettings(_fbb, _o->compilation_caching_settings.get(), _rehasher) : 0;
    auto _armnn_settings = _o->armnn_settings ? CreateArmNNSettings(_fbb, _o->armnn_settings.get(), _rehasher) : 0;
@@ -730,7 +730,7 @@ index 3547e8ca0d1..fb6401a262b 100644
    return tflite::CreateTFLiteSettings(
        _fbb,
        _delegate,
-@@ -5207,7 +5634,8 @@ inline ::flatbuffers::Offset<TFLiteSettings> CreateTFLiteSettings(::flatbuffers:
+@@ -5262,7 +5689,8 @@ inline ::flatbuffers::Offset<TFLiteSettings> CreateTFLiteSettings(::flatbuffers:
        _stable_delegate_loader_settings,
        _google_edgetpu_settings,
        _compilation_caching_settings,
@@ -879,7 +879,7 @@ index d194826d97b..bd5ef446b08 100644
    settings_.tflite_settings = std::make_unique<TFLiteSettingsT>();
    settings_.tflite_settings->cpu_settings = std::make_unique<CPUSettingsT>();
 diff --git a/tensorflow/lite/acceleration/configuration/proto_to_flatbuffer.cc b/tensorflow/lite/acceleration/configuration/proto_to_flatbuffer.cc
-index 44dbd807f8f..9b9be29a7d1 100644
+index 95109fcf1e5..0e9e4e4d6bf 100644
 --- a/tensorflow/lite/acceleration/configuration/proto_to_flatbuffer.cc
 +++ b/tensorflow/lite/acceleration/configuration/proto_to_flatbuffer.cc
 @@ -66,6 +66,8 @@ Delegate ConvertDelegate(proto::Delegate delegate) {
@@ -891,8 +891,8 @@ index 44dbd807f8f..9b9be29a7d1 100644
    }
    TFLITE_LOG_PROD(TFLITE_LOG_ERROR, "Unexpected value for Delegate: %d",
                    delegate);
-@@ -391,6 +393,42 @@ Offset<EdgeTpuSettings> ConvertEdgeTpuSettings(
-       hardware_cluster_ids_fb, public_model_id);
+@@ -393,6 +395,42 @@ Offset<EdgeTpuSettings> ConvertEdgeTpuSettings(
+           settings.use_layer_ir_tgc_backend()));
  }
  
 +Offset<CompilationCachingSettings> ConvertCompilationCachingSettings(
@@ -934,7 +934,7 @@ index 44dbd807f8f..9b9be29a7d1 100644
  Offset<CoralSettings> ConvertCoralSettings(const proto::CoralSettings& settings,
                                             FlatBufferBuilder& builder) {
    return CreateCoralSettings(
-@@ -416,8 +454,11 @@ Offset<TFLiteSettings> ConvertTfliteSettings(
+@@ -418,8 +456,11 @@ Offset<TFLiteSettings> ConvertTfliteSettings(
        settings.disable_default_delegates(),
        ConvertStableDelegateLoaderSettings(
            settings.stable_delegate_loader_settings(), builder),
@@ -948,23 +948,21 @@ index 44dbd807f8f..9b9be29a7d1 100644
  }
  
  Offset<ModelFile> ConvertModelFile(const proto::ModelFile& model_file,
-@@ -457,7 +498,8 @@ const TFLiteSettings* ConvertFromProto(
+@@ -459,7 +500,7 @@ const TFLiteSettings* ConvertFromProto(
      const proto::TFLiteSettings& proto_settings, FlatBufferBuilder* builder) {
    Offset<TFLiteSettings> settings =
        ConvertTfliteSettings(proto_settings, *builder);
 -  return flatbuffers::GetTemporaryPointer(*builder, settings);
-+  return reinterpret_cast<const TFLiteSettings*>(
-+      flatbuffers::GetMutableTemporaryPointer(*builder, settings));
++  return flatbuffers::GetMutableTemporaryPointer(*builder, settings);
  }
  
  const ComputeSettings* ConvertFromProto(
-@@ -469,14 +511,16 @@ const ComputeSettings* ConvertFromProto(
+@@ -471,14 +512,14 @@ const ComputeSettings* ConvertFromProto(
        builder->CreateString(proto_settings.model_identifier_for_statistics()),
        ConvertMinibenchmarkSettings(proto_settings.settings_to_test_locally(),
                                     *builder));
 -  return flatbuffers::GetTemporaryPointer(*builder, settings);
-+  return reinterpret_cast<const ComputeSettings*>(
-+      flatbuffers::GetMutableTemporaryPointer(*builder, settings));
++  return flatbuffers::GetMutableTemporaryPointer(*builder, settings);
  }
  
  const MinibenchmarkSettings* ConvertFromProto(
@@ -972,13 +970,12 @@ index 44dbd807f8f..9b9be29a7d1 100644
      flatbuffers::FlatBufferBuilder* builder) {
    auto settings = ConvertMinibenchmarkSettings(proto_settings, *builder);
 -  return flatbuffers::GetTemporaryPointer(*builder, settings);
-+  return reinterpret_cast<const MinibenchmarkSettings*>(
-+      flatbuffers::GetMutableTemporaryPointer(*builder, settings));
++  return flatbuffers::GetMutableTemporaryPointer(*builder, settings);
  }
  
  }  // namespace tflite
 diff --git a/tensorflow/lite/acceleration/configuration/proto_to_flatbuffer_test.cc b/tensorflow/lite/acceleration/configuration/proto_to_flatbuffer_test.cc
-index 26ddb05dc25..4f109ed1b9b 100644
+index c59ec771cab..e504f09c682 100644
 --- a/tensorflow/lite/acceleration/configuration/proto_to_flatbuffer_test.cc
 +++ b/tensorflow/lite/acceleration/configuration/proto_to_flatbuffer_test.cc
 @@ -14,6 +14,7 @@ limitations under the License.
@@ -989,7 +986,7 @@ index 26ddb05dc25..4f109ed1b9b 100644
  #include <string>
  #include <vector>
  
-@@ -102,5 +103,121 @@ TEST(ConversionTest, StableDelegateLoaderSettings) {
+@@ -116,5 +117,121 @@ TEST(ConversionTest, StableDelegateLoaderSettings) {
              kDelegateName);
  }
  
@@ -1112,28 +1109,29 @@ index 26ddb05dc25..4f109ed1b9b 100644
  }  // namespace
  }  // namespace tflite
 diff --git a/tensorflow/lite/acceleration/configuration/testdata/configuration.proto_prev b/tensorflow/lite/acceleration/configuration/testdata/configuration.proto_prev
-index 77988a9c6e2..9d930646ebf 100644
+index 9d930646ebf..655d95f5990 100644
 --- a/tensorflow/lite/acceleration/configuration/testdata/configuration.proto_prev
 +++ b/tensorflow/lite/acceleration/configuration/testdata/configuration.proto_prev
-@@ -588,6 +588,11 @@ message GoogleEdgeTpuSettings {
-   // TFLite Async API.
-   optional TriState prefer_cache_coherency_for_inputs = 9;
-   optional TriState prefer_cache_coherency_for_outputs = 10;
+@@ -510,6 +510,22 @@ message EdgeTpuSettings {
+   // 4. Please try to use a unique name so that it's easier to identify the
+   // model during debugging.
+   optional string public_model_id = 9;
 +
-+  // Whether to allow the accelerator to optionally use lower-precision
-+  // float16 (16-bit floating point) arithmetic when doing calculations on
-+  // float32 (32-bit floating point).
-+  optional bool allow_fp16_precision_for_fp32 = 11 [default = false];
++  // Layer IR (intermediate representation) TGC (tensor graph in C++) backend
++  // options.
++  // * If set to YES, compile as per layer IR -> TGC -> codegen flow.
++  // * If set to NO, compile as per layer IR -> layer IR -> codegen flow.
++  // * If set to AUTO, we try to run as per layer IR -> TGC -> codegen flow. If
++  // not successful, we will fallback to layer IR -> layer IR -> codegen flow.
++  // * If UNSPECIFIED, it is same as NO for now.
++  enum UseLayerIrTgcBackend {
++    USE_LAYER_IR_TGC_BACKEND_UNSPECIFIED = 0;
++    USE_LAYER_IR_TGC_BACKEND_NO = 1;
++    USE_LAYER_IR_TGC_BACKEND_YES = 2;
++    USE_LAYER_IR_TGC_BACKEND_AUTO = 3;
++  }
++  optional UseLayerIrTgcBackend use_layer_ir_tgc_backend = 10
++      [default = USE_LAYER_IR_TGC_BACKEND_UNSPECIFIED];
  }
  
- // Coral Dev Board / USB accelerator delegate settings.
-@@ -695,6 +700,9 @@ message TFLiteSettings {
- 
-   // Compilation caching settings.
-   optional CompilationCachingSettings compilation_caching_settings = 15;
-+
-+  // For configuring the Arm NN delegate.
-+  optional ArmNNSettings armnn_settings = 16;
- }
- 
- // Whether to automatically fallback to TFLite CPU path on delegation errors.
+ // Google EdgeTPU delegate settings.

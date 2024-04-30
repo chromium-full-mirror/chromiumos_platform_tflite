@@ -1,8 +1,10 @@
+Enable Gpu Delegate for ChromeOS.
+
 diff --git a/tensorflow/lite/BUILD b/tensorflow/lite/BUILD
-index bb2de515da9..a6adde96cd9 100644
+index d58f3f7f12f..cf26081ec16 100644
 --- a/tensorflow/lite/BUILD
 +++ b/tensorflow/lite/BUILD
-@@ -1341,6 +1341,7 @@ tflite_cc_shared_object(
+@@ -1385,6 +1385,7 @@ tflite_cc_shared_object(
          ":tflite_exported_symbols.lds",
          ":tflite_version_script.lds",
          "//tensorflow/lite/kernels:builtin_ops_all_linked",
@@ -57,12 +59,12 @@ index 81d643a6759..981c41a54d6 100644
  
  # For internal usage by shared libraries only.
 diff --git a/tensorflow/lite/delegates/gpu/BUILD b/tensorflow/lite/delegates/gpu/BUILD
-index 6e767beb635..8f13fa59e5d 100644
+index bd47abe9057..4856274cc2d 100644
 --- a/tensorflow/lite/delegates/gpu/BUILD
 +++ b/tensorflow/lite/delegates/gpu/BUILD
-@@ -46,6 +46,11 @@ config_setting(
- # )
- # copybara:uncomment_end
+@@ -33,6 +33,11 @@ config_setting(
+     },
+ )
  
 +config_setting(
 +    name = "force_enable_gpu_delegate",
@@ -72,7 +74,7 @@ index 6e767beb635..8f13fa59e5d 100644
  cc_library(
      name = "gl_delegate",
      srcs = ["gl_delegate.cc"],
-@@ -228,6 +233,7 @@ selects.config_setting_group(
+@@ -216,6 +221,7 @@ selects.config_setting_group(
      name = "supports_gpu_delegate",
      match_any = [
          "//tensorflow:android",
@@ -81,10 +83,10 @@ index 6e767beb635..8f13fa59e5d 100644
      ],
  )
 diff --git a/tensorflow/lite/delegates/gpu/build_defs.bzl b/tensorflow/lite/delegates/gpu/build_defs.bzl
-index 462ec7c2218..b2b03b74139 100644
+index cdea91aec86..58b8386e610 100644
 --- a/tensorflow/lite/delegates/gpu/build_defs.bzl
 +++ b/tensorflow/lite/delegates/gpu/build_defs.bzl
-@@ -15,7 +15,7 @@ def nativewindow_linkopts():
+@@ -3,7 +3,7 @@
  def gpu_delegate_linkopts():
      """Additional link options needed when linking in the GPU Delegate."""
      return select({
@@ -93,17 +95,11 @@ index 462ec7c2218..b2b03b74139 100644
              "-lEGL",
              # We don't need to link libGLESv3, because if it exists,
              # it is a symlink to libGLESv2.
-@@ -24,4 +24,4 @@ def gpu_delegate_linkopts():
-             "-lGLESv2",
-         ],
-         "//conditions:default": [],
--    }) + nativewindow_linkopts()
-+    })
 diff --git a/tensorflow/lite/delegates/gpu/cl/BUILD b/tensorflow/lite/delegates/gpu/cl/BUILD
-index 760f401bdc6..5ae7300cea3 100644
+index 84004f80218..75bb4953406 100644
 --- a/tensorflow/lite/delegates/gpu/cl/BUILD
 +++ b/tensorflow/lite/delegates/gpu/cl/BUILD
-@@ -349,7 +349,7 @@ cc_library(
+@@ -350,7 +350,7 @@ cc_library(
      srcs = ["gpu_api_delegate.cc"],
      hdrs = ["gpu_api_delegate.h"],
      linkopts = select({
@@ -113,7 +109,7 @@ index 760f401bdc6..5ae7300cea3 100644
              "-lGLESv3",
          ],
 diff --git a/tensorflow/lite/tools/evaluation/utils.h b/tensorflow/lite/tools/evaluation/utils.h
-index c598b89bc2b..db27bf2e2b4 100644
+index 1735b9ee08a..5e096a5412d 100644
 --- a/tensorflow/lite/tools/evaluation/utils.h
 +++ b/tensorflow/lite/tools/evaluation/utils.h
 @@ -23,7 +23,7 @@ limitations under the License.

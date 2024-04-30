@@ -9,7 +9,7 @@ load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
 
 # Update `bazel_external_uris` in ebuild as well when upgrading TensorFlow, and
 # all the required dependencies need to be upload to our mirror first.
-TENSORFLOW_VERSION = "2.15.0"
+TENSORFLOW_VERSION = "2.16.1"
 
 # Use the provided tensorflow repo if it exists. Currently the ebuild will
 # download and unpack tensorflow for us.
@@ -21,23 +21,21 @@ maybe(
     patch_args = ["-p1"],
     patch_tool = "patch",
     patches = [
-        "//patch:tensorflow-2.15.0-0001-workspace.patch",
-        "//patch:tensorflow-2.15.0-0002-ashmem-create.patch",
-        "//patch:tensorflow-2.15.0-0003-nnapi-delegates.patch",
-        "//patch:tensorflow-2.15.0-0005-gpu.patch",
-        "//patch:tensorflow-2.15.0-0006-nnapi-loading-errors.patch",
-        "//patch:tensorflow-2.15.0-0008-remove-llvm-repo.patch",
-        "//patch:tensorflow-2.15.0-0010-Convolution2DTransposeBias-nnapi.patch",
-        "//patch:tensorflow-2.15.0-0011-Convolution2DTransposeBias.patch",
-        "//patch:tensorflow-2.15.0-0012-clvk-amd.patch",
-        "//patch:tensorflow-2.15.0-0013-absl-syslib.patch",
-        "//patch:tensorflow-2.15.0-0014-ruy-amd-cpu.patch",
-        "//patch:tensorflow-2.15.0-0015-UPSTREAM-7cf223d-removed_usage_of_qcom_hints_in_clvk.patch",
-        "//patch:tensorflow-2.15.0-0016-memory-usage-monitor.patch",
-        "//patch:tensorflow-2.15.0-0017-mtk-neuron.patch",
-        "//patch:tensorflow-2.15.0-0018-absl-log.patch",
+        "//patch:tensorflow-2.16.1-0001-bazel-toolchains.patch",
+        "//patch:tensorflow-2.16.1-0002-ashmem-create.patch",
+        "//patch:tensorflow-2.16.1-0003-nnapi-delegate.patch",
+        "//patch:tensorflow-2.16.1-0004-gpu-delegate.patch",
+        "//patch:tensorflow-2.16.1-0005-nnapi-loading-errors.patch",
+        "//patch:tensorflow-2.16.1-0006-remove-llvm-repo.patch",
+        "//patch:tensorflow-2.16.1-0007-Convolution2DTransposeBias.patch",
+        "//patch:tensorflow-2.16.1-0008-nnapi-Convolution2DTransposeBias.patch",
+        "//patch:tensorflow-2.16.1-0009-ruy-amd-cpu.patch",
+        "//patch:tensorflow-2.16.1-0010-memory-usage-monitor.patch",
+        "//patch:tensorflow-2.16.1-0011-mtk-neuron.patch",
+        "//patch:tensorflow-2.16.1-0012-absl-log.patch",
+        "//patch:tensorflow-2.16.1-0013-absl-random.patch",
     ],
-    sha256 = "9cec5acb0ecf2d47b16891f8bc5bc6fbfdffe1700bdadc0d9ebe27ea34f0c220",
+    sha256 = "c729e56efc945c6df08efe5c9f5b8b89329c7c91b8f40ad2bb3e13900bd4876d",
     strip_prefix = "tensorflow-{}".format(TENSORFLOW_VERSION),
     url = "https://github.com/tensorflow/tensorflow/archive/v{}.tar.gz".format(TENSORFLOW_VERSION),
 )

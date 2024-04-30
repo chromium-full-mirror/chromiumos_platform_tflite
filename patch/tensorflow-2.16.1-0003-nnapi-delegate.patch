@@ -1,10 +1,10 @@
 Force enable NnApiDelegate for ChromeOS.
 
 diff --git a/tensorflow/lite/BUILD b/tensorflow/lite/BUILD
-index 65fc731b48f..0f905a3ae53 100644
+index d58f3f7f12f..0c9a23c892b 100644
 --- a/tensorflow/lite/BUILD
 +++ b/tensorflow/lite/BUILD
-@@ -533,6 +533,8 @@ cc_library_with_tflite(
+@@ -556,6 +556,8 @@ cc_library_with_tflite(
          "//tensorflow/lite/core/api",
          "//tensorflow/lite/core/api:verifier",
          "//tensorflow/lite/core/c:common",
@@ -14,7 +14,7 @@ index 65fc731b48f..0f905a3ae53 100644
          "//tensorflow/lite/internal:signature_def",
          "//tensorflow/lite/profiling:root_profiler",
 diff --git a/tensorflow/lite/tools/evaluation/utils.h b/tensorflow/lite/tools/evaluation/utils.h
-index af57c1c1189..b40f6d4b127 100644
+index 1735b9ee08a..9266d164ade 100644
 --- a/tensorflow/lite/tools/evaluation/utils.h
 +++ b/tensorflow/lite/tools/evaluation/utils.h
 @@ -27,6 +27,7 @@ limitations under the License.

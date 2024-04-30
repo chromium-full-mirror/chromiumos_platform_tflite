@@ -9,10 +9,10 @@ Our implementation handles this better, and this ensures all of the ashmem
 functionlity is consistenly served from our implementation.
 
 diff --git a/tensorflow/lite/nnapi/nnapi_implementation.cc b/tensorflow/lite/nnapi/nnapi_implementation.cc
-index 69dfe1f6a9a..aa332ca9d39 100644
+index 5f77293ba7f..64474a138a0 100644
 --- a/tensorflow/lite/nnapi/nnapi_implementation.cc
 +++ b/tensorflow/lite/nnapi/nnapi_implementation.cc
-@@ -253,7 +253,8 @@ const NnApi LoadNnApi() {
+@@ -254,7 +254,8 @@ const NnApi LoadNnApi() {
    // implementation, but don't have libneuralnetworks.so library, and
    // platforms which use nnapi_implementation_disabled.cc stub.
    if (libneuralnetworks != nullptr) {
@@ -21,3 +21,4 @@ index 69dfe1f6a9a..aa332ca9d39 100644
 +                         "ashmem_create_region");
    }
  #endif  // __ANDROID__
+ 

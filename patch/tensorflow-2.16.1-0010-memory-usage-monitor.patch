@@ -1,10 +1,10 @@
 Include memory usage monitor
 
 diff --git a/tensorflow/lite/BUILD b/tensorflow/lite/BUILD
-index bb2de515..f666c464 100644
+index d58f3f7f12f..bee6592ec04 100644
 --- a/tensorflow/lite/BUILD
 +++ b/tensorflow/lite/BUILD
-@@ -564,6 +564,7 @@ cc_library_with_tflite(
+@@ -606,6 +606,7 @@ cc_library_with_tflite(
          "//tensorflow/lite/core/c:common",
          "//tensorflow/lite/experimental/resource",
          "//tensorflow/lite/internal:signature_def",
