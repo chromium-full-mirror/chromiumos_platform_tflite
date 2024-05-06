@@ -27,6 +27,7 @@
 #include <string>
 #include <vector>
 
+#include "common/minimal_logging.h"
 #include "delegate/mtk_neuron/neuron_delegate.h"
 #include "delegate/mtk_neuron/neuron_delegate_kernel.h"
 #include "delegate/mtk_neuron/neuron_delegate_utils.h"
@@ -34,7 +35,6 @@
 #include "tensorflow/lite/builtin_ops.h"
 #include "tensorflow/lite/c/builtin_op_data.h"
 #include "tensorflow/lite/context_util.h"
-#include "tensorflow/lite/minimal_logging.h"
 #include "tensorflow/lite/util.h"
 
 namespace tflite {

@@ -23,56 +23,16 @@
 #ifndef DELEGATE_MTK_NEURON_MTK_MTK_MINIMAL_LOGGING_H_
 #define DELEGATE_MTK_NEURON_MTK_MTK_MINIMAL_LOGGING_H_
 
-#include <cstdarg>
-#include <string>
+#include "common/minimal_logging.h"
 
-#include "delegate/mtk_neuron/mtk/mtk_utils.h"
-#include "delegate/mtk_neuron/neuron_delegate_utils.h"
-#include "tensorflow/lite/minimal_logging.h"
+#define TFLITE_MTK_LOG_INFO(format, ...) \
+  TFLITE_LOG_PROD(tflite::TFLITE_LOG_INFO, LOG_TAG ": " format, ##__VA_ARGS__)
 
-namespace tflite {
-namespace logging_internal {
-namespace mtk {
+#define TFLITE_MTK_LOG_WARN(format, ...)                           \
+  TFLITE_LOG_PROD(tflite::TFLITE_LOG_WARNING, LOG_TAG ": " format, \
+                  ##__VA_ARGS__)
 
-inline bool IsPrintLogSupported() {
-  static bool enabled =
-      tflite::mtk::PropertyGetBool("debug.mtk_tflite.vlog", false);
-  static bool isUserBuildType =
-      tflite::neuron::GetPropertyValue("ro.build.type") == "user";
-  return enabled && !isUserBuildType;
-}
-
-inline void Log(LogSeverity severity, const char* tag, const char* format,
-                ...) {
-  static bool support = IsPrintLogSupported();
-  if (!support && severity != TFLITE_LOG_ERROR) {
-    return;
-  }
-
-  va_list args;
-  va_start(args, format);
-  tflite::logging_internal::MinimalLogger::LogFormatted(severity, format, args);
-  va_end(args);
-}
-
-}  // namespace mtk
-}  // namespace logging_internal
-}  // namespace tflite
-
-#define TFLITE_MTK_LOG_INFO(format, ...)                                       \
-  tflite::logging_internal::mtk::Log(tflite::TFLITE_LOG_INFO, LOG_TAG, format, \
-                                     ##__VA_ARGS__);
-
-#define TFLITE_MTK_LOG_WARN(format, ...)                                  \
-  tflite::logging_internal::mtk::Log(tflite::TFLITE_LOG_WARNING, LOG_TAG, \
-                                     format, ##__VA_ARGS__);
-
-#define TFLITE_MTK_LOG_ERROR(format, ...)                               \
-  tflite::logging_internal::mtk::Log(tflite::TFLITE_LOG_ERROR, LOG_TAG, \
-                                     format, ##__VA_ARGS__);
-
-#define TFLITE_MTK_LOG_OP_DUMP(format, ...)                   \
-  tflite::logging_internal::mtk::Log(tflite::TFLITE_LOG_INFO, \
-                                     "TFLite OP Dump", format, ##__VA_ARGS__);
+#define TFLITE_MTK_LOG_ERROR(format, ...) \
+  TFLITE_LOG_PROD(tflite::TFLITE_LOG_ERROR, LOG_TAG ": " format, ##__VA_ARGS__)
 
 #endif  // DELEGATE_MTK_NEURON_MTK_MTK_MINIMAL_LOGGING_H_

@@ -31,6 +31,7 @@
 
 #include <iostream>
 
+#include "common/minimal_logging.h"
 #include "delegate/mtk_neuron/mtk/mtk_minimal_logging.h"
 #include "delegate/mtk_neuron/mtk/mtk_utils.h"
 #include "delegate/mtk_neuron/mtk/mtkext_ops.h"
@@ -43,7 +44,6 @@
 #include "tensorflow/lite/c/common.h"
 #include "tensorflow/lite/context_util.h"
 #include "tensorflow/lite/core/api/profiler.h"
-#include "tensorflow/lite/minimal_logging.h"
 #include "tensorflow/lite/schema/schema_generated.h"
 #include "tensorflow/lite/util.h"
 

@@ -28,10 +28,11 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-#include <cstdarg>
 #include <cstdlib>
 #include <cstring>
 #include <string>
+
+#include "common/minimal_logging.h"
 
 #ifdef __ANDROID__
 #include <android/dlext.h>
@@ -39,7 +40,8 @@
 #include <sys/system_properties.h>
 #endif  // __ANDROID__
 
-#define NEURONAPI_LOG(format, ...) Log(format, ##__VA_ARGS__);
+#define NEURONAPI_LOG(format, ...) \
+  TFLITE_LOG_PROD(tflite::TFLITE_LOG_INFO, format, ##__VA_ARGS__)
 #define RETURN_NEURON_ERROR(code, call_desc)                       \
   do {                                                             \
     const auto _code = (code);                                     \
@@ -49,30 +51,6 @@
                     _call_desc);                                   \
     }                                                              \
   } while (0)
-
-void Log(const char* format, ...) {
-  va_list args;
-  va_start(args, format);
-
-#ifdef __ANDROID__
-  // First log to Android's explicit log(cat) API.
-  va_list args_copy;
-  va_copy(args_copy, args);
-  __android_log_vprint(ANDROID_LOG_INFO, "tflite", format, args_copy);
-  va_end(args_copy);
-#else
-  va_list args_copy;
-#endif
-
-  // Also print to stderr for standard console applications.
-  fprintf(stderr, "%s: ", "INFO");
-  va_copy(args_copy, args);
-  vfprintf(stderr, format, args_copy);
-  va_end(args_copy);
-  fputc('\n', stderr);
-
-  va_end(args);
-}
 
 /// M: NeuroPilot @}
 

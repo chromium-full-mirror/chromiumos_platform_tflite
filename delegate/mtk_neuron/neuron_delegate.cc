@@ -27,6 +27,7 @@
 #include <string>
 #include <vector>
 
+#include "common/minimal_logging.h"
 #include "delegate/mtk_neuron/mtk/mtk_minimal_logging.h"
 #include "delegate/mtk_neuron/neuron_delegate_kernel.h"
 #include "delegate/mtk_neuron/neuron_delegate_utils.h"
@@ -37,7 +38,6 @@
 #include "tensorflow/lite/c/c_api_opaque.h"
 #include "tensorflow/lite/context_util.h"
 #include "tensorflow/lite/delegates/utils/simple_opaque_delegate.h"
-#include "tensorflow/lite/minimal_logging.h"
 #include "tensorflow/lite/schema/schema_generated.h"
 
 #define LOG_TAG "NeuronDelegate"

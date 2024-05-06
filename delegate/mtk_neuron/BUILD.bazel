@@ -11,9 +11,12 @@ cc_library_with_tflite(
         "neuron_implementation.cc",
         "neuron_types.h",
     ],
-    generate_opaque_delegate_target = True,
     hdrs = [
         "neuron_implementation.h",
+    ],
+    generate_opaque_delegate_target = True,
+    deps = [
+        "//common:minimal_logging",
     ],
 )
 
@@ -48,6 +51,7 @@ cc_library_with_tflite(
     ],
     deps = [
         ":neuron_implementation",
+        "//common:minimal_logging",
         "@farmhash_archive//:farmhash",
     ],
 )

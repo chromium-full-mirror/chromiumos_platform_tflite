@@ -29,8 +29,8 @@
 #include <string>
 #include <vector>
 
+#include "common/minimal_logging.h"
 #include "tensorflow/lite/c/common.h"
-#include "tensorflow/lite/minimal_logging.h"
 
 #ifdef __ANDROID__
 #include <sys/system_properties.h>
