@@ -219,7 +219,7 @@ const NeuronApi LoadNeuronApi() {
                           "getting device");
       RETURN_NEURON_ERROR(neuron_api.NeuronDevice_getName(device, &name),
                           "getting device name");
-      // TFLITE_LOG_PROD(tflite::TFLITE_LOG_INFO, "Got device name: %s", name);
+      TFLITE_LOG_PROD(tflite::TFLITE_LOG_VERBOSE, "Got device name: %s", name);
       if (name != nullptr && (strncmp(name, "mtk-dsp", 7) == 0 ||
                               strncmp(name, "mtk-mdla", 8) == 0)) {
         neuron_api.neuron_exists = true;
@@ -265,9 +265,10 @@ const NeuronApi* NeuronApiImplementation() {
   if (neuron_api.neuron_exists) {
     NeuronRuntimeVersion version;
     if (neuron_api.Neuron_getVersion(&version) == NEURON_NO_ERROR) {
-      NEURONAPI_LOG(
-          "NeuronApi version: %d.%d.%d", static_cast<int>(version.major),
-          static_cast<int>(version.minor), static_cast<int>(version.patch));
+      TFLITE_LOG_PROD_ONCE(
+          tflite::TFLITE_LOG_INFO, "NeuronApi version: %d.%d.%d",
+          static_cast<int>(version.major), static_cast<int>(version.minor),
+          static_cast<int>(version.patch));
     } else {
       NEURONAPI_LOG("NeuronApi error: fail to get version by %s",
                     "Neuron_getVersion");

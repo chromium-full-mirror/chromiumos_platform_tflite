@@ -105,8 +105,9 @@ TfLiteStatus NeuronStableDelegate::Initialize(TfLiteOpaqueContext* context) {
                   "Neuron stable delegate for internal use. (version: %s)",
                   NEURON_DELEGATE_VERSION_STRING);
 #else
-  TFLITE_LOG_PROD(tflite::TFLITE_LOG_INFO, "Neuron stable delegate version: %s",
-                  NEURON_DELEGATE_VERSION_STRING);
+  TFLITE_LOG_PROD_ONCE(tflite::TFLITE_LOG_INFO,
+                       "Neuron stable delegate version: %s",
+                       NEURON_DELEGATE_VERSION_STRING);
 #endif
   if (GenModelToken(context) != kTfLiteOk) {
     TFLITE_LOG_PROD(tflite::TFLITE_LOG_ERROR,
@@ -199,7 +200,7 @@ TfLiteStatus NeuronStableDelegate::GenModelToken(TfLiteOpaqueContext* context) {
   }
   test += "};";
 
-  TFLITE_MTK_LOG_INFO("Original cache_token: %s", test.c_str());
+  TFLITE_MTK_LOG_VERBOSE("Original cache_token: %s", test.c_str());
 
   neuron_cache_token_ = nnapi_cache_token;
   return kTfLiteOk;

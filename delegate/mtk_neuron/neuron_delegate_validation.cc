@@ -311,7 +311,7 @@ TfLiteStatus PreGetSupportedForWholeGraph(TfLiteOpaqueContext* context,
   for (int i = 0; i < num_node; i++) {
     is_supported->push_back(support_flags[i] ? 1 : 0);
   }
-  TFLITE_LOG_PROD(tflite::TFLITE_LOG_INFO, "PreOpCheck: succesfully");
+  TFLITE_LOG_PROD(tflite::TFLITE_LOG_VERBOSE, "PreOpCheck: succesfully");
   return kTfLiteOk;
 }
 

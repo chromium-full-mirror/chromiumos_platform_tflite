@@ -25,6 +25,10 @@
 
 #include "common/minimal_logging.h"
 
+#define TFLITE_MTK_LOG_VERBOSE(format, ...)                        \
+  TFLITE_LOG_PROD(tflite::TFLITE_LOG_VERBOSE, LOG_TAG ": " format, \
+                  ##__VA_ARGS__)
+
 #define TFLITE_MTK_LOG_INFO(format, ...) \
   TFLITE_LOG_PROD(tflite::TFLITE_LOG_INFO, LOG_TAG ": " format, ##__VA_ARGS__)
 

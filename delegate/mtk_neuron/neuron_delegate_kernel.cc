@@ -298,7 +298,7 @@ TfLiteStatus GetAcceleratorDevice(const NeuronApi* neuron_api,
     RETURN_TFLITE_ERROR_IF_NEURON_ERROR(
         context, neuron_api->NeuronDevice_getName(device, &name),
         "getting device name");
-    // TFLITE_LOG_PROD(tflite::TFLITE_LOG_INFO, "Got device name: %s", name);
+    TFLITE_LOG_PROD(tflite::TFLITE_LOG_VERBOSE, "Got device name: %s", name);
     if (std::string(device_name) == std::string(name)) {
       *result = device;
       return kTfLiteOk;
@@ -339,11 +339,12 @@ NNMemory::NNMemory(const NeuronApi* neuronapi, const char* name, size_t size,
 #if defined(__ANDROID__)
     uint64_t usage;
     if (use_cacheable_buffer) {
-      TFLITE_LOG_PROD(tflite::TFLITE_LOG_INFO, "use cacheable ahardwarebuffer");
+      TFLITE_LOG_PROD(tflite::TFLITE_LOG_VERBOSE,
+                      "use cacheable ahardwarebuffer");
       usage = AHARDWAREBUFFER_USAGE_CPU_READ_OFTEN |
               AHARDWAREBUFFER_USAGE_CPU_WRITE_OFTEN;
     } else {
-      TFLITE_LOG_PROD(tflite::TFLITE_LOG_INFO,
+      TFLITE_LOG_PROD(tflite::TFLITE_LOG_VERBOSE,
                       "use non cacheable ahardwarebuffer");
       usage = AHARDWAREBUFFER_USAGE_CPU_READ_RARELY |
               AHARDWAREBUFFER_USAGE_CPU_WRITE_RARELY;
@@ -1153,7 +1154,7 @@ TfLiteStatus NeuronStableDelegateKernel::Map(
 
 TfLiteStatus NeuronStableDelegateKernel::Init(
     TfLiteOpaqueContext* context, const TfLiteOpaqueDelegateParams* params) {
-  TFLITE_LOG_PROD(tflite::TFLITE_LOG_INFO, "Init");
+  TFLITE_LOG_PROD(tflite::TFLITE_LOG_VERBOSE, "Init");
   if (params->delegate == nullptr) return kTfLiteDelegateError;
 
   for (auto node_index : TfLiteIntArrayView(params->nodes_to_replace)) {
@@ -1200,7 +1201,7 @@ TfLiteStatus NeuronStableDelegateKernel::Prepare(TfLiteOpaqueContext* context,
         std::strtok(const_cast<char*>(options_.accelerator_name.c_str()), ",");
     while (device_split_name) {
       NeuronDevice* mtk_device = nullptr;
-      TFLITE_LOG_PROD(tflite::TFLITE_LOG_INFO,
+      TFLITE_LOG_PROD(tflite::TFLITE_LOG_VERBOSE,
                       "NeuronCompilation_createForDevices: %s",
                       device_split_name);
       if (GetAcceleratorDevice(neuronapi_, context, device_split_name,
@@ -1226,7 +1227,7 @@ TfLiteStatus NeuronStableDelegateKernel::Prepare(TfLiteOpaqueContext* context,
 
   int result = neuronapi_->NeuronCompilation_setPreference(
       compilation, options_.execution_preference);
-  TFLITE_LOG_PROD(tflite::TFLITE_LOG_INFO,
+  TFLITE_LOG_PROD(tflite::TFLITE_LOG_VERBOSE,
                   "NeuronCompilation_setPreference: %d",
                   options_.execution_preference);
   if (result != NEURON_NO_ERROR) {
@@ -1237,7 +1238,8 @@ TfLiteStatus NeuronStableDelegateKernel::Prepare(TfLiteOpaqueContext* context,
                                       "setting compilation preferences");
   result = neuronapi_->NeuronCompilation_setPriority(
       compilation, options_.execution_priority);
-  TFLITE_LOG_PROD(tflite::TFLITE_LOG_INFO, "NeuronCompilation_setPriority: %d",
+  TFLITE_LOG_PROD(tflite::TFLITE_LOG_VERBOSE,
+                  "NeuronCompilation_setPriority: %d",
                   options_.execution_priority);
   if (result != NEURON_NO_ERROR) {
     neuronapi_->NeuronCompilation_free(compilation);
@@ -1648,7 +1650,7 @@ void NeuronStableDelegateKernel::AddDequantizeOperatorsWhereNeeded(
 
 TfLiteStatus NeuronStableDelegateKernel::AddOpsAndTensors(
     TfLiteOpaqueContext* context) {
-  TFLITE_LOG_PROD(tflite::TFLITE_LOG_INFO, "AddOpsAndTensors");
+  TFLITE_LOG_PROD(tflite::TFLITE_LOG_VERBOSE, "AddOpsAndTensors");
   DequantizeMapping dequantize_mapping;
   // The operand builder allows creating a single op. It is created outside
   // the for loop to avoid reallocating the vectors.
@@ -2041,14 +2043,14 @@ TfLiteStatus NeuronStableDelegateKernel::AddOpsAndTensors(
     }
   }
   total_op_num_ = builder.GetTotalOpNum();
-  TFLITE_LOG_PROD(tflite::TFLITE_LOG_INFO, "AddOpsAndTensors done");
+  TFLITE_LOG_PROD(tflite::TFLITE_LOG_VERBOSE, "AddOpsAndTensors done");
   return kTfLiteOk;
 }
 
 TfLiteStatus NeuronStableDelegateKernel::BuildGraph(
     TfLiteOpaqueContext* context, const TfLiteOpaqueDelegateParams* params,
     const TfLiteIntArray* input_tensors, const TfLiteIntArray* output_tensors) {
-  TFLITE_LOG_PROD(tflite::TFLITE_LOG_INFO, "BuildGraph");
+  TFLITE_LOG_PROD(tflite::TFLITE_LOG_VERBOSE, "BuildGraph");
   // Build the ops and tensors.
   TF_LITE_ENSURE_STATUS(AddOpsAndTensors(context));
 
@@ -2089,7 +2091,7 @@ TfLiteStatus NeuronStableDelegateKernel::BuildGraph(
       total_input_byte_size += getNumPaddingBytes(tensor_size);
     }
   }
-  TFLITE_LOG_PROD(tflite::TFLITE_LOG_INFO, "total_input_byte_size: %d",
+  TFLITE_LOG_PROD(tflite::TFLITE_LOG_VERBOSE, "total_input_byte_size: %d",
                   total_input_byte_size);
 
   size_t total_output_byte_size = 0;
@@ -2106,7 +2108,7 @@ TfLiteStatus NeuronStableDelegateKernel::BuildGraph(
     total_output_byte_size += getNumPaddingBytes(TfLiteOpaqueTensorByteSize(
         TfLiteOpaqueContextGetOpaqueTensor(context, i)));
   }
-  TFLITE_LOG_PROD(tflite::TFLITE_LOG_INFO, "total_output_byte_size: %d",
+  TFLITE_LOG_PROD(tflite::TFLITE_LOG_VERBOSE, "total_output_byte_size: %d",
                   total_output_byte_size);
 
   // Add state output tensors as model outputs.
@@ -2143,7 +2145,7 @@ TfLiteStatus NeuronStableDelegateKernel::BuildGraph(
   }
   test += "};";
 
-  TFLITE_MTK_LOG_INFO("Kernel cache_token: %s", test.c_str());
+  TFLITE_MTK_LOG_VERBOSE("Kernel cache_token: %s", test.c_str());
 
   // Tell Neuron to declare inputs/outputs
   RETURN_TFLITE_ERROR_IF_NEURON_ERROR(
@@ -2152,7 +2154,7 @@ TfLiteStatus NeuronStableDelegateKernel::BuildGraph(
           nn_model_.get(), inputs.size(), inputs.data(), outputs.size(),
           outputs.data()),
       "identifying model inputs and outputs");
-  TFLITE_LOG_PROD(tflite::TFLITE_LOG_INFO,
+  TFLITE_LOG_PROD(tflite::TFLITE_LOG_VERBOSE,
                   "NeuronModel_identifyInputsAndOutputs");
 
   RETURN_TFLITE_ERROR_IF_NEURON_ERROR(
@@ -2160,14 +2162,14 @@ TfLiteStatus NeuronStableDelegateKernel::BuildGraph(
       neuronapi_->NeuronModel_relaxComputationFloat32toFloat16(
           nn_model_.get(), options_.allow_fp16),
       "set relaxed computation mode for fp32 if possible");
-  TFLITE_LOG_PROD(tflite::TFLITE_LOG_INFO,
+  TFLITE_LOG_PROD(tflite::TFLITE_LOG_VERBOSE,
                   "NeuronModel_relaxComputationFloat32toFloat16: %d",
                   options_.allow_fp16);
 
   RETURN_TFLITE_ERROR_IF_NEURON_ERROR(
       context, neuronapi_->NeuronModel_finish(nn_model_.get()),
       "finalizing the model");
-  TFLITE_LOG_PROD(tflite::TFLITE_LOG_INFO, "NeuronModel_finish");
+  TFLITE_LOG_PROD(tflite::TFLITE_LOG_VERBOSE, "NeuronModel_finish");
   // Create shared memory pool for inputs and outputs.
   nn_input_memory_.reset(new NNMemory(neuronapi_, "input_pool",
                                       total_input_byte_size, options_.use_ahwb,
@@ -2176,7 +2178,7 @@ TfLiteStatus NeuronStableDelegateKernel::BuildGraph(
       new NNMemory(neuronapi_, "output_pool", total_output_byte_size,
                    options_.use_ahwb, options_.use_cacheable_buffer));
 
-  TFLITE_LOG_PROD(tflite::TFLITE_LOG_INFO, "BuildGraph done");
+  TFLITE_LOG_PROD(tflite::TFLITE_LOG_VERBOSE, "BuildGraph done");
   return kTfLiteOk;
 }
 
@@ -2189,7 +2191,7 @@ TfLiteStatus NeuronStableDelegateKernel::GetSupportedOperations(
   // Determine the list of operations the device actually supports
   if (neuronapi_->NeuronCompilation_getSupportedOperations != nullptr) {
     TF_LITE_ENSURE_STATUS(Prepare(context, nullptr));
-    TFLITE_LOG_PROD(tflite::TFLITE_LOG_INFO,
+    TFLITE_LOG_PROD(tflite::TFLITE_LOG_VERBOSE,
                     "NeuronCompilation_getSupportedOperations");
     RETURN_TFLITE_ERROR_IF_NEURON_ERROR(
         context,
@@ -2214,14 +2216,14 @@ TfLiteStatus NeuronStableDelegateKernel::GetSupportedOperations(
                                  &mtk_device) == kTfLiteOk) {
           device[device_count] = mtk_device;
           device_count++;
-          TFLITE_LOG_PROD(tflite::TFLITE_LOG_INFO, "Get device: %s",
+          TFLITE_LOG_PROD(tflite::TFLITE_LOG_VERBOSE, "Get device: %s",
                           device_split_name);
         }
         device_split_name = std::strtok(NULL, ",");
       }
     }
     if (device_count) {
-      TFLITE_LOG_PROD(tflite::TFLITE_LOG_INFO,
+      TFLITE_LOG_PROD(tflite::TFLITE_LOG_VERBOSE,
                       "NeuronModel_getSupportedOperationsForDevices");
       RETURN_TFLITE_ERROR_IF_NEURON_ERROR(
           context,
@@ -2230,7 +2232,7 @@ TfLiteStatus NeuronStableDelegateKernel::GetSupportedOperations(
           "get supported operations for devices");
 
     } else {
-      TFLITE_LOG_PROD(tflite::TFLITE_LOG_INFO,
+      TFLITE_LOG_PROD(tflite::TFLITE_LOG_VERBOSE,
                       "NeuronModel_getSupportedOperations");
       RETURN_TFLITE_ERROR_IF_NEURON_ERROR(
           context,
@@ -2246,7 +2248,7 @@ TfLiteStatus NeuronStableDelegateKernel::GetSupportedOperationsForOneNode(
     TfLiteOpaqueContext* context, TfLiteOpaqueNode* node,
     TfLiteRegistrationExternal* registration, bool* is_supported) {
   delegate_specific_mode_ = kOneNodeMode;
-  TFLITE_LOG_PROD(tflite::TFLITE_LOG_INFO,
+  TFLITE_LOG_PROD(tflite::TFLITE_LOG_VERBOSE,
                   "GetSupportedOperationsForOneNode: %s",
                   EnumNameBuiltinOperator(static_cast<BuiltinOperator>(
                       TfLiteRegistrationExternalGetBuiltInCode(registration))));
@@ -2289,7 +2291,7 @@ TfLiteStatus NeuronStableDelegateKernel::GetSupportedOperationsForWholeGraph(
     TfLiteOpaqueContext* context, bool* is_supported) {
   delegate_specific_mode_ = kContextMode;
   TfLiteIntArray* execution_plan = nullptr;
-  TFLITE_LOG_PROD(tflite::TFLITE_LOG_INFO,
+  TFLITE_LOG_PROD(tflite::TFLITE_LOG_VERBOSE,
                   "GetSupportedOperationsForWholeGraph");
   if (TfLiteOpaqueContextGetExecutionPlan(context, &execution_plan) !=
       kTfLiteOk) {

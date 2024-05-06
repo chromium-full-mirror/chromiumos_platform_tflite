@@ -173,7 +173,7 @@ TfLiteOpaqueDelegate* NeuronStableDelegateCreateFunc(const void* settings) {
       options.neuron_config_path = path->str();
     }
   } else {
-    TFLITE_LOG_PROD(tflite::TFLITE_LOG_INFO,
+    TFLITE_LOG_PROD(tflite::TFLITE_LOG_VERBOSE,
                     "Use Default Neuron Delegate Options.");
   }
 

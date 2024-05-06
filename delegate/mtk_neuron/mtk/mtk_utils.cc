@@ -135,8 +135,8 @@ size_t PackOemScalarString(const char* str, uint8_t** out_buffer) {
   EncodeOperandValue(&operand_value, *out_buffer);
   free(operand_value.data);
 
-  // TFLITE_LOG_PROD(tflite::TFLITE_LOG_INFO,
-  //    "PackOemScalarString: %s, buffer size:%zu", str, out_len);
+  TFLITE_LOG_PROD(tflite::TFLITE_LOG_VERBOSE,
+                  "PackOemScalarString: %s, buffer size:%zu", str, out_len);
   return out_len;
 }
 
