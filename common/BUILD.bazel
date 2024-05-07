@@ -38,6 +38,9 @@ cc_library(
     local_defines = ["_GNU_SOURCE"],
     deps = [
         ":dump",
+        "@com_google_absl//absl/cleanup",
+        "@com_google_absl//absl/flags:flag",
+        "@com_google_absl//absl/flags:parse",
         "@com_google_absl//absl/log:absl_log",
         "@com_google_absl//absl/strings:str_format",
     ],
@@ -47,6 +50,7 @@ cc_binary(
     name = "log_test",
     testonly = True,
     srcs = ["log_test.cc"],
+    args = ["--v=2"],
     deps = [
         ":log",
         "@com_google_googletest//:gtest",

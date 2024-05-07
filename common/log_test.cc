@@ -90,6 +90,16 @@ TEST_F(LogTest, PLOG) {
   EXPECT_EQ(after_errno, EINVAL);
 }
 
+TEST_F(LogTest, VLOG) {
+  // We set `--v=2` when running log_test.
+  VLOG(1) << "Lv1";
+  EXPECT_THAT(ConsumeOutput(), HasSubstr("Lv1"));
+  VLOG(2) << "Lv2";
+  EXPECT_THAT(ConsumeOutput(), HasSubstr("Lv2"));
+  VLOG(3) << "Lv3";
+  EXPECT_EQ(ConsumeOutput(), "");
+}
+
 TEST_F(LogTest, FunctionName) {
   const char* fn_name = __FUNCTION__;
   EXPECT_STREQ(fn_name, "TestBody");

@@ -9,9 +9,17 @@
 #include <errno.h>
 #include <syslog.h>
 
+#include <cstdio>
+#include <cstdlib>
 #include <string>
+#include <vector>
 
+#include "absl/cleanup/cleanup.h"
+#include "absl/flags/flag.h"
+#include "absl/flags/parse.h"
 #include "absl/strings/str_format.h"
+
+ABSL_FLAG(int, v, 0, "Show all VLOG(m) messages for m <= this.");
 
 namespace tflite::cros::log_impl {
 
@@ -43,17 +51,56 @@ int GetSyslogLevel(const absl::LogEntry& entry) {
   return LOG_DEBUG;
 }
 
+// Gets the `--v=` flag from command line.
+int GetVLogLevelFromCmdline() {
+  // We can not call absl::ParseCommandLine() in main because the logging
+  // library might be used in stable delegate, which will be loaded dynamically
+  // with dlopen(). Reconstruct argv from proc fs instead.
+  FILE* fp = fopen("/proc/self/cmdline", "r");
+  if (fp == nullptr) {
+    return 0;
+  }
+  absl::Cleanup close_file = [&] { fclose(fp); };
+
+  std::vector<char*> argv;
+  absl::Cleanup free_argv = [&] {
+    for (auto arg : argv) {
+      free(arg);
+    }
+  };
+
+  char* arg = nullptr;
+  size_t size = 0;
+  while (getdelim(&arg, &size, '\0', fp) != -1) {
+    argv.push_back(strdup(arg));
+  }
+  free(arg);
+
+  std::vector<char*> positional_args;
+  std::vector<absl::UnrecognizedFlag> unrecognized_flags;
+  absl::ParseAbseilFlagsOnly(argv.size(), argv.data(), positional_args,
+                             unrecognized_flags);
+  return absl::GetFlag(FLAGS_v);
+}
+
 }  // namespace
 
 SyslogStderrSink* SyslogStderrSink::GetInstance() {
   // Leaky singleton.
   using Self = SyslogStderrSink;
   alignas(Self) static uint8_t storage[sizeof(Self)];
-  static Self* instance = new (storage) Self();
+  static Self* instance = [&] {
+    int vlog_level = GetVLogLevelFromCmdline();
+    return new (storage) Self(vlog_level);
+  }();
   return instance;
 }
 
 void SyslogStderrSink::Send(const absl::LogEntry& entry) {
+  if (entry.verbosity() > global_vlog_level_) {
+    return;
+  }
+
   syslog(GetSyslogLevel(entry), "%s",
          entry.text_message_with_prefix_and_newline_c_str());
 

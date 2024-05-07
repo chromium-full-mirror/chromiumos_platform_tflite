@@ -31,8 +31,17 @@
 // Logging with function name and errno description.
 #define PLOGF(severity) LOG_IMPL_ABSL_F(PLOG, severity)
 
-// TODO(shik): VLOG() is not yet available in the Abseil used by Tensorflow yet.
-// Consider adding it once available.
+// TODO(shik): ABSL_VLOG() is not yet available in the Abseil used by Tensorflow
+// yet. Replace WithVerbosity with ABSL_VLOG() once available.
+
+// Logging with verbosity level that can configured at runtime.
+// `VLOG` statements are logged at `INFO` severity if they are logged at all;
+// the numeric levels are on a different scale than the proper severity levels.
+#define VLOG(verbosity) LOG_IMPL_ABSL(LOG, INFO).WithVerbosity(verbosity)
+
+// Logging with verbosity level and function name.
+#define VLOGF(verbosity) \
+  LOG_IMPL_ABSL(LOG, INFO).WithVerbosity(verbosity) << "__FUNCTION__" << ": "
 
 namespace tflite::cros {
 
@@ -46,7 +55,13 @@ class SyslogStderrSink : public absl::LogSink {
  public:
   static SyslogStderrSink* GetInstance();
 
+  explicit SyslogStderrSink(int global_vlog_level)
+      : global_vlog_level_(global_vlog_level) {}
+
   void Send(const absl::LogEntry& entry) override;
+
+ private:
+  int global_vlog_level_ = 0;
 };
 
 }  // namespace log_impl
