@@ -159,7 +159,7 @@ class Printer {
 
   template <typename T>
   void Print(T&& value) {
-    Print(std::forward<T>(value), PriorityTag<10>());
+    Print(std::forward<T>(value), PriorityTag<11>());
   }
 
   // TODO(shik): Support bytes with hex output.
@@ -170,24 +170,38 @@ class Printer {
   // Boolean value is printed as "true" or "false".
   template <typename T>
     requires std::same_as<std::decay_t<T>, bool>
-  void Print(T&& value, PriorityTag<10>) {
+  void Print(T&& value, PriorityTag<11>) {
     stream_ << (value ? "true" : "false");
   }
 
   // nullptr_t is printed as "nullptr".
   template <typename T>
     requires std::same_as<std::decay_t<T>, std::nullptr_t>
-  void Print(T&& value, PriorityTag<9>) {
+  void Print(T&& value, PriorityTag<10>) {
     stream_ << "nullptr";
   }
 
   // Char-like value is quoted and escaped as 'x' and '\n'.
   template <typename T>
     requires std::same_as<std::decay_t<T>, char>
-  void Print(T&& value, PriorityTag<8>) {
+  void Print(T&& value, PriorityTag<9>) {
     std::decay_t<T> ch = value;
     std::string_view view(&ch, 1);
     stream_ << "'" << absl::Utf8SafeCEscape(view) << "'";
+  }
+
+  // Integral-like value that cannot be handled by standard iostream is printed
+  // as normal number.
+  template <typename T>
+    requires std::same_as<std::decay_t<T>, uint8_t> ||
+             std::same_as<std::decay_t<T>, int8_t> ||
+             std::is_enum_v<std::decay_t<T>>
+  void Print(T&& value, PriorityTag<8>) {
+    if constexpr (std::is_signed_v<std::decay_t<T>>) {
+      stream_ << static_cast<int64_t>(value);
+    } else {
+      stream_ << static_cast<uint64_t>(value);
+    }
   }
 
   // String-like value is quoted and escaped as "foo\nbar".

@@ -44,10 +44,17 @@ class DbgTest : public testing::Test {
   std::stringstream stream_;
 };
 
+enum class Enum {
+  kZero = 0,
+  kOne = 1,
+};
+
 TEST(Dump, BasicTypes) {
   int num = 42;
   bool ok = true;
   char ch = 'A';
+  uint8_t u8 = 255;
+  int8_t i8 = -1;
 
   std::string str = "foo";
   const char* c_str = "hey\napple";
@@ -57,15 +64,22 @@ TEST(Dump, BasicTypes) {
   std::pair<int, int> pair = {5, 14};
   std::tuple<int, bool, char> tuple = {42, true, 'A'};
 
+  Enum enum_zero = Enum::kZero;
+  Enum enum_one = Enum::kOne;
+
   EXPECT_EQ(DUMP(num), "num = 42");
   EXPECT_EQ(DUMP(ok), "ok = true");
   EXPECT_EQ(DUMP(ch), "ch = 'A'");
+  EXPECT_EQ(DUMP(u8), "u8 = 255");
+  EXPECT_EQ(DUMP(i8), "i8 = -1");
   EXPECT_EQ(DUMP(str), "str = \"foo\"");
   EXPECT_EQ(DUMP(c_str), R"(c_str = "hey\napple")");
   EXPECT_EQ(DUMP(null_c_str), "null_c_str = nullptr");
   EXPECT_EQ(DUMP(sv), "sv = \"string_view\"");
   EXPECT_EQ(DUMP(pair), "pair = (5, 14)");
   EXPECT_EQ(DUMP(tuple), "tuple = (42, true, 'A')");
+  EXPECT_EQ(DUMP(enum_zero), "enum_zero = 0");
+  EXPECT_EQ(DUMP(enum_one), "enum_one = 1");
 }
 
 TEST(Dump, MultipleArgs) {
