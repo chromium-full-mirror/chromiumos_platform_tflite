@@ -11,8 +11,8 @@
 
 #include "absl/cleanup/cleanup.h"
 #include "absl/synchronization/mutex.h"
+#include "common/log.h"
 #include "tensorflow/lite/core/async/c/task.h"
-#include "tensorflow/lite/core/async/interop/c/constants.h"
 #include "tensorflow/lite/core/c/c_api_opaque.h"
 #include "tensorflow/lite/delegates/utils/async_type_helpers.h"
 
@@ -41,6 +41,7 @@ TfLiteStatus CrosSampleDelegateAsyncKernel::RegisterBuffer(
   absl::MutexLock lock(&mutex_);
   auto ahwb = static_cast<AHardwareBuffer*>(TfLiteBackendBufferGetPtr(buffer));
   if (ahwb == nullptr) {
+    LOGF(ERROR) << "Got null AHardwareBuffer";
     return kTfLiteError;
   }
   AHardwareBuffer_acquire(ahwb);
@@ -63,6 +64,7 @@ TfLiteStatus CrosSampleDelegateAsyncKernel::UnregisterBuffer(
   absl::MutexLock lock(&mutex_);
   auto it = registered_buffers_.find(handle);
   if (it == registered_buffers_.end()) {
+    LOGF(ERROR) << "Unknown handle " << handle;
     return kTfLiteError;
   }
   AHardwareBuffer_release(it->second);
@@ -151,6 +153,7 @@ TfLiteStatus CrosSampleDelegateAsyncKernel::Eval(TfLiteOpaqueContext* context,
                              AHARDWAREBUFFER_USAGE_CPU_READ_OFTEN |
                                  AHARDWAREBUFFER_USAGE_CPU_WRITE_OFTEN,
                              /*fence=*/-1, /*rect=*/nullptr, &addr) != 0) {
+      LOGF(ERROR) << "Failed to lock AHardwareBuffer " << buffer;
       return kTfLiteError;
     }
     locked_buffers.push_back(buffer);
@@ -174,6 +177,7 @@ TfLiteStatus CrosSampleDelegateAsyncKernel::Eval(TfLiteOpaqueContext* context,
                              AHARDWAREBUFFER_USAGE_CPU_READ_OFTEN |
                                  AHARDWAREBUFFER_USAGE_CPU_WRITE_OFTEN,
                              /*fence=*/-1, /*rect=*/nullptr, &addr) != 0) {
+      LOGF(ERROR) << "Failed to lock AHardwareBuffer " << buffer;
       return kTfLiteError;
     }
     locked_buffers.push_back(buffer);
@@ -191,6 +195,7 @@ TfLiteStatus CrosSampleDelegateAsyncKernel::Wait(TfLiteOpaqueContext* context,
   absl::MutexLock lock(&mutex_);
   auto it = task_status_map_.find(task);
   if (it == task_status_map_.end()) {
+    LOGF(ERROR) << "Unknown task " << task;
     return kTfLiteError;
   }
   return it->second;

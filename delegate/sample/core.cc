@@ -11,6 +11,8 @@
 #include <set>
 #include <vector>
 
+#include "absl/time/clock.h"
+#include "common/log.h"
 #include "tensorflow/lite/core/c/c_api_opaque.h"
 
 namespace tflite::cros {
@@ -109,6 +111,9 @@ void CrosSampleDelegateCore::SetExternalTensorMemory(
 }
 
 TfLiteStatus CrosSampleDelegateCore::Eval() {
+  // TODO(shik): Build a common tracing utility that can measure elapsed time
+  // and integrate with Perfetto.
+  absl::Time start = absl::Now();
   for (const auto& info : node_infos_) {
     float* input1 = GetRawDataSource(info.input1);
     float* input2 = GetRawDataSource(info.input2);
@@ -119,6 +124,8 @@ TfLiteStatus CrosSampleDelegateCore::Eval() {
     std::transform(input1, input1 + size, input2, output,
                    info.op == kTfLiteBuiltinAdd ? AddImpl : SubImpl);
   }
+  absl::Duration elapsed = absl::Now() - start;
+  VLOGF(1) << "Finished in " << elapsed;
   return kTfLiteOk;
 }
 

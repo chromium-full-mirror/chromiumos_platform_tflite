@@ -41,7 +41,7 @@
 
 // Logging with verbosity level and function name.
 #define VLOGF(verbosity) \
-  LOG_IMPL_ABSL(LOG, INFO).WithVerbosity(verbosity) << "__FUNCTION__" << ": "
+  LOG_IMPL_ABSL(LOG, INFO).WithVerbosity(verbosity) << __FUNCTION__ << ": "
 
 namespace tflite::cros {
 

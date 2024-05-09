@@ -65,12 +65,15 @@ TEST_F(LogTest, FunctionName) {
 
   PLOGF(INFO) << "egg";
   EXPECT_THAT(ConsumeOutput(), HasSubstr("TestBody: egg: Success [0]"));
+
+  VLOGF(1) << "fox";
+  EXPECT_THAT(ConsumeOutput(), HasSubstr("TestBody: fox"));
 }
 
 TEST_F(LogTest, DUMP) {
-  std::string name = "fox";
+  std::string name = "gold";
   LOG(INFO) << DUMP(1 + 2, name);
-  EXPECT_THAT(ConsumeOutput(), HasSubstr("1 + 2 = 3, name = \"fox\""));
+  EXPECT_THAT(ConsumeOutput(), HasSubstr("1 + 2 = 3, name = \"gold\""));
 }
 
 }  // namespace

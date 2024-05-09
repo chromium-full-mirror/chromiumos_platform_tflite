@@ -21,7 +21,7 @@ namespace tflite::cros {
 class CrosSampleDelegate : public SimpleAsyncDelegateInterface {
  public:
   static constexpr char kName[] = "cros_sample_delegate";
-  static constexpr char kVersion[] = "0.1.1";
+  static constexpr char kVersion[] = "0.1.2";
 
   // CrosSampleDelegate supports float32 input type only. Returns true if the
   // inputs of 'node' are two tensors of float32 with the same shape and the
