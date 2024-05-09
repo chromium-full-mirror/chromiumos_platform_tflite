@@ -146,6 +146,10 @@ inline bool IsQuantized(TfLiteType type) {
   }
 }
 
+inline bool IsInt64(TfLiteType type) {
+  return type == kTfLiteInt64;
+}
+
 inline bool IsConstantTensor(const TfLiteOpaqueTensor* tensor) {
   return TfLiteOpaqueTensorGetAllocationType(tensor) == kTfLiteMmapRo;
 }

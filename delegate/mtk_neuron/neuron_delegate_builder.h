@@ -24,6 +24,7 @@
 #define DELEGATE_MTK_NEURON_NEURON_DELEGATE_BUILDER_H_
 
 #include <algorithm>
+#include <limits>
 #include <string>
 #include <tuple>
 #include <vector>
@@ -57,6 +58,7 @@ enum {
   NN_TENSOR_FLAG_INT8_CONVERSION = 1U << 1,
   NN_TENSOR_FLAG_USE_INT8_ASYMM_SIGNED = 1U << 2,
   NN_TENSOR_FLAG_FORCE_PER_CHANNEL = 1U << 3,
+  NN_TENSOR_FLAG_INT64_CONVERSION = 1U << 4,
 };
 
 class DequantizeMapping {
@@ -904,6 +906,21 @@ class NeuronOpBuilder {
     return kTfLiteOk;
   }
 
+  // Handles the int64 type by converting to int32.
+  TfLiteStatus ConvertInt64ToInt32(const int64_t* input, int32_t* output,
+                                   size_t num_elements) {
+    for (size_t i = 0; i < num_elements; ++i) {
+      if (input[i] <= std::numeric_limits<int32_t>::max()
+            && input[i] >= std::numeric_limits<int32_t>::min()) {
+        output[i] = static_cast<int32_t>(input[i]);
+      } else {
+        // Exceeds int32_t range, return error.
+        return kTfLiteError;
+      }
+    }
+    return kTfLiteOk;
+  }
+
   // Adds a new Neuron tensor that shadows the TF Lite tensor
   // `tensor_index`. This returns the Neuron tensor index corresponding to
   // the created tensor. If another caller previously created a Neuron
@@ -918,6 +935,8 @@ class NeuronOpBuilder {
         tensor_flags & NN_TENSOR_FLAG_USE_INT8_ASYMM_SIGNED;
     const bool force_per_channel =
         tensor_flags & NN_TENSOR_FLAG_FORCE_PER_CHANNEL;
+    const bool need_int64_conversion =
+        tensor_flags & NN_TENSOR_FLAG_INT64_CONVERSION;
     int neuron_tensor_index =
         operand_mapping_->lite_index_to_neuron(tensor_index);
     if (neuron_tensor_index != -1) {
@@ -1014,6 +1033,9 @@ class NeuronOpBuilder {
           }
         }
         break;
+      case kTfLiteInt64:
+        // Currently, we are maintaining int64 the same as int32 in AddTensor
+        // to prevent DTS test case conv2D bias64 core dump.
       case kTfLiteInt32:
         nn_type = NEURON_TENSOR_INT32;
         scale = TfLiteOpaqueTensorGetQuantizationParams(tensor).scale;
@@ -1130,6 +1152,24 @@ class NeuronOpBuilder {
             neuronapi_->NeuronModel_setOperandValue(
                 nn_model_, neuron_tensor_index, new_tensor_data,
                 TfLiteOpaqueTensorByteSize(new_tensor)),
+            "setting new operand value");
+      } else if (IsInt64(tensor_type) && need_int64_conversion) {
+        size_t byte_size = TfLiteOpaqueTensorByteSize(tensor);
+        const size_t element_size = sizeof(int64_t);
+        size_t num_elements = byte_size / element_size;
+        std::vector<int32_t> int32_data(num_elements);
+
+        TF_LITE_OPAQUE_ENSURE_STATUS(
+            ConvertInt64ToInt32(
+                reinterpret_cast<const int64_t*>(
+                    TfLiteOpaqueTensorData(tensor)),
+                    int32_data.data(), num_elements));
+
+        RETURN_TFLITE_ERROR_IF_NEURON_ERROR(
+            context_,
+            neuronapi_->NeuronModel_setOperandValue(
+                nn_model_, neuron_tensor_index, int32_data.data(),
+                num_elements * sizeof(int32_t)),
             "setting new operand value");
       } else {
         RETURN_TFLITE_ERROR_IF_NEURON_ERROR(

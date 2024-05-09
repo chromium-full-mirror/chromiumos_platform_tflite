@@ -1816,9 +1816,19 @@ TfLiteStatus NeuronStableDelegateKernel::AddOpsAndTensors(
         continue;
       }
 
+      if ((TfLiteRegistrationExternalGetBuiltInCode(reg) ==
+               kTfLiteBuiltinPadv2 ||
+           TfLiteRegistrationExternalGetBuiltInCode(reg) ==
+               kTfLiteBuiltinPad) && input_pos == 1) {
+        const TfLiteOpaqueTensor* padding =
+            TfLiteOpaqueContextGetOpaqueTensor(context, input_index);
+
+        if (TfLiteOpaqueTensorType(padding) == kTfLiteInt64) {
+          input_tensor_flags |= NN_TENSOR_FLAG_INT64_CONVERSION;
+        }
       // Pad and Padv2 have an optional parameter for a pad value which has
       // to be converted to a scalar type in Neuron.
-      if ((TfLiteRegistrationExternalGetBuiltInCode(reg) ==
+      } else if ((TfLiteRegistrationExternalGetBuiltInCode(reg) ==
                kTfLiteBuiltinPadv2 ||
            TfLiteRegistrationExternalGetBuiltInCode(reg) ==
                kTfLiteBuiltinPad) &&
