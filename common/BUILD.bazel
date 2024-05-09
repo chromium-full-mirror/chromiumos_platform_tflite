@@ -48,10 +48,9 @@ cc_library(
     deps = [
         ":dump",
         "@com_google_absl//absl/cleanup",
-        "@com_google_absl//absl/flags:flag",
-        "@com_google_absl//absl/flags:parse",
         "@com_google_absl//absl/log:absl_log",
         "@com_google_absl//absl/strings:str_format",
+        "@org_tensorflow//tensorflow/lite/tools:command_line_flags",
     ],
 )
 

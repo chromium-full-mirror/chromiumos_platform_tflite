@@ -15,11 +15,8 @@
 #include <vector>
 
 #include "absl/cleanup/cleanup.h"
-#include "absl/flags/flag.h"
-#include "absl/flags/parse.h"
 #include "absl/strings/str_format.h"
-
-ABSL_FLAG(int, v, 0, "Show all VLOG(m) messages for m <= this.");
+#include "tensorflow/lite/tools/command_line_flags.h"
 
 namespace tflite::cros::log_impl {
 
@@ -62,25 +59,29 @@ int GetVLogLevelFromCmdline() {
   }
   absl::Cleanup close_file = [&] { fclose(fp); };
 
-  std::vector<char*> argv;
-  absl::Cleanup free_argv = [&] {
-    for (auto arg : argv) {
-      free(arg);
-    }
-  };
-
+  std::vector<std::string> args;
   char* arg = nullptr;
   size_t size = 0;
   while (getdelim(&arg, &size, '\0', fp) != -1) {
-    argv.push_back(strdup(arg));
+    args.push_back(arg);
   }
   free(arg);
 
-  std::vector<char*> positional_args;
-  std::vector<absl::UnrecognizedFlag> unrecognized_flags;
-  absl::ParseAbseilFlagsOnly(argv.size(), argv.data(), positional_args,
-                             unrecognized_flags);
-  return absl::GetFlag(FLAGS_v);
+  int vlog_level = 0;
+  std::vector<Flag> flags = {
+      Flag::CreateFlag("v", &vlog_level,
+                       "Show all VLOG(m) messages for m <= this."),
+  };
+  // We need to copy the arguments to a non-owning temporary vector since
+  // Flags::Parse() will try to remove the parsed arguments from argv.
+  int argc = args.size();
+  std::vector<const char*> argv;
+  for (auto arg : args) {
+    argv.push_back(arg.data());
+  }
+  Flags::Parse(&argc, argv.data(), flags);
+
+  return vlog_level;
 }
 
 }  // namespace
