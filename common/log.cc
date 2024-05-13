@@ -76,7 +76,7 @@ int GetVLogLevelFromCmdline() {
   // Flags::Parse() will try to remove the parsed arguments from argv.
   int argc = args.size();
   std::vector<const char*> argv;
-  for (auto arg : args) {
+  for (const auto& arg : args) {
     argv.push_back(arg.data());
   }
   Flags::Parse(&argc, argv.data(), flags);
