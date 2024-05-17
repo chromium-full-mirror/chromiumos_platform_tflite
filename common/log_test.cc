@@ -76,6 +76,11 @@ TEST_F(LogTest, DUMP) {
   EXPECT_THAT(ConsumeOutput(), HasSubstr("1 + 2 = 3, name = \"gold\""));
 }
 
+TEST_F(LogTest, CHECK) {
+  CHECK(2 > 1) << "2 should be larger than 1";
+  EXPECT_DEATH({ CHECK(1 > 2) << "oops"; }, "Check failed: 1 > 2 oops");
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {

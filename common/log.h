@@ -7,7 +7,8 @@
 #ifndef COMMON_LOG_H_
 #define COMMON_LOG_H_
 
-#include "absl/log/absl_log.h"  // IWYU pragma: keep
+#include "absl/log/absl_check.h"  // IWYU pragma: keep
+#include "absl/log/absl_log.h"    // IWYU pragma: keep
 
 // Exports DUMP() here to allow `LOG(INFO) << DUMP(...)` usage.
 #include "common/dump.h"  // IWYU pragma: export
@@ -42,6 +43,11 @@
 // Logging with verbosity level and function name.
 #define VLOGF(verbosity) \
   LOG_IMPL_ABSL(LOG, INFO).WithVerbosity(verbosity) << __FUNCTION__ << ": "
+
+// Checks the condition and terminates the program if it's false.
+// Note that DCHECK() is intentionally not added here as per the style guide.
+// https://chromium.googlesource.com/chromium/src/+/HEAD/styleguide/c++/checks.md
+#define CHECK(condition) LOG_IMPL_ABSL(CHECK, condition)
 
 namespace tflite::cros {
 
