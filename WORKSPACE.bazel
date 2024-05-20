@@ -88,3 +88,8 @@ tf_workspace1()
 load("@org_tensorflow//tensorflow:workspace0.bzl", "tf_workspace0")
 
 tf_workspace0()
+
+# Intel OpenVINO Delegate dependencies
+load("@cros_tflite//delegate/intel_openvino:openvino.bzl", "openvino_repository")
+
+openvino_repository(name = "intel_openvino")

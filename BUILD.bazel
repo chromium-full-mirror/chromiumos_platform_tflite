@@ -13,6 +13,11 @@ alias(
 )
 
 alias(
+    name = "intel_openvino_delegate",
+    actual = "//delegate/intel_openvino:tensorflowlite_intel_openvino_delegate",
+)
+
+alias(
     name = "libnativewindow.so",
     actual = "//android:libnativewindow.so",
 )
@@ -21,4 +26,3 @@ alias(
     name = "async_delegate_test",
     actual = "//common:async_delegate_test",
 )
-
