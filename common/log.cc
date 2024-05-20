@@ -84,6 +84,12 @@ int GetVLogLevelFromCmdline() {
   return vlog_level;
 }
 
+std::string FormatPidTid(int pid, int tid) {
+  // Only show thread id when it's different from the process id.
+  return pid == tid ? absl::StrFormat("%d", pid)
+                    : absl::StrFormat("%d:%d", pid, tid);
+}
+
 }  // namespace
 
 SyslogStderrSink* SyslogStderrSink::GetInstance() {
@@ -115,12 +121,11 @@ void SyslogStderrSink::Send(const absl::LogEntry& entry) {
   // We don't provide control knobs for simplicity. The format looks like:
   // <timestamp> <severity> <program>[<pid>:<tid>]: [<file>(<line>)] <message>
   //
-  // TODO(shik): Only print thread id when it's different from the process id.
   // TODO(shik): Only log to stderr if stdin is a tty.
   std::string body = absl::StrFormat(
-      "%v %s %s[%d:%d]: [%v(%d)] %v", timestamp, severity, GetProgramName(),
-      getpid(), entry.tid(), entry.source_basename(), entry.source_line(),
-      entry.text_message_with_newline());
+      "%v %s %s[%s]: [%v(%d)] %v", timestamp, severity, GetProgramName(),
+      FormatPidTid(getpid(), entry.tid()), entry.source_basename(),
+      entry.source_line(), entry.text_message_with_newline());
   fwrite(body.data(), body.size(), 1, stderr);
 
   // TODO(shik): Print stacktrace if available.
