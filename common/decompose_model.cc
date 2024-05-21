@@ -85,25 +85,67 @@ bool DecomposeModel(tflite::ModelT& model, int op_index) {
   auto& subgraph = model.subgraphs[0];
 
   // Prunes the other operators and keeps only operator with index |op_index|.
-  // TODO: b/331900692 - Also prunes the unused tensor.
   auto& operators = subgraph->operators;
   if (operators.size() <= op_index) {
     return false;
   }
   operators[0] = std::move(operators[op_index]);
   operators.resize(1);
+  auto& op = operators[0];
+
+  // Prunes the unused tensors.
+  std::map<int, int> tensor_map;
+  int tensor_map_index = 0;
+  for (auto& tensors : {std::ref(op->inputs), std::ref(op->outputs)}) {
+    for (int& index : tensors.get()) {
+      // Optional input -1 should be skipped.
+      if (index < 0) {
+        continue;
+      }
+      auto it = tensor_map.find(index);
+      if (it == tensor_map.end()) {
+        tensor_map.emplace(index, tensor_map_index++);
+      }
+      index = tensor_map[index];
+    }
+  }
+  std::vector<std::unique_ptr<tflite::TensorT>> new_tensors(tensor_map_index);
+  for (auto [k, v] : tensor_map) {
+    new_tensors[v] = std::move(subgraph->tensors[k]);
+  }
+  subgraph->tensors = std::move(new_tensors);
+
+  // Prunes the unused buffers.
+  // TODO: b/331900692 - Randomize the buffer data.
+  // 0th entry of the buffer array should be an empty buffer for tensors
+  // without associated buffers.
+  std::map<int, int> buffer_map = {{0, 0}};
+  int buffer_map_index = 1;
+  for (const auto& tensor : subgraph->tensors) {
+    int buffer_idx = tensor->buffer;
+    auto it = buffer_map.find(buffer_idx);
+    if (it == buffer_map.end()) {
+      buffer_map.emplace(buffer_idx, buffer_map_index++);
+    }
+    tensor->buffer = buffer_map[buffer_idx];
+  }
+  std::vector<std::unique_ptr<tflite::BufferT>> new_buffers(buffer_map_index);
+  for (auto [k, v] : buffer_map) {
+    new_buffers[v] = std::move(model.buffers[k]);
+  }
+  model.buffers = std::move(new_buffers);
+
+  // TODO: b/331900692 - Consider also pruning unused operator code.
 
   // Reassigns input/output of the remaining operator with empty buffers to
   // input/output of the subgraph.
-  auto& op = operators[0];
   subgraph->inputs.clear();
-  for (int input : op->inputs) {
-    int buffer_idx = subgraph->tensors[input]->buffer;
+  for (int index : op->inputs) {
+    int buffer_idx = subgraph->tensors[index]->buffer;
     // Input of the subgraph should contain only empty buffers.
     if (model.buffers[buffer_idx]->data.size() == 0) {
-      subgraph->inputs.push_back(input);
+      subgraph->inputs.push_back(index);
     }
-    // TODO: b/331900692 - Randomize the buffer data of the other inputs.
   }
   subgraph->outputs = op->outputs;
   return true;
