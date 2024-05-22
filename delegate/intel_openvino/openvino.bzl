@@ -8,8 +8,8 @@ load("@rules_cc//cc:defs.bzl", "cc_library")
 cc_library(
     name = "openvino",
     srcs = ["openvino/lib64/libopenvino.so"],
-    includes = ["openvino/runtime/include"],
-    hdrs = glob(["openvino/runtime/include/**"]),
+    includes = ["openvino/include/openvino"],
+    hdrs = glob(["openvino/include/openvino/**"]),
     visibility = ["//visibility:public"],
 )
 '''

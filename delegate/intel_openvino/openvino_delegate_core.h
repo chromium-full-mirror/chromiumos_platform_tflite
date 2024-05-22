@@ -15,7 +15,8 @@ namespace tflite {
 namespace openvinodelegate {
 class OpenVINODelegateCore {
  public:
-  OpenVINODelegateCore(std::string_view plugins_path) : ov_core_(ov::Core()) {}
+  OpenVINODelegateCore(std::string plugins_path)
+      : ov_core_(ov::Core(plugins_path)) {}
   TfLiteStatus Init();
 
   std::vector<int> getComputeInputs() { return compute_inputs_; }

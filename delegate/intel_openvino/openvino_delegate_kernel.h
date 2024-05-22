@@ -16,7 +16,8 @@ namespace openvinodelegate {
 class OpenVINODelegateKernel : public SimpleOpaqueDelegateKernelInterface {
  public:
   explicit OpenVINODelegateKernel()
-      : ov_delegate_core_(std::make_unique<OpenVINODelegateCore>("")) {}
+      : ov_delegate_core_(std::make_unique<OpenVINODelegateCore>(
+            "/etc/openvino/plugins.xml")) {}
 
   TfLiteStatus Init(TfLiteOpaqueContext *context,
                     const TfLiteOpaqueDelegateParams *params) override;
