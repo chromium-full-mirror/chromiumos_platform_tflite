@@ -104,7 +104,7 @@ int SimpleModelBuilder::AddBuffer(std::vector<uint8_t> data) {
   return idx;
 }
 
-std::unique_ptr<FlatBufferModel> SimpleModelBuilder::Build() {
+std::unique_ptr<FlatBufferModel> SimpleModelBuilder::Build() const {
   Interpreter interpreter;
 
   // Add tensors.
@@ -153,15 +153,18 @@ std::unique_ptr<FlatBufferModel> SimpleModelBuilder::Build() {
     if (reg == nullptr) {
       return nullptr;
     }
+    // We have to use malloc here since this will be freed by Interpreter.
+    void* builtin_data = malloc(op.params.size());
+    memcpy(builtin_data, op.params.data(), op.params.size());
     if (interpreter.AddNodeWithParameters(op.inputs, op.outputs,
                                           /*init_data=*/nullptr,
-                                          /*init_data_size=*/0, op.params.get(),
+                                          /*init_data_size=*/0, builtin_data,
                                           reg) != kTfLiteOk) {
+      free(builtin_data);
       return nullptr;
     }
-    // If AddNodeWithParameters() succeed, the pointer ownership is taken by
-    // interpreter.
-    (void)op.params.release();
+    // If AddNodeWithParameters() succeed, the ownership of builtin_data is
+    // taken by the interpreter, so we don't need to free it here.
   }
 
   std::unique_ptr<uint8_t[]> buffer;
@@ -177,10 +180,6 @@ std::unique_ptr<FlatBufferModel> SimpleModelBuilder::Build() {
   }
 
   return FixupSignatureDef(std::move(model));
-}
-
-void SimpleModelBuilder::AddOperatorImpl(OperatorArgs<ScopedBuiltinData> args) {
-  operators_.push_back(std::move(args));
 }
 
 }  // namespace tflite::cros

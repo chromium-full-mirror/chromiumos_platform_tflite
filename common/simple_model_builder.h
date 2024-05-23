@@ -59,11 +59,11 @@ class SimpleModelBuilder {
 
   SimpleModelBuilder();
 
-  // Move-only.
+  // Copyable and movable.
+  SimpleModelBuilder(const SimpleModelBuilder& other) = default;
+  SimpleModelBuilder& operator=(const SimpleModelBuilder& other) = default;
   SimpleModelBuilder(SimpleModelBuilder&& other) = default;
   SimpleModelBuilder& operator=(SimpleModelBuilder&& other) = default;
-  SimpleModelBuilder(const SimpleModelBuilder&) = delete;
-  SimpleModelBuilder& operator=(const SimpleModelBuilder&) = delete;
 
   // Adds an input tensor. Returns the tensor index.
   int AddInput(const TensorArgs& args);
@@ -80,29 +80,21 @@ class SimpleModelBuilder {
   // Adds an operator node in the graph.
   template <typename T>
   void AddOperator(const OperatorArgs<T>& args) {
-    // We have to use malloc here since this will be freed by Interpreter.
-    void* builtin_data = malloc(sizeof(T));
-    *static_cast<T*>(builtin_data) = args.params;
-    AddOperatorImpl({
+    std::vector<uint8_t> params(sizeof(T));
+    memcpy(params.data(), &args.params, params.size());
+    operators_.push_back({
         .op = args.op,
         .inputs = args.inputs,
         .outputs = args.outputs,
-        .params = ScopedBuiltinData(builtin_data),
+        .params = std::move(params),
     });
   }
 
   // Builds the model. This can be called multiple times.
   // TODO(shik): Support saving to a file directly.
-  std::unique_ptr<FlatBufferModel> Build();
+  std::unique_ptr<FlatBufferModel> Build() const;
 
  private:
-  struct FreeDeleter {
-    void operator()(void* ptr) { free(ptr); }
-  };
-  using ScopedBuiltinData = std::unique_ptr<void, FreeDeleter>;
-
-  void AddOperatorImpl(OperatorArgs<ScopedBuiltinData> args);
-
   int next_tensor_index_ = 0;
 
   // The added tensors stored as vectors of (tensor_index, tensor_args) pair.
@@ -114,8 +106,8 @@ class SimpleModelBuilder {
   // schema.
   std::vector<std::vector<uint8_t>> buffers_;
 
-  // The added operators with params converted to owned void data pointers.
-  std::vector<OperatorArgs<ScopedBuiltinData>> operators_;
+  // The added operators with params converted to owned bytes.
+  std::vector<OperatorArgs<std::vector<uint8_t>>> operators_;
 };
 
 }  // namespace tflite::cros

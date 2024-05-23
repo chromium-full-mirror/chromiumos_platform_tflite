@@ -176,6 +176,19 @@ TEST(Builder, ModelWithBuffer) {
   }
 }
 
+TEST(Builder, BuildTwice) {
+  SimpleModelBuilder mb;
+  int x = mb.AddInput({.name = "x", .type = kTfLiteFloat32, .shape = {1}});
+  int y = mb.AddOutput({.name = "y", .type = kTfLiteFloat32, .shape = {1}});
+  mb.AddOperator<TfLiteAddParams>({
+      .op = kTfLiteBuiltinAdd,
+      .inputs = {x, x},
+      .outputs = {y},
+  });
+  EXPECT_NE(mb.Build(), nullptr);
+  EXPECT_NE(mb.Build(), nullptr);
+}
+
 }  // namespace tflite::cros
 
 int main(int argc, char** argv) {
