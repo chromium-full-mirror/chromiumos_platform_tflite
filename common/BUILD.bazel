@@ -109,6 +109,28 @@ cc_binary(
     ],
 )
 
+cc_library(
+    name = "single_op_model_builder",
+    srcs = ["single_op_model_builder.cc"],
+    hdrs = ["single_op_model_builder.h"],
+    deps = [
+        ":log",
+        ":simple_model_builder",
+        "@com_google_absl//absl/strings",
+    ],
+)
+
+cc_binary(
+    name = "single_op_model_builder_test",
+    testonly = True,
+    srcs = ["single_op_model_builder_test.cc"],
+    deps = [
+        ":single_op_model_builder",
+        "@com_google_absl//absl/random",
+        "@com_google_googletest//:gtest",
+    ],
+)
+
 cc_binary(
     name = "decompose_model",
     srcs = ["decompose_model.cc"],

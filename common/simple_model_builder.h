@@ -10,6 +10,7 @@
 #include <memory>
 #include <string>
 #include <utility>
+#include <variant>
 #include <vector>
 
 #include "tensorflow/lite/builtin_ops.h"
@@ -78,7 +79,7 @@ class SimpleModelBuilder {
   int AddBuffer(std::vector<uint8_t> data);
 
   // Adds an operator node in the graph.
-  template <typename T>
+  template <typename T = std::monostate>
   void AddOperator(const OperatorArgs<T>& args) {
     std::vector<uint8_t> params(sizeof(T));
     memcpy(params.data(), &args.params, params.size());
