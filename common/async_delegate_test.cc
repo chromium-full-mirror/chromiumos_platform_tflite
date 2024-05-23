@@ -5,73 +5,18 @@
  */
 
 #include <gtest/gtest.h>
-#include <iostream>
+
+#include <vector>
 
 #include "absl/random/random.h"
 #include "common/async_driver.h"
 #include "common/simple_model_builder.h"
+#include "common/test_util/stable_delegate_env.h"
 #include "tensorflow/lite/core/c/builtin_op_data.h"
-#include "tensorflow/lite/tools/command_line_flags.h"
-#include "tensorflow/lite/tools/delegates/delegate_provider.h"
-#include "tensorflow/lite/tools/tool_params.h"
 
 namespace tflite::cros::tests {
 
-using DelegateProvider = tools::DelegateProvider;
-using ProvidedDelegateList = tools::ProvidedDelegateList;
-using ProvidedDelegate = tools::ProvidedDelegateList::ProvidedDelegate;
-using ToolParams = tools::ToolParams;
-using TfLiteDelegatePtr = Interpreter::TfLiteDelegatePtr;
-
-class Environment : public ::testing::Environment {
- public:
-  Environment() : delegate_list_(&params_) {}
-  ~Environment() override {}
-
-  bool InitFromCommandLine(int* argc, char** argv) {
-    constexpr char kSettingsFlagName[] = "stable_delegate_settings_file";
-
-    std::string settings;
-    // Use our own flags directly instead of delegate_list_.AppendCmdlineFlags()
-    // to make the settings flag required.
-    std::vector<tflite::Flag> flags = {
-        Flag::CreateFlag(kSettingsFlagName, &settings,
-                         "The path to the delegate settings JSON file.",
-                         Flag::kRequired),
-    };
-
-    if (!tflite::Flags::Parse(argc, const_cast<const char**>(argv), flags)) {
-      std::cout << Flags::Usage(argv[0], flags) << std::endl;
-      return false;
-    }
-
-    delegate_list_.AddAllDelegateParams();
-    params_.Set<std::string>(kSettingsFlagName, settings);
-
-    return true;
-  }
-
-  TfLiteDelegatePtr CreateDelegate() {
-    std::vector<ProvidedDelegate> provided_delegates =
-        delegate_list_.CreateAllRankedDelegates();
-    EXPECT_EQ(provided_delegates.size(), 1);
-    if (provided_delegates.empty()) {
-      return tools::CreateNullDelegate();
-    }
-    return std::move(provided_delegates[0].delegate);
-  }
-
-  void SetUp() override {
-    // Ensure that the delegate can be created before running any test.
-    ASSERT_NE(CreateDelegate(), nullptr);
-  }
-
- private:
-  ToolParams params_;
-  ProvidedDelegateList delegate_list_;
-};
-
-Environment* g_env = nullptr;
+StableDelegateEnvironment* g_env = nullptr;
 
 // Use a relaxed tolerance when comparing the computation results, as the
 // primary goal of this test is to verify the asynchronous kernel API flow.
@@ -157,7 +102,7 @@ TEST(AsyncDelegate, Inference) {
 using tflite::cros::tests::g_env;
 
 int main(int argc, char** argv) {
-  g_env = new tflite::cros::tests::Environment();
+  g_env = new StableDelegateEnvironment();
   if (!g_env->InitFromCommandLine(&argc, argv)) {
     delete g_env;
     return EXIT_FAILURE;

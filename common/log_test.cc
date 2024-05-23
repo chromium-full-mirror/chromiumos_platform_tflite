@@ -11,7 +11,7 @@
 
 #include <string>
 
-#include "common/test_util.h"
+#include "common/test_util/log_fixture.h"
 
 namespace {
 

@@ -1,0 +1,32 @@
+# Copyright 2024 The ChromiumOS Authors
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+load("@rules_cc//cc:defs.bzl", "cc_library")
+
+package(
+    default_visibility = ["//:__subpackages__"],
+)
+
+cc_library(
+    name = "log_fixture",
+    testonly = True,
+    srcs = ["log_fixture.cc"],
+    hdrs = ["log_fixture.h"],
+    deps = [
+        "@com_google_googletest//:gtest",
+    ],
+)
+
+cc_library(
+    name = "stable_delegate_env",
+    testonly = True,
+    srcs = ["stable_delegate_env.cc"],
+    hdrs = ["stable_delegate_env.h"],
+    deps = [
+        "@com_google_googletest//:gtest",
+        "@org_tensorflow//tensorflow/lite:framework",
+        "@org_tensorflow//tensorflow/lite/tools/delegates:delegate_provider_lib",
+        "@org_tensorflow//tensorflow/lite/tools/delegates/experimental/stable_delegate:delegate_provider",
+    ],
+)

@@ -4,8 +4,8 @@
  * found in the LICENSE file.
  */
 
-#ifndef COMMON_TEST_UTIL_H_
-#define COMMON_TEST_UTIL_H_
+#ifndef COMMON_TEST_UTIL_LOG_FIXTURE_H_
+#define COMMON_TEST_UTIL_LOG_FIXTURE_H_
 
 #include <gtest/gtest.h>
 
@@ -25,4 +25,4 @@ class LogTest : public testing::Test {
   int original_stderr_ = -1;
 };
 
-#endif  // COMMON_TEST_UTIL_H_
+#endif  // COMMON_TEST_UTIL_LOG_FIXTURE_H_

@@ -1,0 +1,39 @@
+/*
+ * Copyright 2024 The ChromiumOS Authors
+ * Use of this source code is governed by a BSD-style license that can be
+ * found in the LICENSE file.
+ */
+
+#ifndef COMMON_TEST_UTIL_STABLE_DELEGATE_ENV_H_
+#define COMMON_TEST_UTIL_STABLE_DELEGATE_ENV_H_
+
+#include <gtest/gtest.h>
+
+#include "tensorflow/lite/core/interpreter.h"
+#include "tensorflow/lite/tools/delegates/delegate_provider.h"
+#include "tensorflow/lite/tools/tool_params.h"
+
+// An environment that loads the settings file from command line and creates a
+// stable delegate accordingly.
+class StableDelegateEnvironment : public ::testing::Environment {
+  using ProvidedDelegateList = tflite::tools::ProvidedDelegateList;
+  using ToolParams = tflite::tools::ToolParams;
+  using TfLiteDelegatePtr = tflite::Interpreter::TfLiteDelegatePtr;
+
+ public:
+  StableDelegateEnvironment();
+  ~StableDelegateEnvironment() override;
+
+  bool InitFromCommandLine(int* argc, char** argv);
+
+  TfLiteDelegatePtr CreateDelegate();
+
+ protected:
+  void SetUp() override;
+
+ private:
+  ToolParams params_;
+  ProvidedDelegateList delegate_list_;
+};
+
+#endif  // COMMON_TEST_UTIL_STABLE_DELEGATE_ENV_H_

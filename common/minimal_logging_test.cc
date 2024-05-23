@@ -9,7 +9,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include "common/test_util.h"
+#include "common/test_util/log_fixture.h"
 
 namespace tflite {
 
