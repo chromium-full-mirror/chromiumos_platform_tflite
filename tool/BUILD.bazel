@@ -32,3 +32,20 @@ cc_binary(
         "@org_tensorflow//tensorflow/lite/tools:command_line_flags",
     ],
 )
+
+cc_binary(
+    name = "op_compat_test",
+    testonly = True,
+    srcs = [
+        "op_compat_test.cc",
+    ],
+    deps = [
+        "//common:log",
+        "//common:single_op_model_builder",
+        "//common/test_util:stable_delegate_env",
+        "@com_google_googletest//:gtest",
+        "@org_tensorflow//tensorflow/lite:framework",
+        "@org_tensorflow//tensorflow/lite/kernels:builtin_ops",
+        "@org_tensorflow//tensorflow/lite/tools:utils",
+    ],
+)
