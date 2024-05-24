@@ -121,7 +121,7 @@ def setup_argument_parser() -> argparse.ArgumentParser:
         "--build",
         action=argparse.BooleanOptionalAction,
         help="whether to build the target",
-        default=True,
+        default=False,
     )
     parser.add_argument(
         "--output",
