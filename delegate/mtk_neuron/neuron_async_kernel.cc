@@ -4,6 +4,8 @@
  * found in the LICENSE file.
  */
 
+#include "delegate/mtk_neuron/neuron_async_kernel.h"
+
 #include <algorithm>
 #include <limits>
 #include <memory>
@@ -12,7 +14,6 @@
 #include <vector>
 
 #include "delegate/mtk_neuron/neuron_delegate_kernel.h"
-#include "delegate/mtk_neuron/neuron_async_kernel.h"
 #include "tensorflow/lite/builtin_ops.h"
 #include "tensorflow/lite/c/c_api.h"
 #include "tensorflow/lite/c/c_api_opaque.h"
@@ -23,14 +24,13 @@
 namespace tflite::neuron {
 using tflite::delegates::utils::ReadBufferAttrs;
 
-DelegateAsyncKernel::DelegateAsyncKernel(
-    NeuronStableDelegateKernel* core)
+DelegateAsyncKernel::DelegateAsyncKernel(NeuronStableDelegateKernel* core)
     : core_(*core) {}
 
 constexpr size_t kDefaultByteAlignmentForNeuron = 128;
 
 static size_t alignToLCM(size_t provided_size, size_t alignment_size) {
-    return std::lcm(provided_size, alignment_size);
+  return std::lcm(provided_size, alignment_size);
 }
 
 bool DelegateAsyncKernel::ReconcileRestrictions(
@@ -38,14 +38,13 @@ bool DelegateAsyncKernel::ReconcileRestrictions(
     const TfLiteOpaqueNode* opaque_node, int tensor_index,
     const TfLiteAttributeMap* user_provided_attributes,
     TfLiteAttributeMap* merged, TfLiteAttributeMap* conflict) const {
-
   TfLiteOpaqueTensor* tensor =
-        TfLiteOpaqueContextGetOpaqueTensor(opaque_context, tensor_index);
+      TfLiteOpaqueContextGetOpaqueTensor(opaque_context, tensor_index);
   if (TfLiteAttributeMapIsBufferAttributeMap(user_provided_attributes)) {
     auto attrs = ReadBufferAttrs(user_provided_attributes);
     size_t tensor_size = TfLiteOpaqueTensorByteSize(tensor);
-    size_t padding = alignToLCM(attrs.padding.value_or(1),
-                                kDefaultByteAlignmentForNeuron);
+    size_t padding =
+        alignToLCM(attrs.padding.value_or(1), kDefaultByteAlignmentForNeuron);
     attrs.size = std::max(attrs.size.value_or(0), tensor_size);
     attrs.padding = padding;
     delegates::utils::WriteBufferAttrs(attrs, merged);
@@ -77,7 +76,6 @@ TfLiteStatus DelegateAsyncKernel::RegisterBuffer(
     TfLiteOpaqueContext* opaque_context, TfLiteIoType io_type,
     const TfLiteBackendBuffer* buffer, const TfLiteAttributeMap* attrs,
     TfLiteBufferHandle handle) {
-
   auto buffer_attrs = ReadBufferAttrs(attrs);
   size_t buffer_size = buffer_attrs.size.value();
 
@@ -105,8 +103,7 @@ TfLiteStatus DelegateAsyncKernel::UnregisterBuffer(
   if (it == registered_buffers_.end()) {
     return kTfLiteError;
   }
-  TF_LITE_OPAQUE_ENSURE_STATUS(
-    core_.UnregisterBuffer(handle));
+  TF_LITE_OPAQUE_ENSURE_STATUS(core_.UnregisterBuffer(handle));
   AHardwareBuffer_release(it->second);
   registered_buffers_.erase(it);
   return kTfLiteOk;
@@ -121,7 +118,7 @@ TfLiteStatus DelegateAsyncKernel::Eval(TfLiteOpaqueContext* opaque_context,
 }
 
 TfLiteStatus DelegateAsyncKernel::Wait(TfLiteOpaqueContext* opaque_context,
-                                                 TfLiteExecutionTask* task) {
+                                       TfLiteExecutionTask* task) {
   auto it = task_status_map_.find(task);
   if (it == task_status_map_.end()) {
     return kTfLiteError;
@@ -130,7 +127,7 @@ TfLiteStatus DelegateAsyncKernel::Wait(TfLiteOpaqueContext* opaque_context,
 }
 
 TfLiteStatus DelegateAsyncKernel::Finish(TfLiteOpaqueContext* opaque_context,
-                                                   TfLiteExecutionTask* task) {
+                                         TfLiteExecutionTask* task) {
   size_t erased = task_status_map_.erase(task);
   return erased == 1 ? kTfLiteOk : kTfLiteError;
 }

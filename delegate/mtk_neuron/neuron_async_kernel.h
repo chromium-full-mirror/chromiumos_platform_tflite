@@ -26,7 +26,7 @@ using BackendAsyncKernelInterface =
 class NeuronStableDelegateKernel;
 class DelegateAsyncKernel : public BackendAsyncKernelInterface {
  public:
-  explicit DelegateAsyncKernel(NeuronStableDelegateKernel *core);
+  explicit DelegateAsyncKernel(NeuronStableDelegateKernel* core);
   ~DelegateAsyncKernel() override = default;
 
   // Buffer operations
@@ -91,7 +91,6 @@ class DelegateAsyncKernel : public BackendAsyncKernelInterface {
   std::map<TfLiteBufferHandle, AHardwareBuffer*> registered_buffers_;
   std::map<TfLiteExecutionTask*, TfLiteStatus> task_status_map_;
 };
-
 
 }  // namespace tflite::neuron
 

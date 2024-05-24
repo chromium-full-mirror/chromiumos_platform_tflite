@@ -910,8 +910,8 @@ class NeuronOpBuilder {
   TfLiteStatus ConvertInt64ToInt32(const int64_t* input, int32_t* output,
                                    size_t num_elements) {
     for (size_t i = 0; i < num_elements; ++i) {
-      if (input[i] <= std::numeric_limits<int32_t>::max()
-            && input[i] >= std::numeric_limits<int32_t>::min()) {
+      if (input[i] <= std::numeric_limits<int32_t>::max() &&
+          input[i] >= std::numeric_limits<int32_t>::min()) {
         output[i] = static_cast<int32_t>(input[i]);
       } else {
         // Exceeds int32_t range, return error.
@@ -1159,11 +1159,9 @@ class NeuronOpBuilder {
         size_t num_elements = byte_size / element_size;
         std::vector<int32_t> int32_data(num_elements);
 
-        TF_LITE_OPAQUE_ENSURE_STATUS(
-            ConvertInt64ToInt32(
-                reinterpret_cast<const int64_t*>(
-                    TfLiteOpaqueTensorData(tensor)),
-                    int32_data.data(), num_elements));
+        TF_LITE_OPAQUE_ENSURE_STATUS(ConvertInt64ToInt32(
+            reinterpret_cast<const int64_t*>(TfLiteOpaqueTensorData(tensor)),
+            int32_data.data(), num_elements));
 
         RETURN_TFLITE_ERROR_IF_NEURON_ERROR(
             context_,

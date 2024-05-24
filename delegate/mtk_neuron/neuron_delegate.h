@@ -53,7 +53,7 @@ NeuronDelegateOptions TfLiteNeuronDelegateOptionsDefault();
 
 class NeuronStableDelegate : public cros::SimpleAsyncDelegateInterface {
  public:
-  explicit NeuronStableDelegate(const NeuronDelegateOptions &options)
+  explicit NeuronStableDelegate(const NeuronDelegateOptions& options)
       : options_(options) {}
 
   bool IsNodeSupportedByDelegate(const TfLiteRegistrationExternal* registration,
