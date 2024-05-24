@@ -185,6 +185,17 @@ cc_binary(
     ],
 )
 
+cc_binary(
+    name = "openvino_smoke_test",
+    testonly = True,
+    srcs = ["openvino_smoke_test.cc"],
+    copts = tflite_copts(),
+    deps = [
+        "@com_google_googletest//:gtest",
+        "@intel_openvino//:openvino",
+    ],
+)
+
 filegroup(
     name = "openvino_delegate_tests",
     testonly = True,
@@ -193,5 +204,6 @@ filegroup(
         "openvino_delegate_external_test",
         "openvino_delegate_test",
         "openvino_graph_builder_test",
+        "openvino_smoke_test",
     ],
 )

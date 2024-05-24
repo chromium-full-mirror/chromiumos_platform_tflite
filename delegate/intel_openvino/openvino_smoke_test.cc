@@ -6,6 +6,7 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+
 #include <openvino/openvino.hpp>
 #include <openvino/runtime/core.hpp>
 
