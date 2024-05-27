@@ -79,7 +79,7 @@ using ::testing::Pointwise;
 // checking operator compatibility.
 constexpr float kEps = 1e-2;
 
-class OpTest : public testing::Test {
+class ModelTest : public testing::Test {
  protected:
   void TestModel(const SingleOpModelBuilder& model_builder) {
     auto delegate = g_env->CreateDelegate();
@@ -148,29 +148,46 @@ class OpTest : public testing::Test {
   std::map<int, utils::InputTensorData> random_input_data_;
 };
 
-// TODO(shik): Extract common logic for testing element-wise unary/binary
-// operators as a fixture.
+class OpTest : public ModelTest {
+ protected:
+  template <typename T = std::monostate>
+  void TestUnaryOp(TfLiteBuiltinOperator op, TfLiteType type, T params = {}) {
+    TestOp(op, type, params, /*num_inputs=*/1);
+  }
+
+  template <typename T = std::monostate>
+  void TestBinaryOp(TfLiteBuiltinOperator op, TfLiteType type, T params = {}) {
+    TestOp(op, type, params, /*num_inputs=*/2);
+  }
+
+ private:
+  template <typename T>
+  void TestOp(TfLiteBuiltinOperator op,
+              TfLiteType type,
+              T params,
+              int num_inputs) {
+    // TODO(shik): Parameterize tensor ranks and make it controllable as
+    // command-line flags. For now, test only 4D which should be supported
+    // universally by all delegates we care about.
+    const std::vector<int> shape = {1, 2, 3, 4};
+    SingleOpModelBuilder builder;
+    for (int i = 0; i < num_inputs; i++) {
+      builder.AddInput(type, shape);
+    }
+    TestModel(builder.AddOutput(type, shape).AddOperator<T>(op, params));
+  }
+};
+
 TEST_F(OpTest, Abs) {
-  TestModel(SingleOpModelBuilder()
-                .AddInput(kTfLiteFloat32, {2, 3})
-                .AddOutput(kTfLiteFloat32, {2, 3})
-                .AddOperator(kTfLiteBuiltinAbs));
+  TestUnaryOp(kTfLiteBuiltinAbs, kTfLiteFloat32);
 }
 
 TEST_F(OpTest, Add) {
-  TestModel(SingleOpModelBuilder()
-                .AddInput(kTfLiteFloat32, {2, 3})
-                .AddInput(kTfLiteFloat32, {2, 3})
-                .AddOutput(kTfLiteFloat32, {2, 3})
-                .AddOperator<TfLiteAddParams>(kTfLiteBuiltinAdd));
+  TestBinaryOp<TfLiteAddParams>(kTfLiteBuiltinAdd, kTfLiteFloat32);
 }
 
 TEST_F(OpTest, Sub) {
-  TestModel(SingleOpModelBuilder()
-                .AddInput(kTfLiteFloat32, {2, 3})
-                .AddInput(kTfLiteFloat32, {2, 3})
-                .AddOutput(kTfLiteFloat32, {2, 3})
-                .AddOperator<TfLiteSubParams>(kTfLiteBuiltinSub));
+  TestBinaryOp<TfLiteSubParams>(kTfLiteBuiltinSub, kTfLiteFloat32);
 }
 
 }  // namespace tflite::cros::tests
