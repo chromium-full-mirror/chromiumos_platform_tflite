@@ -123,6 +123,8 @@ class ModelTest : public testing::Test {
       // Reuse the same random input from the previous run if exists.
       utils::InputTensorData& data = random_input_data_[input];
       if (data.data == nullptr) {
+        // TODO(shik): Support specifying the random range. Some operators do
+        // not support negative input tensors, such as sqrt.
         float low = 0, high = 0;
         utils::GetDataRangesForType(tensor->type, &low, &high);
         data = utils::CreateRandomTensorData(*tensor, low, high);
@@ -180,6 +182,59 @@ class OpTest : public ModelTest {
 
 TEST_F(OpTest, Abs) {
   TestUnaryOp(kTfLiteBuiltinAbs, kTfLiteFloat32);
+}
+
+TEST_F(OpTest, Cos) {
+  TestUnaryOp(kTfLiteBuiltinCos, kTfLiteFloat32);
+}
+
+TEST_F(OpTest, Elu) {
+  TestUnaryOp(kTfLiteBuiltinElu, kTfLiteFloat32);
+}
+
+TEST_F(OpTest, Exp) {
+  TestUnaryOp(kTfLiteBuiltinExp, kTfLiteFloat32);
+}
+
+TEST_F(OpTest, Floor) {
+  TestUnaryOp(kTfLiteBuiltinFloor, kTfLiteFloat32);
+}
+
+TEST_F(OpTest, Gelu) {
+  TestUnaryOp<TfLiteGeluParams>(kTfLiteBuiltinGelu, kTfLiteFloat32,
+                                {.approximate = false});
+  TestUnaryOp<TfLiteGeluParams>(kTfLiteBuiltinGelu, kTfLiteFloat32,
+                                {.approximate = true});
+}
+
+// TODO(shik): Test Log.
+
+TEST_F(OpTest, Logistic) {
+  TestUnaryOp(kTfLiteBuiltinLogistic, kTfLiteFloat32);
+}
+
+TEST_F(OpTest, Neg) {
+  TestUnaryOp(kTfLiteBuiltinNeg, kTfLiteFloat32);
+}
+
+// TODO(shik): Test Rsqrt.
+
+TEST_F(OpTest, Sign) {
+  TestUnaryOp(kTfLiteBuiltinSign, kTfLiteFloat32);
+}
+
+TEST_F(OpTest, Sin) {
+  TestUnaryOp(kTfLiteBuiltinSin, kTfLiteFloat32);
+}
+
+// TODO(shik): Test Sqrt.
+
+TEST_F(OpTest, Square) {
+  TestUnaryOp(kTfLiteBuiltinSquare, kTfLiteFloat32);
+}
+
+TEST_F(OpTest, Tanh) {
+  TestUnaryOp(kTfLiteBuiltinTanh, kTfLiteFloat32);
 }
 
 TEST_F(OpTest, Add) {
