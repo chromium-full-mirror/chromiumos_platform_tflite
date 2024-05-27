@@ -82,13 +82,16 @@ constexpr float kEps = 1e-2;
 class ModelTest : public testing::Test {
  protected:
   void TestModel(const SingleOpModelBuilder& model_builder) {
-    auto delegate = g_env->CreateDelegate();
+    // Call GetDelegate() instead of CreateDelegate() here to reuse the delegate
+    // instance and reduce the overhead of creating/destorying the delegate
+    // itself.
+    auto delegate = g_env->GetDelegate();
     ASSERT_NE(delegate, nullptr);
 
     // Run model with/without the delegate and compare the result.
     std::vector<std::vector<double>> actual, expected;
     random_input_data_.clear();
-    RunModel(model_builder.Build(), delegate.get(), actual);
+    RunModel(model_builder.Build(), delegate, actual);
     RunModel(model_builder.Build(), nullptr, expected);
     ASSERT_EQ(actual.size(), expected.size());
     for (size_t i = 0; i < actual.size(); i++) {

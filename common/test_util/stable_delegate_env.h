@@ -26,14 +26,21 @@ class StableDelegateEnvironment : public ::testing::Environment {
 
   bool InitFromCommandLine(int* argc, char** argv);
 
+  // Creates a new delegate instance. The caller owns the delegate.
   TfLiteDelegatePtr CreateDelegate();
+
+  // Retrieves a delegate instance, possibly reusing a cached instance. The
+  // testing environment owns the delegate.
+  TfLiteDelegate* GetDelegate();
 
  protected:
   void SetUp() override;
+  void TearDown() override;
 
  private:
   ToolParams params_;
   ProvidedDelegateList delegate_list_;
+  TfLiteDelegatePtr cached_delegate_ = tflite::tools::CreateNullDelegate();
 };
 
 #endif  // COMMON_TEST_UTIL_STABLE_DELEGATE_ENV_H_

@@ -56,7 +56,18 @@ StableDelegateEnvironment::CreateDelegate() {
   return std::move(provided_delegates[0].delegate);
 }
 
+TfLiteDelegate* StableDelegateEnvironment::GetDelegate() {
+  if (cached_delegate_ == nullptr) {
+    cached_delegate_ = CreateDelegate();
+  }
+  return cached_delegate_.get();
+}
+
 void StableDelegateEnvironment::SetUp() {
   // Ensure that the delegate can be created before running any test.
   ASSERT_NE(CreateDelegate(), nullptr);
+}
+
+void StableDelegateEnvironment::TearDown() {
+  cached_delegate_.reset();
 }
