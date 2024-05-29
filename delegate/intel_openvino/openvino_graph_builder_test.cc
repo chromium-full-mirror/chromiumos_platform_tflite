@@ -3,13 +3,21 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "openvino_graph_builder.h"
+#include "delegate/intel_openvino/openvino_graph_builder.h"
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
 #include <openvino/pass/manager.hpp>
 #include <openvino/pass/serialize.hpp>
+
+// TODO(shik): Without this comment, clang-format would like to mix openvino can
+// C++ standard headers together. We should tweak IncludeCategories in
+// .clang-format config to make it works as expected.
+
+#include <memory>
+#include <string>
+#include <unordered_set>
 
 #include "tensorflow/lite/builtin_ops.h"
 #include "tensorflow/lite/c/c_api.h"
@@ -24,6 +32,8 @@
 
 namespace tflite {
 namespace openvinodelegate {
+
+constexpr char kPluginsXmlPath[] = "/etc/openvino/plugins.xml";
 
 std::function<void(TfLiteOpaqueTensor *opaque_tensor, const int index)>
     test_function_;
@@ -43,8 +53,8 @@ class OpenVINOGraphBuilderTest : public testing::Test {
   std::unique_ptr<::tflite::FlatBufferModel> model;
 };
 
-TfLiteOpaqueTensor *create_opaque_tensor(TfLiteTensor *t) {
-  return (TfLiteOpaqueTensor *)t;
+TfLiteOpaqueTensor *CreateOpaqueTensor(TfLiteTensor *t) {
+  return reinterpret_cast<TfLiteOpaqueTensor *>(t);
 }
 
 TEST_F(OpenVINOGraphBuilderTest, AddInputParamsTest_VALID) {
@@ -62,7 +72,7 @@ TEST_F(OpenVINOGraphBuilderTest, AddInputParamsTest_VALID) {
   t.dims_signature = TfLiteIntArrayCopy(t.dims);
   t.buffer_handle = 5;
 
-  TfLiteOpaqueTensor *opaque_t = create_opaque_tensor(&t);
+  TfLiteOpaqueTensor *opaque_t = CreateOpaqueTensor(&t);
 
   auto openvino_graph_builder_test =
       std::make_unique<OpenVINOGraphBuilder>(std::make_unique<NodeManager>());
@@ -97,7 +107,7 @@ TEST_F(OpenVINOGraphBuilderTest, AddInputParamsTest_InvalidIndex) {
   t.dims_signature = TfLiteIntArrayCopy(t.dims);
   t.buffer_handle = 5;
 
-  TfLiteOpaqueTensor *opaque_t = create_opaque_tensor(&t);
+  TfLiteOpaqueTensor *opaque_t = CreateOpaqueTensor(&t);
 
   auto openvino_graph_builder_test =
       std::make_unique<OpenVINOGraphBuilder>(std::make_unique<NodeManager>());
@@ -320,7 +330,7 @@ TEST_F(OpenVINOGraphBuilderTest, UpdateResultNodes_Valid) {
               openvino_graph_builder_test->getResultNodes(),
               openvino_graph_builder_test->getInputParams());
 
-          ov::Core ov_core_;
+          ov::Core ov_core_(kPluginsXmlPath);
           ov::CompiledModel compiled_model_;
           std::string deviceStr = "CPU";
           ov::InferRequest infer_request_;
@@ -458,7 +468,7 @@ TEST_F(OpenVINOGraphBuilderTest, UpdateResultNodes_InvalidIndex) {
               openvino_graph_builder_test->getResultNodes(),
               openvino_graph_builder_test->getInputParams());
 
-          ov::Core ov_core_;
+          ov::Core ov_core_(kPluginsXmlPath);
           ov::CompiledModel compiled_model_;
           std::string deviceStr = "CPU";
           ov::InferRequest infer_request_;
@@ -610,7 +620,7 @@ TEST_F(OpenVINOGraphBuilderTest, CreateNodeFromTfLiteOp_Valid) {
               openvino_graph_builder_test->getResultNodes(),
               openvino_graph_builder_test->getInputParams());
 
-          ov::Core ov_core_;
+          ov::Core ov_core_(kPluginsXmlPath);
           ov::CompiledModel compiled_model_;
           std::string deviceStr = "CPU";
           ov::InferRequest infer_request_;
@@ -740,7 +750,7 @@ TEST_F(OpenVINOGraphBuilderTest, CreateNodeFromTfLiteOp_InvalidRegistration) {
               openvino_graph_builder_test->getResultNodes(),
               openvino_graph_builder_test->getInputParams());
 
-          ov::Core ov_core_;
+          ov::Core ov_core_(kPluginsXmlPath);
           ov::CompiledModel compiled_model_;
           std::string deviceStr = "CPU";
           ov::InferRequest infer_request_;
@@ -870,7 +880,7 @@ TEST_F(OpenVINOGraphBuilderTest, CreateNodeFromTfLiteOp_InvalidNode) {
               openvino_graph_builder_test->getResultNodes(),
               openvino_graph_builder_test->getInputParams());
 
-          ov::Core ov_core_;
+          ov::Core ov_core_(kPluginsXmlPath);
           ov::CompiledModel compiled_model_;
           std::string deviceStr = "CPU";
           ov::InferRequest infer_request_;
@@ -1000,7 +1010,7 @@ TEST_F(OpenVINOGraphBuilderTest, CreateNodeFromTfLiteOp_InvalidContext) {
               openvino_graph_builder_test->getResultNodes(),
               openvino_graph_builder_test->getInputParams());
 
-          ov::Core ov_core_;
+          ov::Core ov_core_(kPluginsXmlPath);
           ov::CompiledModel compiled_model_;
           std::string deviceStr = "CPU";
           ov::InferRequest infer_request_;
