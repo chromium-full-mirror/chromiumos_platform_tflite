@@ -81,6 +81,17 @@ constexpr float kEps = 1e-2;
 
 class ModelTest : public testing::Test {
  protected:
+  void SetRandomInputRange(float low, float high) {
+    random_input_range_ = std::make_pair(low, high);
+  }
+
+  void UsePositiveInput() {
+    // A handle chosen positive random range that should work for most
+    // operators. Note that we exclude near zero positive values intentionally
+    // to avoid potential numerical issues like log(~0).
+    SetRandomInputRange(1, 10);
+  }
+
   void TestModel(const SingleOpModelBuilder& model_builder) {
     // Call GetDelegate() instead of CreateDelegate() here to reuse the delegate
     // instance and reduce the overhead of creating/destorying the delegate
@@ -126,10 +137,13 @@ class ModelTest : public testing::Test {
       // Reuse the same random input from the previous run if exists.
       utils::InputTensorData& data = random_input_data_[input];
       if (data.data == nullptr) {
-        // TODO(shik): Support specifying the random range. Some operators do
-        // not support negative input tensors, such as sqrt.
         float low = 0, high = 0;
-        utils::GetDataRangesForType(tensor->type, &low, &high);
+        if (random_input_range_.has_value()) {
+          low = random_input_range_->first;
+          high = random_input_range_->second;
+        } else {
+          utils::GetDataRangesForType(tensor->type, &low, &high);
+        }
         data = utils::CreateRandomTensorData(*tensor, low, high);
       }
       ASSERT_EQ(data.bytes, tensor->bytes);
@@ -151,6 +165,7 @@ class ModelTest : public testing::Test {
   }
 
   std::map<int, utils::InputTensorData> random_input_data_;
+  std::optional<std::pair<float, float>> random_input_range_;
 };
 
 class OpTest : public ModelTest {
@@ -210,7 +225,10 @@ TEST_F(OpTest, Gelu) {
                                 {.approximate = true});
 }
 
-// TODO(shik): Test Log.
+TEST_F(OpTest, Log) {
+  UsePositiveInput();
+  TestUnaryOp(kTfLiteBuiltinLog, kTfLiteFloat32);
+}
 
 TEST_F(OpTest, Logistic) {
   TestUnaryOp(kTfLiteBuiltinLogistic, kTfLiteFloat32);
@@ -220,7 +238,10 @@ TEST_F(OpTest, Neg) {
   TestUnaryOp(kTfLiteBuiltinNeg, kTfLiteFloat32);
 }
 
-// TODO(shik): Test Rsqrt.
+TEST_F(OpTest, Rsqrt) {
+  UsePositiveInput();
+  TestUnaryOp(kTfLiteBuiltinRsqrt, kTfLiteFloat32);
+}
 
 TEST_F(OpTest, Sign) {
   TestUnaryOp(kTfLiteBuiltinSign, kTfLiteFloat32);
@@ -230,7 +251,10 @@ TEST_F(OpTest, Sin) {
   TestUnaryOp(kTfLiteBuiltinSin, kTfLiteFloat32);
 }
 
-// TODO(shik): Test Sqrt.
+TEST_F(OpTest, Sqrt) {
+  UsePositiveInput();
+  TestUnaryOp(kTfLiteBuiltinSqrt, kTfLiteFloat32);
+}
 
 TEST_F(OpTest, Square) {
   TestUnaryOp(kTfLiteBuiltinSquare, kTfLiteFloat32);
