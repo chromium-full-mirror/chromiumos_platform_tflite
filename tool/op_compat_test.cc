@@ -268,6 +268,43 @@ TEST_F(OpTest, Add) {
   TestBinaryOp<TfLiteAddParams>(kTfLiteBuiltinAdd, kTfLiteFloat32);
 }
 
+TEST_F(OpTest, Div) {
+  UsePositiveInput();
+  TestBinaryOp<TfLiteDivParams>(kTfLiteBuiltinDiv, kTfLiteFloat32);
+}
+
+TEST_F(OpTest, FloorDiv) {
+  UsePositiveInput();
+  TestBinaryOp(kTfLiteBuiltinFloorDiv, kTfLiteFloat32);
+}
+
+TEST_F(OpTest, FloorMod) {
+  UsePositiveInput();
+  TestBinaryOp(kTfLiteBuiltinFloorMod, kTfLiteFloat32);
+}
+
+TEST_F(OpTest, Maximum) {
+  TestBinaryOp(kTfLiteBuiltinMaximum, kTfLiteFloat32);
+}
+
+TEST_F(OpTest, Minimum) {
+  TestBinaryOp(kTfLiteBuiltinMinimum, kTfLiteFloat32);
+}
+
+TEST_F(OpTest, Mul) {
+  TestBinaryOp(kTfLiteBuiltinMul, kTfLiteFloat32);
+}
+
+TEST_F(OpTest, Pow) {
+  // The default positive range is too big for power operation.
+  SetRandomInputRange(1, 5);
+  TestBinaryOp(kTfLiteBuiltinPow, kTfLiteFloat32);
+}
+
+TEST_F(OpTest, SquaredDifference) {
+  TestBinaryOp(kTfLiteBuiltinSquaredDifference, kTfLiteFloat32);
+}
+
 TEST_F(OpTest, Sub) {
   TestBinaryOp<TfLiteSubParams>(kTfLiteBuiltinSub, kTfLiteFloat32);
 }
