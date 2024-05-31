@@ -8,6 +8,11 @@ alias(
 )
 
 alias(
+    name = "stable_gpu_delegate",
+    actual = "//delegate/gpu:tensorflowlite_stable_gpu_delegate",
+)
+
+alias(
     name = "mtk_neuron_delegate",
     actual = "//delegate/mtk_neuron:tensorflowlite_mtk_neuron_delegate",
 )
