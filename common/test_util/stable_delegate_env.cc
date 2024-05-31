@@ -19,7 +19,10 @@ StableDelegateEnvironment::StableDelegateEnvironment()
 
 StableDelegateEnvironment::~StableDelegateEnvironment() {}
 
-bool StableDelegateEnvironment::InitFromCommandLine(int* argc, char** argv) {
+bool StableDelegateEnvironment::InitFromCommandLine(
+    int* argc,
+    char** argv,
+    std::vector<tflite::Flag> flags) {
   using tflite::Flag;
   using tflite::Flags;
 
@@ -28,11 +31,9 @@ bool StableDelegateEnvironment::InitFromCommandLine(int* argc, char** argv) {
   std::string settings;
   // Use our own flags directly instead of delegate_list_.AppendCmdlineFlags()
   // to make the settings flag required.
-  std::vector<Flag> flags = {
-      Flag::CreateFlag(kSettingsFlagName, &settings,
-                       "The path to the delegate settings JSON file.",
-                       Flag::kRequired),
-  };
+  flags.push_back(Flag::CreateFlag(
+      kSettingsFlagName, &settings,
+      "The path to the delegate settings JSON file.", Flag::kRequired));
 
   if (!Flags::Parse(argc, const_cast<const char**>(argv), flags)) {
     std::cout << Flags::Usage(argv[0], flags) << std::endl;

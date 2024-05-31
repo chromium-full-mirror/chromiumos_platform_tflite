@@ -9,6 +9,8 @@
 
 #include <gtest/gtest.h>
 
+#include <vector>
+
 #include "tensorflow/lite/core/interpreter.h"
 #include "tensorflow/lite/tools/delegates/delegate_provider.h"
 #include "tensorflow/lite/tools/tool_params.h"
@@ -24,7 +26,11 @@ class StableDelegateEnvironment : public ::testing::Environment {
   StableDelegateEnvironment();
   ~StableDelegateEnvironment() override;
 
-  bool InitFromCommandLine(int* argc, char** argv);
+  // Initializes the environment with optional extra command line flags that
+  // should be parsed together with the stable delegate flag.
+  bool InitFromCommandLine(int* argc,
+                           char** argv,
+                           std::vector<tflite::Flag> flags = {});
 
   // Creates a new delegate instance. The caller owns the delegate.
   TfLiteDelegatePtr CreateDelegate();

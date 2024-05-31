@@ -7,6 +7,9 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include <fstream>
+
+#include "absl/strings/str_cat.h"
 #include "common/single_op_model_builder.h"
 #include "common/test_util/stable_delegate_env.h"
 #include "tensorflow/lite/core/c/builtin_op_data.h"
@@ -19,6 +22,19 @@
 StableDelegateEnvironment* g_env = nullptr;
 
 namespace tflite::cros::tests {
+
+struct TestConfig {
+  std::vector<Flag> GetFlags() {
+    std::vector<Flag> flags = {
+        Flag::CreateFlag(
+            "dump_model_dir", &dump_model_dir,
+            "Where to save the test models. Empty means do not save at all."),
+    };
+    return flags;
+  }
+
+  std::string dump_model_dir = "";
+} g_config;
 
 size_t NumElements(const TfLiteTensor* tensor) {
   size_t n = 1;
@@ -93,6 +109,10 @@ class ModelTest : public testing::Test {
   }
 
   void TestModel(const SingleOpModelBuilder& model_builder) {
+    if (!g_config.dump_model_dir.empty()) {
+      DumpModel(model_builder.Build());
+    }
+
     // Call GetDelegate() instead of CreateDelegate() here to reuse the delegate
     // instance and reduce the overhead of creating/destorying the delegate
     // itself.
@@ -164,8 +184,25 @@ class ModelTest : public testing::Test {
     }
   }
 
+  void DumpModel(std::unique_ptr<FlatBufferModel> model) {
+    ASSERT_FALSE(g_config.dump_model_dir.empty());
+
+    const testing::TestInfo* info =
+        testing::UnitTest::GetInstance()->current_test_info();
+    // Save into {dir}/{suite}.{test}-{counter}.tflite.
+    std::string path =
+        absl::StrCat(g_config.dump_model_dir, "/", info->test_suite_name(), ".",
+                     info->name(), "-", dumped_model_counter_, ".tflite");
+    std::ofstream out(path, std::ios::out | std::ios::binary);
+    const Allocation* alloc = model->allocation();
+    out.write(static_cast<const char*>(alloc->base()), alloc->bytes());
+    LOGF(INFO) << "Save to " << path;
+    dumped_model_counter_++;
+  }
+
   std::map<int, utils::InputTensorData> random_input_data_;
   std::optional<std::pair<float, float>> random_input_range_;
+  int dumped_model_counter_ = 0;
 };
 
 class OpTest : public ModelTest {
@@ -313,7 +350,8 @@ TEST_F(OpTest, Sub) {
 
 int main(int argc, char** argv) {
   g_env = new StableDelegateEnvironment();
-  if (!g_env->InitFromCommandLine(&argc, argv)) {
+  auto config_flags = ::tflite::cros::tests::g_config.GetFlags();
+  if (!g_env->InitFromCommandLine(&argc, argv, config_flags)) {
     delete g_env;
     return EXIT_FAILURE;
   }
