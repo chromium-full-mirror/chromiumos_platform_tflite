@@ -365,6 +365,26 @@ TEST_F(OpTest, Conv2d) {
   TestModel(mb);
 }
 
+TEST_F(OpTest, DepthwiseConv2d) {
+  SingleOpModelBuilder mb;
+  // The input tensors are input, filter and an optional bias.
+  mb.AddInput(kTfLiteFloat32, {2, 5, 4, 3});
+  mb.AddInput(kTfLiteFloat32, {1, 3, 2, 3});
+  mb.AddConstInput<float>(kTfLiteFloat32, {3}, {1, 2, 3});
+  mb.AddOutput(kTfLiteFloat32, {2, 5, 4, 3});
+  mb.AddOperator<TfLiteDepthwiseConvParams>(kTfLiteBuiltinDepthwiseConv2d,
+                                            {
+                                                .padding = kTfLitePaddingSame,
+                                                .stride_width = 1,
+                                                .stride_height = 1,
+                                                .depth_multiplier = 1,
+                                                .activation = kTfLiteActNone,
+                                                .dilation_width_factor = 1,
+                                                .dilation_height_factor = 1,
+                                            });
+  TestModel(mb);
+}
+
 }  // namespace tflite::cros::tests
 
 int main(int argc, char** argv) {
