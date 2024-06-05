@@ -404,6 +404,24 @@ TEST_F(OpTest, DepthwiseConv2d) {
   TestModel(mb);
 }
 
+TEST_F(OpTest, Concatenation) {
+  std::vector<int> shape_in = {1, 2, 3, 4};
+  // Concatenation allows negative indexing on the `axis` attribute.
+  for (int axis : {1, -1}) {
+    std::vector<int> shape_out = shape_in;
+    shape_out[(axis + 4) % 4] *= 2;
+    SingleOpModelBuilder mb;
+    mb.AddInput(kTfLiteFloat32, shape_in);
+    mb.AddInput(kTfLiteFloat32, shape_in);
+    mb.AddOutput(kTfLiteFloat32, shape_out);
+    mb.AddOperator<TfLiteConcatenationParams>(kTfLiteBuiltinConcatenation,
+                                              {
+                                                  .axis = axis,
+                                                  .activation = kTfLiteActNone,
+                                              });
+  }
+}
+
 }  // namespace tflite::cros::tests
 
 int main(int argc, char** argv) {
