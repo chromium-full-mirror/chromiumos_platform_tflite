@@ -9,6 +9,8 @@ package(
     licenses = ["notice"],
 )
 
+exports_files(["settings.json"])
+
 cc_library_with_tflite(
     name = "openvino_graph_builder",
     srcs = ["openvino_graph_builder.cc"],
@@ -128,7 +130,6 @@ cc_binary(
     srcs = ["openvino_delegate_core_test.cc"],
     copts = tflite_copts(),
     data = [
-        ":intel_openvino_stable_settings.json",
         ":tensorflowlite_intel_openvino_delegate",
         "@org_tensorflow//tensorflow/lite:testdata/add.bin",
     ],
@@ -155,7 +156,6 @@ cc_binary(
     srcs = ["openvino_graph_builder_test.cc"],
     copts = tflite_copts(),
     data = [
-        ":intel_openvino_stable_settings.json",
         ":tensorflowlite_intel_openvino_delegate",
         "@org_tensorflow//tensorflow/lite:testdata/add.bin",
     ],
@@ -172,7 +172,6 @@ cc_binary(
     srcs = ["openvino_delegate_test.cc"],
     copts = tflite_copts(),
     data = [
-        ":intel_openvino_stable_settings.json",
         ":tensorflowlite_intel_openvino_delegate",
         "@org_tensorflow//tensorflow/lite:testdata/add.bin",
     ],
