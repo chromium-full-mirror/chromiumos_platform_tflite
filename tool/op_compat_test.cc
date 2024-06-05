@@ -262,6 +262,11 @@ TEST_F(OpTest, Gelu) {
                                 {.approximate = true});
 }
 
+TEST_F(OpTest, LeakyRelu) {
+  TestUnaryOp<TfLiteLeakyReluParams>(kTfLiteBuiltinLeakyRelu, kTfLiteFloat32,
+                                     {.alpha = 0.8});
+}
+
 TEST_F(OpTest, Log) {
   UsePositiveInput();
   TestUnaryOp(kTfLiteBuiltinLog, kTfLiteFloat32);
@@ -273,6 +278,20 @@ TEST_F(OpTest, Logistic) {
 
 TEST_F(OpTest, Neg) {
   TestUnaryOp(kTfLiteBuiltinNeg, kTfLiteFloat32);
+}
+
+TEST_F(OpTest, Relu) {
+  TestUnaryOp(kTfLiteBuiltinRelu, kTfLiteFloat32);
+}
+
+TEST_F(OpTest, Relu6) {
+  SetRandomInputRange(-1, 7);
+  TestUnaryOp(kTfLiteBuiltinRelu6, kTfLiteFloat32);
+}
+
+TEST_F(OpTest, ReluN1To1) {
+  SetRandomInputRange(-2, 2);
+  TestUnaryOp(kTfLiteBuiltinReluN1To1, kTfLiteFloat32);
 }
 
 TEST_F(OpTest, Rsqrt) {
