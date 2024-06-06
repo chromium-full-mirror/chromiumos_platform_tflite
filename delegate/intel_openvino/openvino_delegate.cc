@@ -25,7 +25,7 @@ bool OpenVINODelegate::CheckDataTypeSupported(
   if (TfLiteOpaqueNodeInputs(node, &inputs, &num_inputs) != kTfLiteOk)
     return false;
 
-  if (num_inputs != supported_types.size()) return false;
+  if (num_inputs < supported_types.size()) return false;
 
   for (int i = 0; i < supported_types.size(); i++) {
     int tensor_id = inputs[i];
@@ -48,14 +48,19 @@ bool OpenVINODelegate::CheckDims(
   int num_inputs;
   if (TfLiteOpaqueNodeInputs(node, &inputs, &num_inputs) != kTfLiteOk)
     return false;
-  if (num_inputs != dims_size.size()) return false;
+  if (num_inputs < dims_size.size()) return false;
 
   for (int i = 0; i < dims_size.size(); i++) {
     bool supported = false;
     const TfLiteOpaqueTensor *opaque_tensor =
         TfLiteOpaqueContextGetOpaqueTensor(context, inputs[i]);
-    for (int size : dims_size[i])
-      supported |= TfLiteOpaqueTensorNumDims(opaque_tensor) == size;
+    for (int j = 0; j < dims_size[i].size(); j++) {
+      if (TfLiteOpaqueTensorNumDims(opaque_tensor) == dims_size[i][j]) {
+        supported |= true;
+        for (int k = 0; k < dims_size[i][j]; k++)
+          if (TfLiteOpaqueTensorDim(opaque_tensor, k) == 0) return false;
+      }
+    }
     if (!supported) return false;
   }
 
@@ -94,9 +99,11 @@ bool OpenVINODelegate::CheckNodeSupportByOpenVINO(
       }
     }
     case kTfLiteBuiltinConcatenation: {
+      // NOTE: Concatenation is allowed to have variadic input tensors , but we
+      // check type for 2 input tensors. Rest are assumed to have same type if
+      // present
       return CheckDataTypeSupported(context, node,
-                                    {{kTfLiteFloat32}, {kTfLiteFloat32}}) &&
-             CheckDims(context, node, {{4}, {4}});
+                                    {{kTfLiteFloat32}, {kTfLiteFloat32}});
     }
     case kTfLiteBuiltinDepthwiseConv2d: {
       if (num_inputs == 2) {
