@@ -141,6 +141,9 @@ bool DecomposeModel(tflite::ModelT& model, int op_index) {
   // input/output of the subgraph.
   subgraph->inputs.clear();
   for (int index : op->inputs) {
+    if (index < 0) {
+      continue;
+    }
     int buffer_idx = subgraph->tensors[index]->buffer;
     // Input of the subgraph should contain only empty buffers.
     if (model.buffers[buffer_idx]->data.size() == 0) {
@@ -179,6 +182,10 @@ std::string DumpTensorsInfo(
     const std::vector<std::unique_ptr<tflite::TensorT>>& tensors) {
   return absl::StrJoin(
       tensor_indices, "  ", [&tensors](std::string* out, int index) {
+        if (index < 0) {
+          absl::StrAppend(out, "#" + std::to_string(index));
+          return;
+        }
         auto& tensor = tensors[index];
         std::string message =
             absl::StrFormat("%s[%s]#%d", EnumNameTensorType(tensor->type),
