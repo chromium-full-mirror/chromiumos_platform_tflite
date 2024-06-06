@@ -43,6 +43,13 @@ class OperationsBase {
   virtual ~OperationsBase(){};
 
  protected:
+  typedef enum {
+    NHWC_NCHW,
+    NCHW_NHWC,
+    IHWO_OIHW,
+    OHWI_OIHW,
+  } LayoutConversion;
+
   std::shared_ptr<ov::Node> output_node_;
   template <typename T>
   T *GetBuiltinData() {
@@ -63,6 +70,9 @@ class OperationsBase {
 
   TfLiteStatus CalculatePadding(TfLitePadding padding,
                                 ov::op::PadType &auto_pad);
+
+  TfLiteStatus Transpose(LayoutConversion type, std::shared_ptr<ov::Node> input,
+                         std::shared_ptr<ov::Node> &transposed_node);
 
   std::shared_ptr<ov::Node> ApplyActivation(std::shared_ptr<ov::Node> input,
                                             TfLiteFusedActivation activation);

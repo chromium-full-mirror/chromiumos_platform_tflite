@@ -117,42 +117,6 @@ TEST_F(OpenVINOGraphBuilderTest, AddInputParamsTest_InvalidIndex) {
   EXPECT_EQ(false, openvino_graph_builder_test->getNodeManagerSize() == 1);
 }
 
-TEST_F(OpenVINOGraphBuilderTest, convertNHWCtoNCHW_Valid) {
-  std::vector<int> dims = {1, 2, 3, 4};
-  auto input = std::make_shared<ov::opset3::Parameter>(
-      ov::element::Type_t::f32, ov::Shape(dims.begin(), dims.end()));
-
-  auto openvino_graph_builder_test =
-      std::make_unique<OpenVINOGraphBuilder>(std::make_unique<NodeManager>());
-
-  std::shared_ptr<ov::Node> interim;
-  EXPECT_EQ(kTfLiteOk, openvino_graph_builder_test->convertNHWCtoNCHW(
-                           dims, input, interim));
-}
-
-TEST_F(OpenVINOGraphBuilderTest, convertNHWCtoNCHW_InvalidNode) {
-  std::vector<int> dims = {1, 2, 3, 4};
-  auto openvino_graph_builder_test =
-      std::make_unique<OpenVINOGraphBuilder>(std::make_unique<NodeManager>());
-
-  std::shared_ptr<ov::Node> interim;
-  EXPECT_EQ(kTfLiteError, openvino_graph_builder_test->convertNHWCtoNCHW(
-                              dims, nullptr, interim));
-}
-
-TEST_F(OpenVINOGraphBuilderTest, convertNHWCtoNCHW_InvalidDims) {
-  std::vector<int> dims = {1, 2, 3, 4, 5, 6};
-  auto input = std::make_shared<ov::opset3::Parameter>(
-      ov::element::Type_t::f32, ov::Shape(dims.begin(), dims.end()));
-
-  auto openvino_graph_builder_test =
-      std::make_unique<OpenVINOGraphBuilder>(std::make_unique<NodeManager>());
-
-  std::shared_ptr<ov::Node> interim;
-  EXPECT_EQ(kTfLiteError, openvino_graph_builder_test->convertNHWCtoNCHW(
-                              dims, input, interim));
-}
-
 TEST_F(OpenVINOGraphBuilderTest, CreateConstNode_Invalid) {
   TfLiteOpaqueDelegateBuilder opaque_delegate_builder{};
   bool delegate_prepared = false;

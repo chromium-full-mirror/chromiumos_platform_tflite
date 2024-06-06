@@ -28,41 +28,6 @@
 namespace tflite {
 namespace openvinodelegate {
 
-TfLiteStatus OpenVINOGraphBuilder::convertNHWCtoNCHW(
-    std::vector<int> node_dims, std::shared_ptr<ov::Node> input,
-    std::shared_ptr<ov::Node> &transposed_node) {
-  if (input == nullptr) return kTfLiteError;
-
-  // TODO: 0d(scalar) tensors are not supported in this version of delegate.
-  // Support to be added in next release.
-  if (node_dims.size() <= 0) return kTfLiteError;
-
-  ov::AxisVector order = {0, 3, 1, 2};
-  const auto order_node = std::make_shared<ov::opset8::Constant>(
-      ov::element::i32, ov::Shape{order.size()}, order);
-
-  // TODO: Generic NHWC to NCHW conversions to be moved to op specific
-  // implementation in next version of delegate.
-  if (node_dims.size() < 4) {
-    auto size = node_dims.size();
-    for (int i = 0; i < 4 - size; i++) {
-      node_dims.insert(node_dims.begin(), 1);
-    }
-    auto new_size = std::make_shared<ov::opset8::Constant>(
-        ov::element::i32, ov::Shape{4}, node_dims);
-    input = std::make_shared<ov::opset8::Reshape>(input, new_size,
-                                                  /*special_zero=*/false);
-  }
-
-  if (node_dims.size() >= 5) {
-    TFLITE_LOG(ERROR) << "5D or greater than 5D tensors are not supported";
-    return kTfLiteError;
-  }
-  transposed_node = std::make_shared<ov::opset3::Transpose>(input, order_node);
-
-  return kTfLiteOk;
-}
-
 TfLiteStatus OpenVINOGraphBuilder::CreateConstNode(
     const TfLiteOpaqueContext *context, const int index) {
   if (context == nullptr) return kTfLiteError;
@@ -97,17 +62,8 @@ TfLiteStatus OpenVINOGraphBuilder::UpdateResultNodes(
   if (context == nullptr) return kTfLiteError;
   if (outputs.size() < 1) return kTfLiteError;
 
-  for (auto o : outputs) {
-    auto out_node = node_manager_->getInterimNodeOutput(o);
-    auto dims = out_node->get_shape();
-    if (dims.size() == 4) {
-      ov::AxisVector order = {0, 2, 3, 1};
-      const auto order_node = std::make_shared<ov::opset8::Constant>(
-          ov::element::i64, ov::Shape{order.size()}, order);
-      out_node = std::make_shared<ov::opset3::Transpose>(out_node, order_node);
-    }
-    result_nodes_.push_back(out_node);
-  }
+  for (auto o : outputs)
+    result_nodes_.push_back(node_manager_->getInterimNodeOutput(o));
 
   return kTfLiteOk;
 }
@@ -125,11 +81,7 @@ TfLiteStatus OpenVINOGraphBuilder::AddInputParams(const TfLiteOpaqueTensor *t,
       ov::element::f32, ov::Shape(dims.begin(), dims.end()));
   input_params_.push_back(input);
 
-  std::shared_ptr<ov::Node> interim;
-  if (convertNHWCtoNCHW(dims, input, interim) != kTfLiteOk) return kTfLiteError;
-  if (interim == nullptr) return kTfLiteError;
-  node_manager_->setOutputAtOperandIndex(index, interim);
-  node_manager_->insertIndexParameters(index);
+  node_manager_->setOutputAtOperandIndex(index, input);
 
   return kTfLiteOk;
 }

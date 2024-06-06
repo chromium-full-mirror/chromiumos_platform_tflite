@@ -31,15 +31,7 @@ TfLiteStatus Mean::CreateNode() {
   }
 
   for (auto i = 0; i < count; i++) {
-    int ax = *((int *)(data) + i);
-    if (ax == 1)
-      axes_vec.push_back(2);
-    else if (ax == 2)
-      axes_vec.push_back(3);
-    else if (ax == 3)
-      axes_vec.push_back(1);
-    else
-      axes_vec.push_back(ax);
+    axes_vec.push_back(*((int *)(data) + i));
   }
 
   auto axes_node =

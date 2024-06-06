@@ -28,11 +28,18 @@ TfLiteStatus ResizeBilinear::CreateNode() {
         ov::op::v11::Interpolate::CoordinateTransformMode::ASYMMETRIC;
   }
 
+  std::shared_ptr<ov::Node> transposed_input_node;
+  if (Transpose(NHWC_NCHW, input_node, transposed_input_node) != kTfLiteOk)
+    return kTfLiteError;
+
   std::vector<int32_t> axes_vec = {2, 3};
   auto axes_node = CreateConstNode(ov::element::i32, /*size=*/{2}, axes_vec);
 
   output_node_ = std::make_shared<ov::op::v11::Interpolate>(
-      input_node, shape_node, axes_node, attrs);
+      transposed_input_node, shape_node, axes_node, attrs);
+
+  if (Transpose(NCHW_NHWC, output_node_, output_node_) != kTfLiteOk)
+    return kTfLiteError;
 
   return kTfLiteOk;
 }

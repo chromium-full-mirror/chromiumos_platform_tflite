@@ -20,9 +20,9 @@ TfLiteStatus DepthwiseConv2D::CreateNode() {
   std::vector<size_t> dilations = {
       (size_t)depth_conv2dParams->dilation_height_factor,
       (size_t)depth_conv2dParams->dilation_width_factor};
-  if (tensor_indices_[BIAS_NODE] < 0) {
+  if (tensor_indices_size_ < 3) {
     has_bias = false;
-  } else {
+  } else if (tensor_indices_size_ == 3) {
     bias_node = getInputNode(tensor_indices_[BIAS_NODE]);
     has_bias = true;
   }
@@ -36,43 +36,34 @@ TfLiteStatus DepthwiseConv2D::CreateNode() {
     return kTfLiteError;
   }
 
-  ov::AxisVector order = {3, 0, 1, 2};
-  // TODO: Possibly add a test compilation flag to change the order for test
-  // mode
-  //  Uncomment below line and comment above line for test mode
-  //  ov::AxisVector order = {1,0,2,3};
-  const auto order_node = std::make_shared<ov::opset8::Constant>(
-      ov::element::i64, ov::Shape{order.size()}, order);
-  filter_node =
-      std::make_shared<ov::opset3::Transpose>(filter_node, order_node);
+  std::shared_ptr<ov::Node> transposed_filter_node, transposed_input_node;
+  if (Transpose(IHWO_OIHW, filter_node, transposed_filter_node) != kTfLiteOk)
+    return kTfLiteError;
+  if (Transpose(NHWC_NCHW, input_node, transposed_input_node) != kTfLiteOk)
+    return kTfLiteError;
 
-  std::vector<size_t> shape(&filter_node->get_shape()[0],
-                            &filter_node->get_shape()[0] + 4);
-  auto num_groups = input_dims[3] / filter_node->get_shape()[1];
+  std::vector<size_t> shape(&transposed_filter_node->get_shape()[0],
+                            &transposed_filter_node->get_shape()[0] + 4);
+  auto num_groups = input_dims[3] / transposed_filter_node->get_shape()[1];
   shape.insert(shape.begin(), num_groups);
-  shape[1] = filter_node->get_shape()[0] / num_groups;
+  shape[1] = transposed_filter_node->get_shape()[0] / num_groups;
   auto shape_node =
       CreateConstNode(ov::element::i32, ov::Shape{shape.size()}, shape);
 
-  filter_node =
-      std::make_shared<ov::opset3::Reshape>(filter_node, shape_node, true);
+  transposed_filter_node = std::make_shared<ov::opset3::Reshape>(
+      transposed_filter_node, shape_node, true);
 
   auto depthwise_conv_node = std::make_shared<ov::opset3::GroupConvolution>(
-      input_node, filter_node, ov::Strides(strides), ov::CoordinateDiff(0, 0),
-      ov::CoordinateDiff(0, 0), ov::Strides(dilations), auto_pad);
+      transposed_input_node, transposed_filter_node, ov::Strides(strides),
+      ov::CoordinateDiff(0, 0), ov::CoordinateDiff(0, 0),
+      ov::Strides(dilations), auto_pad);
+
+  if (Transpose(NCHW_NHWC, depthwise_conv_node, output_node_) != kTfLiteOk)
+    return kTfLiteError;
 
   if (has_bias) {
-    auto bias_dimensions = GetDims(tensor_indices_[BIAS_NODE]);
-    std::vector<uint32_t> shape(depthwise_conv_node->get_shape().size(), 1);
-    shape[1] = bias_dimensions[0];
-    auto shape_node =
-        CreateConstNode(ov::element::i32, ov::Shape{shape.size()}, shape);
-    bias_node = std::make_shared<ov::opset3::Reshape>(bias_node, shape_node,
-                                                      /*special_zero=*/true);
     output_node_ = std::make_shared<ov::opset3::Add>(
-        depthwise_conv_node, bias_node, ov::op::AutoBroadcastType::NUMPY);
-  } else {
-    output_node_ = depthwise_conv_node;
+        output_node_, bias_node, ov::op::AutoBroadcastType::NUMPY);
   }
 
   output_node_ = ApplyActivation(output_node_, depth_conv2dParams->activation);

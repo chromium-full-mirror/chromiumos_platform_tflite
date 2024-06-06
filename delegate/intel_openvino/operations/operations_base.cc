@@ -22,6 +22,33 @@ void OperationsBase::SetGraphData(const TfLiteOpaqueContext *context,
   node_manager_ = node_manager;
 }
 
+TfLiteStatus OperationsBase::Transpose(
+    LayoutConversion type, std::shared_ptr<ov::Node> input,
+    std::shared_ptr<ov::Node> &transposed_node) {
+  ov::AxisVector order;
+  switch (type) {
+    case NHWC_NCHW:
+      order = {0, 3, 1, 2};
+      break;
+    case NCHW_NHWC:
+      order = {0, 2, 3, 1};
+      break;
+    case IHWO_OIHW:
+      order = {3, 0, 1, 2};
+      break;
+    case OHWI_OIHW:
+      order = {0, 3, 1, 2};
+      break;
+    default:
+      TFLITE_LOG(ERROR) << "Invalid layout conversion type";
+      return kTfLiteError;
+  }
+  const auto order_node = ov::opset3::Constant::create(
+      ov::element::i32, ov::Shape{order.size()}, order);
+  transposed_node = std::make_shared<ov::opset3::Transpose>(input, order_node);
+  return kTfLiteOk;
+}
+
 TfLiteStatus OperationsBase::CalculatePadding(TfLitePadding padding,
                                               ov::op::PadType &auto_pad) {
   switch (padding) {

@@ -30,11 +30,18 @@ TfLiteStatus AveragePool2D::CreateNode() {
     return kTfLiteError;
   }
 
+  std::shared_ptr<ov::Node> transposed_input_node;
+  if (Transpose(NHWC_NCHW, input_node, transposed_input_node) != kTfLiteOk)
+    return kTfLiteError;
+
   auto average_pool_2d_node = std::make_shared<ov::opset8::AvgPool>(
-      input_node, strides, padding_begin, padding_end, kernel,
+      transposed_input_node, strides, padding_begin, padding_end, kernel,
       /*exclude_pad=*/true, ov::op::RoundingType::FLOOR, auto_pad);
-  output_node_ =
-      ApplyActivation(average_pool_2d_node, avg_pool_params->activation);
+
+  if (Transpose(NCHW_NHWC, average_pool_2d_node, output_node_) != kTfLiteOk)
+    return kTfLiteError;
+
+  output_node_ = ApplyActivation(output_node_, avg_pool_params->activation);
 
   return kTfLiteOk;
 }

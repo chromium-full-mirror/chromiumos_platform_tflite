@@ -36,15 +36,6 @@ TfLiteStatus TransposeConv::CreateNode() {
   ov::CoordinateDiff padding_begin = {0, 0};
   ov::CoordinateDiff padding_end = {0, 0};
 
-  // TODO: Possibly add a test compilation flag to change the order for test
-  // mode
-  //  Comment below transpose lines for test mode
-  ov::AxisVector order = {3, 0, 1, 2};
-  const auto order_node = ov::opset3::Constant::create(
-      ov::element::i64, ov::Shape{order.size()}, order);
-  weights_node =
-      std::make_shared<ov::opset3::Transpose>(weights_node, order_node);
-
   std::shared_ptr<ov::Node> transpose_conv_node = nullptr;
   size_t spatial_dimensions_size = 2;
   int32_t output_shape[4];
@@ -55,19 +46,21 @@ TfLiteStatus TransposeConv::CreateNode() {
   auto output_shape_node = std::make_shared<ov::opset8::Constant>(
       ov::element::i32, ov::Shape{spatial_dimensions_size}, spatial_dimensions);
 
+  std::shared_ptr<ov::Node> transposed_weights_node, transposed_input_node;
+  if (Transpose(IHWO_OIHW, weights_node, transposed_weights_node) != kTfLiteOk)
+    return kTfLiteError;
+  if (Transpose(NHWC_NCHW, input_node, transposed_input_node) != kTfLiteOk)
+    return kTfLiteError;
+
   transpose_conv_node = std::make_shared<ov::opset3::ConvolutionBackpropData>(
-      input_node, weights_node, output_shape_node, strides, padding_begin,
-      padding_end, dilations, auto_pad);
+      transposed_input_node, transposed_weights_node, output_shape_node,
+      strides, padding_begin, padding_end, dilations, auto_pad);
+
+  if (Transpose(NCHW_NHWC, transpose_conv_node, transpose_conv_node) !=
+      kTfLiteOk)
+    return kTfLiteError;
 
   if (has_bias) {
-    std::vector<int> bias_dims;
-    bias_dims = GetDims(tensor_indices_[TRANSPOSE_CONV_BIAS]);
-    std::vector<uint32_t> shape(transpose_conv_node->get_shape().size(), 1);
-    shape[1] = bias_dims[0];
-    auto shape_node =
-        CreateConstNode(ov::element::i32, ov::Shape{shape.size()}, shape);
-    bias_node = std::make_shared<ov::opset3::Reshape>(bias_node, shape_node,
-                                                      /*special_zero=*/true);
     output_node_ = std::make_shared<ov::opset3::Add>(
         transpose_conv_node, bias_node, ov::op::AutoBroadcastType::NUMPY);
   } else {

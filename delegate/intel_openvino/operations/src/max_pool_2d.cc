@@ -30,11 +30,18 @@ TfLiteStatus MaxPool2D::CreateNode() {
   ov::op::PadType auto_pad;
   TfLiteStatus tf_status = CalculatePadding(max_pool_params->padding, auto_pad);
 
+  std::shared_ptr<ov::Node> transposed_input_node;
+  if (Transpose(NHWC_NCHW, input_node, transposed_input_node) != kTfLiteOk)
+    return kTfLiteError;
+
   auto max_pool_node = std::make_shared<ov::opset3::MaxPool>(
-      input_node, strides, padding_begin, padding_end, kernel,
+      transposed_input_node, strides, padding_begin, padding_end, kernel,
       ov::op::RoundingType::FLOOR, auto_pad);
 
-  output_node_ = ApplyActivation(max_pool_node, max_pool_params->activation);
+  if (Transpose(NCHW_NHWC, max_pool_node, output_node_) != kTfLiteOk)
+    return kTfLiteError;
+
+  output_node_ = ApplyActivation(output_node_, max_pool_params->activation);
   return kTfLiteOk;
 }
 

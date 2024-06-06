@@ -26,10 +26,6 @@ class OpenVINOGraphBuilder {
     node_manager_ = std::move(node_manager);
   }
 
-  TfLiteStatus convertNHWCtoNCHW(std::vector<int> node_dims,
-                                 std::shared_ptr<ov::Node> input,
-                                 std::shared_ptr<ov::Node> &transposed_node);
-
   std::vector<int> GetDims(const TfLiteOpaqueTensor *t) {
     int32_t num_dims = TfLiteOpaqueTensorNumDims(t);
     std::vector<int> dims(num_dims);
