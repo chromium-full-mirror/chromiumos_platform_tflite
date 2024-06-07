@@ -185,6 +185,12 @@ bool OpenVINODelegate::CheckNodeSupportByOpenVINO(
         return false;
       }
     }
+    case kTfLiteBuiltinPad: {
+      return CheckDataTypeSupported(
+                 context, node,
+                 {{kTfLiteFloat32}, {kTfLiteInt32, kTfLiteInt64}}) &&
+             CheckDims(context, node, {{1, 2, 3, 4}, {2}});
+    }
     default:
       return false;
   }

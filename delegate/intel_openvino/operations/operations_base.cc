@@ -103,6 +103,12 @@ void OperationsBase::GetTensorData(int index, void *data) {
   std::memcpy(data, tensor_data, size);
 }
 
+ov::element::Type OperationsBase::GetTensorType(int index) {
+  auto opaque_tensor = TfLiteOpaqueContextGetOpaqueTensor(context_, index);
+  TfLiteType tensor_type = TfLiteOpaqueTensorType(opaque_tensor);
+  return GetOVElementType(tensor_type);
+}
+
 std::pair<void *, int> OperationsBase::GetTensorDataPtrAndCount(int index) {
   auto opaque_tensor = TfLiteOpaqueContextGetOpaqueTensor(context_, index);
   void *tensor_data = TfLiteOpaqueTensorData(opaque_tensor);

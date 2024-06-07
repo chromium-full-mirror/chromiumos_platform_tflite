@@ -16,6 +16,7 @@
 #include "delegate/intel_openvino/operations/include/max_pool_2d.h"
 #include "delegate/intel_openvino/operations/include/mean.h"
 #include "delegate/intel_openvino/operations/include/mul.h"
+#include "delegate/intel_openvino/operations/include/pad.h"
 #include "delegate/intel_openvino/operations/include/relu.h"
 #include "delegate/intel_openvino/operations/include/relu6.h"
 #include "delegate/intel_openvino/operations/include/reshape.h"
@@ -176,6 +177,9 @@ std::shared_ptr<OperationsBase> OpenVINOGraphBuilder::CreateOpForCode(
     }
     case kTfLiteBuiltinTransposeConv: {
       return std::make_shared<TransposeConv>();
+    }
+    case kTfLiteBuiltinPad: {
+      return std::make_shared<Pad>();
     }
     default:
       return nullptr;

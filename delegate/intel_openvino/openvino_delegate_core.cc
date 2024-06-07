@@ -53,6 +53,7 @@ TfLiteStatus OpenVINODelegateCore::CreateGraphfromTfLite(
       return kTfLiteError;
     for (int k = 0; k < num_inputs; k++) {
       const int t = inputs_data[k];
+      if (t == kTfLiteOptionalTensor) continue;
       const void *data = nullptr;
       auto opaque_tensor = TfLiteOpaqueContextGetOpaqueTensor(context, t);
       auto allocation_type = TfLiteOpaqueTensorGetAllocationType(opaque_tensor);

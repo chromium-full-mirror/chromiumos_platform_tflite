@@ -81,6 +81,8 @@ class OperationsBase {
 
   void GetTensorData(int index, void *data);
 
+  ov::element::Type GetTensorType(int index);
+
   std::pair<void *, int> GetTensorDataPtrAndCount(int index);
 
   int *tensor_indices_;
