@@ -59,6 +59,7 @@ cc_library_with_tflite(
     copts = tflite_copts(),
     visibility = ["//delegate/intel_openvino:__subpackages__"],
     deps = [
+        "//delegate/intel_openvino:log",
         "@intel_openvino//:openvino",
         "@org_tensorflow//tensorflow/lite:kernel_api",
         "@org_tensorflow//tensorflow/lite:util",
@@ -71,6 +72,5 @@ cc_library_with_tflite(
         "@org_tensorflow//tensorflow/lite/kernels/internal:optimized_base",
         "@org_tensorflow//tensorflow/lite/kernels/internal:tensor",
         "@org_tensorflow//tensorflow/lite/kernels/internal:types",
-        "@org_tensorflow//tensorflow/lite/tools:logging",
     ],
 )

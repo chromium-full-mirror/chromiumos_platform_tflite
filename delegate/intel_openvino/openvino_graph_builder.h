@@ -14,11 +14,11 @@
 #include <utility>
 #include <vector>
 
+#include "delegate/intel_openvino/log.h"
 #include "delegate/intel_openvino/operations/openvino_node_manager.h"
 #include "delegate/intel_openvino/operations/operations_base.h"
 #include "tensorflow/lite/builtin_ops.h"
 #include "tensorflow/lite/c/builtin_op_data.h"
-#include "tensorflow/lite/tools/logging.h"
 
 namespace tflite {
 namespace openvinodelegate {

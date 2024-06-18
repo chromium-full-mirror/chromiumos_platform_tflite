@@ -14,12 +14,12 @@
 #include <utility>
 #include <vector>
 
+#include "delegate/intel_openvino/log.h"
 #include "delegate/intel_openvino/operations/openvino_node_manager.h"
 #include "tensorflow/lite/c/builtin_op_data.h"
 #include "tensorflow/lite/c/c_api_opaque.h"
 #include "tensorflow/lite/c/c_api_types.h"
 #include "tensorflow/lite/kernels/padding.h"
-#include "tensorflow/lite/tools/logging.h"
 
 typedef enum {
   INPUT_NODE_1 = 0,

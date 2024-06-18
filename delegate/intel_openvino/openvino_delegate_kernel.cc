@@ -9,7 +9,7 @@
 
 #include <vector>
 
-#include "tensorflow/lite/tools/logging.h"
+#include "delegate/intel_openvino/log.h"
 
 namespace tflite {
 namespace openvinodelegate {
