@@ -6,8 +6,9 @@
 #ifndef DELEGATE_INTEL_OPENVINO_OPENVINO_DELEGATE_KERNEL_H_
 #define DELEGATE_INTEL_OPENVINO_OPENVINO_DELEGATE_KERNEL_H_
 
-#include <memory>
 #include <openvino/openvino.hpp>
+
+#include <memory>
 
 #include "openvino_delegate_core.h"
 #include "tensorflow/lite/delegates/utils/simple_opaque_delegate.h"

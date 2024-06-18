@@ -6,6 +6,7 @@
 #include "openvino_delegate_kernel.h"
 
 #include <openvino/runtime/core.hpp>
+
 #include <vector>
 
 #include "tensorflow/lite/tools/logging.h"

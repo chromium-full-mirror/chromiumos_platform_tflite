@@ -4,3 +4,11 @@
 
 BasedOnStyle: Google
 Standard: c++20
+
+IncludeCategories:
+  - Regex:           '^<.*\.(h|hpp)>'
+    Priority:        1
+  - Regex:           '^<.*'
+    Priority:        2
+  - Regex:           '.*'
+    Priority:        3

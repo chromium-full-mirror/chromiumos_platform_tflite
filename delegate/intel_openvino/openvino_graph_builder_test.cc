@@ -7,13 +7,8 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
-
 #include <openvino/pass/manager.hpp>
 #include <openvino/pass/serialize.hpp>
-
-// TODO(shik): Without this comment, clang-format would like to mix openvino can
-// C++ standard headers together. We should tweak IncludeCategories in
-// .clang-format config to make it works as expected.
 
 #include <memory>
 #include <string>

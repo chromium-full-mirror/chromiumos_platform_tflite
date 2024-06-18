@@ -6,8 +6,9 @@
 #ifndef DELEGATE_INTEL_OPENVINO_OPENVINO_DELEGATE_CORE_H_
 #define DELEGATE_INTEL_OPENVINO_OPENVINO_DELEGATE_CORE_H_
 
-#include <memory>
 #include <openvino/openvino.hpp>
+
+#include <memory>
 #include <string>
 #include <vector>
 

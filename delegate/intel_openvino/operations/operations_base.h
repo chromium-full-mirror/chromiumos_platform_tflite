@@ -6,10 +6,11 @@
 #ifndef DELEGATE_INTEL_OPENVINO_OPERATIONS_OPERATIONS_BASE_H_
 #define DELEGATE_INTEL_OPENVINO_OPERATIONS_OPERATIONS_BASE_H_
 
-#include <memory>
 #include <openvino/openvino.hpp>
 #include <openvino/opsets/opset3.hpp>
 #include <openvino/opsets/opset8.hpp>
+
+#include <memory>
 #include <utility>
 #include <vector>
 
