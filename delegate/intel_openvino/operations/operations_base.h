@@ -38,13 +38,14 @@ namespace openvinodelegate {
 
 class OperationsBase {
  public:
-  void UpdateNodeInfo(void *data, int size, void *builtin_data);
+  void UpdateNodeInfo(const int *tensor_indices, int tensor_indices_size,
+                      void *builtin_data);
   void SetGraphData(const TfLiteOpaqueContext *context,
                     NodeManager *node_manager);
 
   std::shared_ptr<ov::Node> GetOpResultNode() { return output_node_; }
   virtual TfLiteStatus CreateNode() = 0;
-  virtual ~OperationsBase(){};
+  virtual ~OperationsBase() {}
 
  protected:
   typedef enum {
@@ -89,7 +90,7 @@ class OperationsBase {
 
   std::pair<void *, int> GetTensorDataPtrAndCount(int index);
 
-  int *tensor_indices_;
+  const int *tensor_indices_;
   int tensor_indices_size_;
 
  private:

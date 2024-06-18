@@ -14,8 +14,9 @@
 namespace tflite {
 namespace openvinodelegate {
 
-void OperationsBase::UpdateNodeInfo(void *data, int size, void *builtin_data) {
-  tensor_indices_ = (int *)data;
+void OperationsBase::UpdateNodeInfo(const int *tensor_indices, int size,
+                                    void *builtin_data) {
+  tensor_indices_ = tensor_indices;
   tensor_indices_size_ = size;
   SetBuiltinData(builtin_data);
 }

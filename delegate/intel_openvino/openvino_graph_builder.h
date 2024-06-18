@@ -25,7 +25,7 @@ namespace openvinodelegate {
 
 class OpenVINOGraphBuilder {
  public:
-  OpenVINOGraphBuilder(std::unique_ptr<NodeManager> node_manager) {
+  explicit OpenVINOGraphBuilder(std::unique_ptr<NodeManager> node_manager) {
     node_manager_ = std::move(node_manager);
   }
 

@@ -29,14 +29,16 @@ TfLiteStatus Pad::CreateNode() {
   std::vector<int64_t> paddings_0(half_size);
   std::vector<int64_t> paddings_1(half_size);
   if (pad_dtype == ov::element::i32) {
+    auto* data = reinterpret_cast<int32_t*>(paddings_2d);
     for (size_t i = 0; i < half_size; i++) {
-      paddings_0[i] = *((int32_t *)(paddings_2d) + (2 * i));
-      paddings_1[i] = *((int32_t *)(paddings_2d) + (2 * i) + 1);
+      paddings_0[i] = data[2 * i];
+      paddings_1[i] = data[2 * i + 1];
     }
   } else {
+    auto* data = reinterpret_cast<int64_t*>(paddings_2d);
     for (size_t i = 0; i < half_size; i++) {
-      paddings_0[i] = *((int64_t *)(paddings_2d) + (2 * i));
-      paddings_1[i] = *((int64_t *)(paddings_2d) + (2 * i) + 1);
+      paddings_0[i] = data[2 * i];
+      paddings_1[i] = data[2 * i + 1];
     }
   }
 

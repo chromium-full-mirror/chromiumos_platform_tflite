@@ -104,7 +104,7 @@ TfLiteStatus OpenVINOGraphBuilder::CreateNodeFromTfLiteOp(
   int num_inputs;
   if (TfLiteOpaqueNodeInputs(node, &inputs_data, &num_inputs) != kTfLiteOk)
     return kTfLiteError;
-  operation_node->UpdateNodeInfo((void *)inputs_data, num_inputs,
+  operation_node->UpdateNodeInfo(inputs_data, num_inputs,
                                  TfLiteOpaqueNodeGetBuiltinData(node));
   if (operation_node->CreateNode() != kTfLiteOk) return kTfLiteError;
 

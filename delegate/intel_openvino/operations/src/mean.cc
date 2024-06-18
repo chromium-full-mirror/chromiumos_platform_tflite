@@ -23,16 +23,13 @@ TfLiteStatus Mean::CreateNode() {
     return kTfLiteError;
   }
 
-  std::vector<int32_t> axes_vec = {};
   auto [data, count] = GetTensorDataPtrAndCount(tensor_indices_[1]);
   if (count == 0 || data == nullptr) {
     TFLITE_LOG(INFO) << "Failed to get reduction_axes data";
     return kTfLiteError;
   }
-
-  for (auto i = 0; i < count; i++) {
-    axes_vec.push_back(*((int *)(data) + i));
-  }
+  auto *axes_ptr = reinterpret_cast<int32_t *>(data);
+  std::vector<int32_t> axes_vec(axes_ptr, axes_ptr + count);
 
   auto axes_node =
       CreateConstNode(ov::element::i32, {(unsigned int)count}, axes_vec);

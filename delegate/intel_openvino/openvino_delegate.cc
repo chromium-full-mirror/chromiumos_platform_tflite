@@ -118,8 +118,9 @@ bool OpenVINODelegate::CheckNodeSupportByOpenVINO(
                    context, node,
                    {{kTfLiteFloat32}, {kTfLiteFloat32}, {kTfLiteFloat32}}) &&
                CheckDims(context, node, {{4}, {4}, {1}});
-      } else
+      } else {
         return false;
+      }
     }
     case kTfLiteBuiltinDequantize: {
       return CheckDataTypeSupported(context, node, {{kTfLiteFloat16}});
@@ -146,8 +147,8 @@ bool OpenVINODelegate::CheckNodeSupportByOpenVINO(
              CheckDims(context, node, {{1, 2, 3, 4}, {1, 2, 3, 4}});
     }
     case kTfLiteBuiltinSoftmax: {
-      auto *softmax_params =
-          (TfLiteSoftmaxParams *)TfLiteOpaqueNodeGetBuiltinData(node);
+      auto *softmax_params = reinterpret_cast<TfLiteSoftmaxParams *>(
+          TfLiteOpaqueNodeGetBuiltinData(node));
       if (softmax_params->beta != 1.0f) {
         TFLITE_LOG(INFO) << "Unsupported Softmax op, beta value is not 1.0";
         return false;

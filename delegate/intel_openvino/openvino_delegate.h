@@ -32,8 +32,9 @@ class OpenVINODelegate : public SimpleOpaqueDelegateInterface {
     if (options == nullptr) {
       TfLiteOpenVINODelegateOptions default_opt;
       options_ = default_opt;
-    } else
+    } else {
       options_ = *options;
+    }
   }
 
   bool IsNodeSupportedByDelegate(const TfLiteRegistrationExternal *registration,

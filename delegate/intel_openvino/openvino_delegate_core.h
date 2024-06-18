@@ -18,7 +18,7 @@ namespace tflite {
 namespace openvinodelegate {
 class OpenVINODelegateCore {
  public:
-  OpenVINODelegateCore(std::string plugins_path)
+  explicit OpenVINODelegateCore(std::string plugins_path)
       : ov_core_(ov::Core(plugins_path)) {}
   TfLiteStatus Init();
 
