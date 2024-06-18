@@ -6,7 +6,7 @@
 #include <memory>
 #include <utility>
 
-#include "openvino_delegate.h"
+#include "delegate/intel_openvino/openvino_delegate.h"
 #include "tensorflow/lite/acceleration/configuration/c/delegate_plugin.h"
 #include "tensorflow/lite/acceleration/configuration/c/stable_delegate.h"
 #include "tensorflow/lite/c/c_api_types.h"

@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "openvino_graph_builder.h"
+#include "delegate/intel_openvino/openvino_graph_builder.h"
 
 #include <memory>
 

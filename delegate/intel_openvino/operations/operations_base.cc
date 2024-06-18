@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "operations_base.h"
+#include "delegate/intel_openvino/operations/operations_base.h"
 
 #include <memory>
 #include <utility>

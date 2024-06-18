@@ -12,7 +12,7 @@
 #include <string>
 #include <vector>
 
-#include "openvino_graph_builder.h"
+#include "delegate/intel_openvino/openvino_graph_builder.h"
 
 namespace tflite {
 namespace openvinodelegate {

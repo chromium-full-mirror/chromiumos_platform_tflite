@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "openvino_delegate_core.h"
+#include "delegate/intel_openvino/openvino_delegate_core.h"
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -11,7 +11,7 @@
 #include <memory>
 #include <unordered_set>
 
-#include "openvino_graph_builder.h"
+#include "delegate/intel_openvino/openvino_graph_builder.h"
 #include "tensorflow/lite/builtin_ops.h"
 #include "tensorflow/lite/c/c_api.h"
 #include "tensorflow/lite/core/kernels/builtin_op_kernels.h"

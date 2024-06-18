@@ -3,13 +3,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "openvino_delegate_core.h"
+#include "delegate/intel_openvino/openvino_delegate_core.h"
 
 #include <memory>
 #include <string>
 #include <unordered_set>
 
-#include "operations/openvino_node_manager.h"
+#include "delegate/intel_openvino/operations/openvino_node_manager.h"
 #include "tensorflow/lite/c/c_api_opaque.h"
 
 namespace tflite {

@@ -10,7 +10,7 @@
 
 #include <memory>
 
-#include "openvino_delegate_core.h"
+#include "delegate/intel_openvino/openvino_delegate_core.h"
 #include "tensorflow/lite/delegates/utils/simple_opaque_delegate.h"
 
 namespace tflite {

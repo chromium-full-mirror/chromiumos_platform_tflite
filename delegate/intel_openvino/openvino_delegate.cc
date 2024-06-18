@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "openvino_delegate.h"
+#include "delegate/intel_openvino/openvino_delegate.h"
 
 #include <memory>
 #include <vector>
