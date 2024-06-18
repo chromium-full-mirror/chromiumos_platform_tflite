@@ -5,6 +5,10 @@
 
 #include "operations_base.h"
 
+#include <memory>
+#include <utility>
+#include <vector>
+
 #include "delegate/intel_openvino/operations/utility.h"
 
 namespace tflite {

@@ -5,6 +5,9 @@
 
 #include "openvino_delegate.h"
 
+#include <memory>
+#include <vector>
+
 #include "tensorflow/lite/builtin_ops.h"
 #include "tensorflow/lite/c/c_api_opaque.h"
 #include "tensorflow/lite/c/c_api_types.h"

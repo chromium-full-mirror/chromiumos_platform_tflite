@@ -6,6 +6,7 @@
 #ifndef DELEGATE_INTEL_OPENVINO_OPENVINO_DELEGATE_KERNEL_H_
 #define DELEGATE_INTEL_OPENVINO_OPENVINO_DELEGATE_KERNEL_H_
 
+#include <memory>
 #include <openvino/openvino.hpp>
 
 #include "openvino_delegate_core.h"

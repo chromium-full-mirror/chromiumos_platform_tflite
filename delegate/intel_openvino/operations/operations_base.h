@@ -6,9 +6,12 @@
 #ifndef DELEGATE_INTEL_OPENVINO_OPERATIONS_OPERATIONS_BASE_H_
 #define DELEGATE_INTEL_OPENVINO_OPERATIONS_OPERATIONS_BASE_H_
 
+#include <memory>
 #include <openvino/openvino.hpp>
 #include <openvino/opsets/opset3.hpp>
 #include <openvino/opsets/opset8.hpp>
+#include <utility>
+#include <vector>
 
 #include "delegate/intel_openvino/operations/openvino_node_manager.h"
 #include "tensorflow/lite/c/builtin_op_data.h"

@@ -5,6 +5,10 @@
 
 #include "openvino_delegate_core.h"
 
+#include <memory>
+#include <string>
+#include <unordered_set>
+
 #include "operations/openvino_node_manager.h"
 #include "tensorflow/lite/c/c_api_opaque.h"
 

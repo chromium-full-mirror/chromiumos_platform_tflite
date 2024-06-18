@@ -5,6 +5,8 @@
 
 #include "openvino_graph_builder.h"
 
+#include <memory>
+
 #include "delegate/intel_openvino/operations/include/add.h"
 #include "delegate/intel_openvino/operations/include/average_pool_2d.h"
 #include "delegate/intel_openvino/operations/include/concat.h"

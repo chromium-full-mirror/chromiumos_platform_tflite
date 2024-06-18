@@ -6,7 +6,10 @@
 #ifndef DELEGATE_INTEL_OPENVINO_OPERATIONS_OPENVINO_NODE_MANAGER_H_
 #define DELEGATE_INTEL_OPENVINO_OPERATIONS_OPENVINO_NODE_MANAGER_H_
 
+#include <map>
+#include <memory>
 #include <openvino/openvino.hpp>
+#include <unordered_set>
 
 class NodeManager {
  public:

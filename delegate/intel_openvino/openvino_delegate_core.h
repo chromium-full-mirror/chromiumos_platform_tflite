@@ -6,7 +6,9 @@
 #ifndef DELEGATE_INTEL_OPENVINO_OPENVINO_DELEGATE_CORE_H_
 #define DELEGATE_INTEL_OPENVINO_OPENVINO_DELEGATE_CORE_H_
 
+#include <memory>
 #include <openvino/openvino.hpp>
+#include <string>
 #include <vector>
 
 #include "openvino_graph_builder.h"
