@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef TENSORFLOW_LITE_DELEGATES_OPENVINO_NODE_MANAGER_H_
-#define TENSORFLOW_LITE_DELEGATES_OPENVINO_NODE_MANAGER_H_
+#ifndef DELEGATE_INTEL_OPENVINO_OPERATIONS_OPENVINO_NODE_MANAGER_H_
+#define DELEGATE_INTEL_OPENVINO_OPERATIONS_OPENVINO_NODE_MANAGER_H_
 
 #include <openvino/openvino.hpp>
 
@@ -28,4 +28,4 @@ class NodeManager {
   std::map<int, ov::Output<ov::Node>> output_at_op_index_;
   std::unordered_set<int> index_parameters_;
 };
-#endif  // TENSORFLOW_LITE_DELEGATES_OPENVINO_NODE_MANAGER_H_
+#endif  // DELEGATE_INTEL_OPENVINO_OPERATIONS_OPENVINO_NODE_MANAGER_H_

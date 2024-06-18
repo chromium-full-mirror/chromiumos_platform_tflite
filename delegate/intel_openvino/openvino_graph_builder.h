@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef TENSORFLOW_LITE_DELEGATES_OPENVINO_GRAPH_BUILDER_H_
-#define TENSORFLOW_LITE_DELEGATES_OPENVINO_GRAPH_BUILDER_H_
+#ifndef DELEGATE_INTEL_OPENVINO_OPENVINO_GRAPH_BUILDER_H_
+#define DELEGATE_INTEL_OPENVINO_OPENVINO_GRAPH_BUILDER_H_
 
 #include <openvino/openvino.hpp>
 #include <openvino/opsets/opset3.hpp>
@@ -70,4 +70,4 @@ class OpenVINOGraphBuilder {
 }  // namespace openvinodelegate
 }  // namespace tflite
 
-#endif  // TENSORFLOW_LITE_DELEGATES_OPENVINO_GRAPH_BUILDER_H_
+#endif  // DELEGATE_INTEL_OPENVINO_OPENVINO_GRAPH_BUILDER_H_

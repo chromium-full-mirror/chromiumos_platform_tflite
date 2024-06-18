@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef TENSORFLOW_LITE_DELEGATES_OPENVINO_UTILITY_H_
-#define TENSORFLOW_LITE_DELEGATES_OPENVINO_UTILITY_H_
+#ifndef DELEGATE_INTEL_OPENVINO_OPERATIONS_UTILITY_H_
+#define DELEGATE_INTEL_OPENVINO_OPERATIONS_UTILITY_H_
 
 #include <openvino/openvino.hpp>
 
@@ -64,4 +64,4 @@ inline ov::element::Type GetOVElementType(TfLiteType tensor_type) {
 }  // namespace openvinodelegate
 }  // namespace tflite
 
-#endif  // TENSORFLOW_LITE_DELEGATES_OPENVINO_UTILITY_H_
+#endif  // DELEGATE_INTEL_OPENVINO_OPERATIONS_UTILITY_H_

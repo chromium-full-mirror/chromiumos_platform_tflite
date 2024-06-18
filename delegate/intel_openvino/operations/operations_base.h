@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef TENSORFLOW_LITE_DELEGATES_OPERATIONS_BASE_H_
-#define TENSORFLOW_LITE_DELEGATES_OPERATIONS_BASE_H_
+#ifndef DELEGATE_INTEL_OPENVINO_OPERATIONS_OPERATIONS_BASE_H_
+#define DELEGATE_INTEL_OPENVINO_OPERATIONS_OPERATIONS_BASE_H_
 
 #include <openvino/openvino.hpp>
 #include <openvino/opsets/opset3.hpp>
@@ -97,4 +97,4 @@ class OperationsBase {
 }  // namespace openvinodelegate
 }  // namespace tflite
 
-#endif  // TENSORFLOW_LITE_DELEGATES_OPERATIOSN_BASE_H_
+#endif  // DELEGATE_INTEL_OPENVINO_OPERATIONS_OPERATIONS_BASE_H_

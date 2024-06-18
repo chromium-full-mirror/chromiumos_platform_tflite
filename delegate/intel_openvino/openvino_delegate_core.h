@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef TENSORFLOW_LITE_DELEGATES_OPENVINO_DELEGATE_CORE_H_
-#define TENSORFLOW_LITE_DELEGATES_OPENVINO_DELEGATE_CORE_H_
+#ifndef DELEGATE_INTEL_OPENVINO_OPENVINO_DELEGATE_CORE_H_
+#define DELEGATE_INTEL_OPENVINO_OPENVINO_DELEGATE_CORE_H_
 
 #include <openvino/openvino.hpp>
 #include <vector>
@@ -41,4 +41,4 @@ class OpenVINODelegateCore {
 }  // namespace openvinodelegate
 }  // namespace tflite
 
-#endif  // TENSORFLOW_LITE_DELEGATES_OPENVINO_DELEGATE_KERNEL_H_
+#endif  // DELEGATE_INTEL_OPENVINO_OPENVINO_DELEGATE_CORE_H_

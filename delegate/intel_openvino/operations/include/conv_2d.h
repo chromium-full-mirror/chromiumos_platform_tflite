@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef TENSORFLOW_LITE_DELEGATES_OPENVINO_CONV2D_H_
-#define TENSORFLOW_LITE_DELEGATES_OPENVINO_CONV2D_H_
+#ifndef DELEGATE_INTEL_OPENVINO_OPERATIONS_INCLUDE_CONV_2D_H_
+#define DELEGATE_INTEL_OPENVINO_OPERATIONS_INCLUDE_CONV_2D_H_
 
 #include "delegate/intel_openvino/operations/operations_base.h"
 
@@ -19,4 +19,4 @@ class Conv2D final : public OperationsBase {
 
 }  // namespace openvinodelegate
 }  // namespace tflite
-#endif  // TENSORFLOW_LITE_DELEGATES_OPENVINO_CONV2D_H_
+#endif  // DELEGATE_INTEL_OPENVINO_OPERATIONS_INCLUDE_CONV_2D_H_
