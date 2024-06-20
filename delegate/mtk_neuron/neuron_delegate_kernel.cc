@@ -40,6 +40,7 @@
 #include "delegate/mtk_neuron/neuron_implementation.h"
 #include "tensorflow/lite/builtin_ops.h"
 #include "tensorflow/lite/c/builtin_op_data.h"
+#include "tensorflow/lite/c/c_api.h"
 #include "tensorflow/lite/c/c_api_opaque.h"
 #include "tensorflow/lite/c/common.h"
 #include "tensorflow/lite/context_util.h"
@@ -1718,23 +1719,23 @@ TfLiteStatus NeuronStableDelegateKernel::AddOpsAndTensors(
 
 #ifdef LOWERING_PACK
     // Delegate PACK by lowering it into CONCAT + RESHAPE.
-    if (TfLiteRegistrationExternalGetBuiltInCode(reg) == kTfLiteBuiltinPack) {
+    if (TfLiteOperatorGetBuiltInCode(reg) == kTfLiteBuiltinPack) {
       TF_LITE_ENSURE_STATUS(builder.TransformPackIntoSupportedOps(node, reg));
       continue;
     }
 #endif
     // Delegate SPLIT_V by lowering it into SLICEs.
-    if (TfLiteRegistrationExternalGetBuiltInCode(reg) == kTfLiteBuiltinSplitV) {
+    if (TfLiteOperatorGetBuiltInCode(reg) == kTfLiteBuiltinSplitV) {
       TF_LITE_ENSURE_STATUS(
           builder.TransformSplitVIntoSupportedOps(node_index, node, reg));
       continue;
     }
     // Remove MirrorPad set same quantization params of input & output tensors
     // patch due to the limitation of the MirrorPad spec.
-    const bool hybrid_op = IsHybridOperator(
-        context, TfLiteRegistrationExternalGetBuiltInCode(reg), node);
+    const bool hybrid_op =
+        IsHybridOperator(context, TfLiteOperatorGetBuiltInCode(reg), node);
     const bool scalar_as_tensor =
-        IsScalarInputSupported(TfLiteRegistrationExternalGetBuiltInCode(reg));
+        IsScalarInputSupported(TfLiteOperatorGetBuiltInCode(reg));
     const bool need_int8_conversion = false;
     const bool use_int8_asymm_signed = true;
     const int* node_inputs;
@@ -1751,8 +1752,7 @@ TfLiteStatus NeuronStableDelegateKernel::AddOpsAndTensors(
     }
 #ifdef LOWERING_HARD_SWISH
     // h_swish will be lowered into supported Neuron operations.
-    if (TfLiteRegistrationExternalGetBuiltInCode(reg) ==
-        kTfLiteBuiltinHardSwish) {
+    if (TfLiteOperatorGetBuiltInCode(reg) == kTfLiteBuiltinHardSwish) {
       builder.AddHardSwish(node_inputs[0], node->outputs->data[0],
                            need_int8_conversion);
       continue;
@@ -1760,7 +1760,7 @@ TfLiteStatus NeuronStableDelegateKernel::AddOpsAndTensors(
 #endif
 #ifndef LOWERING_PACK
     // For PACK, NNAPI expects the axis scalar before all input tensors.
-    if (TfLiteRegistrationExternalGetBuiltInCode(reg) == kTfLiteBuiltinPack) {
+    if (TfLiteOperatorGetBuiltInCode(reg) == kTfLiteBuiltinPack) {
       const auto* builtin = reinterpret_cast<TfLitePackParams*>(
           TfLiteOpaqueNodeGetBuiltinData(node));
       // Neuron only accepts non-negative axis.
@@ -1774,14 +1774,12 @@ TfLiteStatus NeuronStableDelegateKernel::AddOpsAndTensors(
     // Map inputs to Neuron tensor indices.
     for (int input_pos = 0; input_pos < TfLiteOpaqueNodeNumberOfInputs(node);
          ++input_pos) {
-      if (TfLiteRegistrationExternalGetBuiltInCode(reg) ==
-          kTfLiteBuiltinTransposeConv) {
+      if (TfLiteOperatorGetBuiltInCode(reg) == kTfLiteBuiltinTransposeConv) {
         // Everything is added during Map since input tensors
         // have different order.
         continue;
       }
-      if (TfLiteRegistrationExternalGetBuiltInCode(reg) ==
-              kTfLiteBuiltinFullyConnected &&
+      if (TfLiteOperatorGetBuiltInCode(reg) == kTfLiteBuiltinFullyConnected &&
           node_inputs[input_pos] == kTfLiteOptionalTensor) {
         // skip optional bias and handle it during mapping
         continue;
@@ -1789,46 +1787,31 @@ TfLiteStatus NeuronStableDelegateKernel::AddOpsAndTensors(
       const auto input_index = node_inputs[input_pos];
       if (need_int8_conversion &&
           (input_pos == 0 ||
-           TfLiteRegistrationExternalGetBuiltInCode(reg) ==
-               kTfLiteBuiltinFullyConnected ||
-           TfLiteRegistrationExternalGetBuiltInCode(reg) ==
-               kTfLiteBuiltinConv2d ||
-           TfLiteRegistrationExternalGetBuiltInCode(reg) ==
-               kTfLiteBuiltinDepthwiseConv2d ||
-           TfLiteRegistrationExternalGetBuiltInCode(reg) == kTfLiteBuiltinAdd ||
-           TfLiteRegistrationExternalGetBuiltInCode(reg) == kTfLiteBuiltinMul ||
-           TfLiteRegistrationExternalGetBuiltInCode(reg) == kTfLiteBuiltinSub ||
-           TfLiteRegistrationExternalGetBuiltInCode(reg) ==
-               kTfLiteBuiltinConcatenation ||
-           TfLiteRegistrationExternalGetBuiltInCode(reg) ==
-               kTfLiteBuiltinMaximum ||
-           TfLiteRegistrationExternalGetBuiltInCode(reg) ==
-               kTfLiteBuiltinMinimum ||
-           TfLiteRegistrationExternalGetBuiltInCode(reg) ==
-               kTfLiteBuiltinLeakyRelu ||
-           TfLiteRegistrationExternalGetBuiltInCode(reg) ==
-               kTfLiteBuiltinLess ||
-           TfLiteRegistrationExternalGetBuiltInCode(reg) ==
-               kTfLiteBuiltinLessEqual ||
-           TfLiteRegistrationExternalGetBuiltInCode(reg) ==
-               kTfLiteBuiltinPrelu ||
-           TfLiteRegistrationExternalGetBuiltInCode(reg) ==
-               kTfLiteBuiltinGreater ||
-           TfLiteRegistrationExternalGetBuiltInCode(reg) ==
-               kTfLiteBuiltinGreaterEqual ||
-           TfLiteRegistrationExternalGetBuiltInCode(reg) ==
-               kTfLiteBuiltinEqual ||
-           TfLiteRegistrationExternalGetBuiltInCode(reg) ==
-               kTfLiteBuiltinNotEqual ||
-           TfLiteRegistrationExternalGetBuiltInCode(reg) ==
-               kTfLiteBuiltinSelect)) {
+           TfLiteOperatorGetBuiltInCode(reg) == kTfLiteBuiltinFullyConnected ||
+           TfLiteOperatorGetBuiltInCode(reg) == kTfLiteBuiltinConv2d ||
+           TfLiteOperatorGetBuiltInCode(reg) == kTfLiteBuiltinDepthwiseConv2d ||
+           TfLiteOperatorGetBuiltInCode(reg) == kTfLiteBuiltinAdd ||
+           TfLiteOperatorGetBuiltInCode(reg) == kTfLiteBuiltinMul ||
+           TfLiteOperatorGetBuiltInCode(reg) == kTfLiteBuiltinSub ||
+           TfLiteOperatorGetBuiltInCode(reg) == kTfLiteBuiltinConcatenation ||
+           TfLiteOperatorGetBuiltInCode(reg) == kTfLiteBuiltinMaximum ||
+           TfLiteOperatorGetBuiltInCode(reg) == kTfLiteBuiltinMinimum ||
+           TfLiteOperatorGetBuiltInCode(reg) == kTfLiteBuiltinLeakyRelu ||
+           TfLiteOperatorGetBuiltInCode(reg) == kTfLiteBuiltinLess ||
+           TfLiteOperatorGetBuiltInCode(reg) == kTfLiteBuiltinLessEqual ||
+           TfLiteOperatorGetBuiltInCode(reg) == kTfLiteBuiltinPrelu ||
+           TfLiteOperatorGetBuiltInCode(reg) == kTfLiteBuiltinGreater ||
+           TfLiteOperatorGetBuiltInCode(reg) == kTfLiteBuiltinGreaterEqual ||
+           TfLiteOperatorGetBuiltInCode(reg) == kTfLiteBuiltinEqual ||
+           TfLiteOperatorGetBuiltInCode(reg) == kTfLiteBuiltinNotEqual ||
+           TfLiteOperatorGetBuiltInCode(reg) == kTfLiteBuiltinSelect)) {
         // Only selected inputs require int8 conversion.
         TF_LITE_ENSURE_STATUS(builder.AddTensorInput(
             input_index, hybrid_op,
             input_tensor_flags | NN_TENSOR_FLAG_INT8_CONVERSION));
         continue;
       }
-      if (TfLiteRegistrationExternalGetBuiltInCode(reg) == kTfLiteBuiltinLstm &&
+      if (TfLiteOperatorGetBuiltInCode(reg) == kTfLiteBuiltinLstm &&
           isLstmFullKernel(node) && input_pos >= 20) {
         // Skip layer normalization weights. They are added in the Map
         // function (after all the other inputs added there) since layer
@@ -1836,12 +1819,12 @@ TfLiteStatus NeuronStableDelegateKernel::AddOpsAndTensors(
         // Neuron.
         continue;
       }
-      if (TfLiteRegistrationExternalGetBuiltInCode(reg) == kTfLiteBuiltinLstm &&
+      if (TfLiteOperatorGetBuiltInCode(reg) == kTfLiteBuiltinLstm &&
           isLstmBasicKernel(node)) {
         // Configuring all inputs in the Map function
         continue;
       }
-      if (TfLiteRegistrationExternalGetBuiltInCode(reg) ==
+      if (TfLiteOperatorGetBuiltInCode(reg) ==
           kTfLiteBuiltinUnidirectionalSequenceLstm) {
         if (input_pos >= 20) {
           // Skip layer normalization weights. They are added in the Map
@@ -1855,18 +1838,15 @@ TfLiteStatus NeuronStableDelegateKernel::AddOpsAndTensors(
           continue;
         }
       }
-      if ((TfLiteRegistrationExternalGetBuiltInCode(reg) ==
-           kTfLiteBuiltinSplit) &&
+      if ((TfLiteOperatorGetBuiltInCode(reg) == kTfLiteBuiltinSplit) &&
           (input_index == node_inputs[0])) {
         // Skip the axis input tensor; it will be added as a scalar operand
         // by the Map() mapping.
         continue;
       }
 
-      if ((TfLiteRegistrationExternalGetBuiltInCode(reg) ==
-               kTfLiteBuiltinPadv2 ||
-           TfLiteRegistrationExternalGetBuiltInCode(reg) ==
-               kTfLiteBuiltinPad) &&
+      if ((TfLiteOperatorGetBuiltInCode(reg) == kTfLiteBuiltinPadv2 ||
+           TfLiteOperatorGetBuiltInCode(reg) == kTfLiteBuiltinPad) &&
           input_pos == 1) {
         const TfLiteOpaqueTensor* padding =
             TfLiteOpaqueContextGetOpaqueTensor(context, input_index);
@@ -1876,10 +1856,8 @@ TfLiteStatus NeuronStableDelegateKernel::AddOpsAndTensors(
         }
         // Pad and Padv2 have an optional parameter for a pad value which has
         // to be converted to a scalar type in Neuron.
-      } else if ((TfLiteRegistrationExternalGetBuiltInCode(reg) ==
-                      kTfLiteBuiltinPadv2 ||
-                  TfLiteRegistrationExternalGetBuiltInCode(reg) ==
-                      kTfLiteBuiltinPad) &&
+      } else if ((TfLiteOperatorGetBuiltInCode(reg) == kTfLiteBuiltinPadv2 ||
+                  TfLiteOperatorGetBuiltInCode(reg) == kTfLiteBuiltinPad) &&
                  TfLiteOpaqueNodeNumberOfInputs(node) == 3 && input_pos == 2) {
         const int constant_value_id = node_inputs[2];
         if (constant_value_id == kTfLiteOptionalTensor) {
@@ -1930,18 +1908,16 @@ TfLiteStatus NeuronStableDelegateKernel::AddOpsAndTensors(
       }
 
       if (input_index == kTfLiteOptionalTensor &&
-          (TfLiteRegistrationExternalGetBuiltInCode(reg) ==
-               kTfLiteBuiltinLstm ||
-           TfLiteRegistrationExternalGetBuiltInCode(reg) ==
-               kTfLiteBuiltinSvdf ||
-           TfLiteRegistrationExternalGetBuiltInCode(reg) ==
+          (TfLiteOperatorGetBuiltInCode(reg) == kTfLiteBuiltinLstm ||
+           TfLiteOperatorGetBuiltInCode(reg) == kTfLiteBuiltinSvdf ||
+           TfLiteOperatorGetBuiltInCode(reg) ==
                kTfLiteBuiltinBidirectionalSequenceLstm)) {
         // properly handle the optional tensor for LSTM and SVDF.
         // currently only support float32.
         TF_LITE_ENSURE_STATUS(builder.AddVectorFloat32Operand(nullptr, 0));
-      } else if (TfLiteRegistrationExternalGetBuiltInCode(reg) ==
+      } else if (TfLiteOperatorGetBuiltInCode(reg) ==
                      kTfLiteBuiltinResizeBilinear ||
-                 TfLiteRegistrationExternalGetBuiltInCode(reg) ==
+                 TfLiteOperatorGetBuiltInCode(reg) ==
                      kTfLiteBuiltinResizeNearestNeighbor) {
         if (input_pos == 0) {
           // Only the first input tensor is added. The second one,
@@ -1950,33 +1926,29 @@ TfLiteStatus NeuronStableDelegateKernel::AddOpsAndTensors(
           // scalars by the mapping function returned by Map().
           TF_LITE_ENSURE_STATUS(builder.AddTensorInput(input_index, hybrid_op));
         }
-      } else if (TfLiteRegistrationExternalGetBuiltInCode(reg) ==
-                     kTfLiteBuiltinTopkV2 &&
+      } else if (TfLiteOperatorGetBuiltInCode(reg) == kTfLiteBuiltinTopkV2 &&
                  input_pos > 0) {
         // The K parameter tensor is not handled here but by the functor
         // returned by Map, the input tensor is instead added in
         // the else clause below
         continue;
-      } else if (TfLiteRegistrationExternalGetBuiltInCode(reg) ==
-                 kTfLiteBuiltinGather) {
+      } else if (TfLiteOperatorGetBuiltInCode(reg) == kTfLiteBuiltinGather) {
         // Everything is added during Map since input tensors
         // have different order.
         continue;
-      } else if (TfLiteRegistrationExternalGetBuiltInCode(reg) ==
+      } else if (TfLiteOperatorGetBuiltInCode(reg) ==
                      kTfLiteBuiltinExpandDims &&
                  input_pos == 1) {
         // The axis param is added during Map
         continue;
-      } else if (TfLiteRegistrationExternalGetBuiltInCode(reg) ==
+      } else if (TfLiteOperatorGetBuiltInCode(reg) ==
                      kTfLiteBuiltinBatchToSpaceNd &&
                  input_pos == 2) {
         // Neuron does not support crops.
         // The Map function will check if all crops are zero.
         continue;
-      } else if (TfLiteRegistrationExternalGetBuiltInCode(reg) ==
-                     kTfLiteBuiltinArgMin ||
-                 TfLiteRegistrationExternalGetBuiltInCode(reg) ==
-                     kTfLiteBuiltinArgMax) {
+      } else if (TfLiteOperatorGetBuiltInCode(reg) == kTfLiteBuiltinArgMin ||
+                 TfLiteOperatorGetBuiltInCode(reg) == kTfLiteBuiltinArgMax) {
         // The first input tensor is added as is. The second one, specifying
         // the axis, needs to be converted to a scalar since TFLite uses a
         // tensor but Neuron uses a scalar as the axis.
@@ -2008,8 +1980,7 @@ TfLiteStatus NeuronStableDelegateKernel::AddOpsAndTensors(
               return kTfLiteError;
           }
         }
-      } else if (TfLiteRegistrationExternalGetBuiltInCode(reg) ==
-                     kTfLiteBuiltinCustom &&
+      } else if (TfLiteOperatorGetBuiltInCode(reg) == kTfLiteBuiltinCustom &&
                  strcmp(TfLiteRegistrationExternalGetCustomName(reg),
                         "TFLite_Detection_PostProcess") == 0) {
         // Everything is added during Map since input tensors
@@ -2027,12 +1998,12 @@ TfLiteStatus NeuronStableDelegateKernel::AddOpsAndTensors(
     // Get op type and operands
     // Fails if the Validate function failed
     NeuronOperationType nn_op_type;
-    TF_LITE_ENSURE_STATUS(
-        Map(context, TfLiteRegistrationExternalGetBuiltInCode(reg),
-            TfLiteRegistrationExternalGetVersion(reg), android_sdk_version,
-            {context, &builder, node, &model_state_outputs_,
-             &model_state_tfl_inputs_, &feedback_loops_, reg},
-            &nn_op_type));
+    TF_LITE_ENSURE_STATUS(Map(context, TfLiteOperatorGetBuiltInCode(reg),
+                              TfLiteRegistrationExternalGetVersion(reg),
+                              android_sdk_version,
+                              {context, &builder, node, &model_state_outputs_,
+                               &model_state_tfl_inputs_, &feedback_loops_, reg},
+                              &nn_op_type));
     // Map outputs to Neuron tensor indices.
     int output_tensor_flags = 0;
     if (need_int8_conversion) {
@@ -2053,13 +2024,12 @@ TfLiteStatus NeuronStableDelegateKernel::AddOpsAndTensors(
       auto output_index = outputs[output_pos];
 
       // Outputs for  basic LSTM cell are set in the Map function since
-      if (TfLiteRegistrationExternalGetBuiltInCode(reg) == kTfLiteBuiltinLstm &&
+      if (TfLiteOperatorGetBuiltInCode(reg) == kTfLiteBuiltinLstm &&
           isLstmBasicKernel(node)) {
         continue;
       }
       // Handle FC with keep_num_dims==true.
-      if (TfLiteRegistrationExternalGetBuiltInCode(reg) ==
-              kTfLiteBuiltinFullyConnected &&
+      if (TfLiteOperatorGetBuiltInCode(reg) == kTfLiteBuiltinFullyConnected &&
           reinterpret_cast<TfLiteFullyConnectedParams*>(
               TfLiteOpaqueNodeGetBuiltinData(node))
               ->keep_num_dims) {
@@ -2077,8 +2047,7 @@ TfLiteStatus NeuronStableDelegateKernel::AddOpsAndTensors(
             TfLiteOpaqueTensorGetQuantizationParams(output_tensor).scale,
             TfLiteOpaqueTensorGetQuantizationParams(output_tensor).zero_point,
             &fc_nn_intermediate_output_index));
-      } else if (TfLiteRegistrationExternalGetBuiltInCode(reg) ==
-                     kTfLiteBuiltinCustom &&
+      } else if (TfLiteOperatorGetBuiltInCode(reg) == kTfLiteBuiltinCustom &&
                  strcmp(TfLiteRegistrationExternalGetCustomName(reg),
                         "TFLite_Detection_PostProcess") == 0) {
         // Everything is added during Map since output tensors
@@ -2093,7 +2062,7 @@ TfLiteStatus NeuronStableDelegateKernel::AddOpsAndTensors(
     // Dequantize operators may have to be added in case inputs are to be
     // floating-point.
     AddDequantizeOperatorsWhereNeeded(
-        context, TfLiteRegistrationExternalGetBuiltInCode(reg), node, &builder);
+        context, TfLiteOperatorGetBuiltInCode(reg), node, &builder);
     TF_LITE_ENSURE_STATUS(builder.FinalizeAddOperation(nn_op_type));
     if (fc_nn_intermediate_output_index > -1) {
       TF_LITE_ENSURE_STATUS(
@@ -2307,7 +2276,7 @@ TfLiteStatus NeuronStableDelegateKernel::GetSupportedOperationsForOneNode(
   TFLITE_LOG_PROD(tflite::TFLITE_LOG_VERBOSE,
                   "GetSupportedOperationsForOneNode: %s",
                   EnumNameBuiltinOperator(static_cast<BuiltinOperator>(
-                      TfLiteRegistrationExternalGetBuiltInCode(registration))));
+                      TfLiteOperatorGetBuiltInCode(registration))));
   // One Node Mode with unknown node index, nodes_ is always set to [0].
   nodes_.push_back(0);
   one_node_and_reg_.first = node;

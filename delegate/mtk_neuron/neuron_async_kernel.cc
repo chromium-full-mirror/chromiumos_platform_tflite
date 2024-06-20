@@ -67,6 +67,20 @@ TfLiteStatus DelegateAsyncKernel::SetAttributes(
   return kTfLiteOk;
 }
 
+TfLiteStatus DelegateAsyncKernel::SetBufferAttributes(
+    const TfLiteBackendBuffer* buffer, const TfLiteAttributeMap* attrs) {
+  // TODO(b/348328994): Implement this. This is a no-op function for now to
+  // unblock TensorFlow uprev.
+  return kTfLiteDelegateError;
+}
+
+TfLiteStatus DelegateAsyncKernel::GetBufferAttributes(
+    const TfLiteBackendBuffer* buffer, TfLiteAttributeMap* attrs) {
+  // TODO(b/348328994): Implement this. This is a no-op function for now to
+  // unblock TensorFlow uprev.
+  return kTfLiteDelegateError;
+}
+
 TfLiteStatus DelegateAsyncKernel::Prepare(TfLiteOpaqueContext* opaque_context,
                                           TfLiteOpaqueNode* opaque_node) {
   return core_.Prepare(opaque_context, opaque_node);

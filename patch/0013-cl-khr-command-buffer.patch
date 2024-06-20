@@ -1,8 +1,10 @@
+Use cl_khr_command_buffer extension with clvk
+
 diff --git a/tensorflow/lite/delegates/gpu/cl/api.cc b/tensorflow/lite/delegates/gpu/cl/api.cc
-index 4e0a0189fb8..856ef44b0ef 100644
+index dc9a8d3a6ca..da97b755db2 100644
 --- a/tensorflow/lite/delegates/gpu/cl/api.cc
 +++ b/tensorflow/lite/delegates/gpu/cl/api.cc
-@@ -568,7 +568,7 @@ class InferenceRunnerImpl : public CLInferenceRunner {
+@@ -586,7 +586,7 @@ class InferenceRunnerImpl : public CLInferenceRunner {
      // but currently it does not, see the bug for details. Once fixed, this
      // code should be in an else clause of the above if statement.
      RETURN_IF_ERROR(context_->AddToQueue(queue_));
@@ -11,25 +13,11 @@ index 4e0a0189fb8..856ef44b0ef 100644
      return absl::OkStatus();
    }
  
-diff --git a/tensorflow/lite/delegates/gpu/cl/cl_device.cc b/tensorflow/lite/delegates/gpu/cl/cl_device.cc
-index 174fdcdf0e4..15c2312b4e3 100644
---- a/tensorflow/lite/delegates/gpu/cl/cl_device.cc
-+++ b/tensorflow/lite/delegates/gpu/cl/cl_device.cc
-@@ -465,6 +465,9 @@ absl::Status CreateDefaultGPUDevice(CLDevice* result) {
-   }
- 
-   *result = CLDevice(devices[0], platform_id);
-+
-+  LoadOpenCLFunctionExtensions(platform_id);
-+
-   return absl::OkStatus();
- }
- 
 diff --git a/tensorflow/lite/delegates/gpu/cl/inference_context.cc b/tensorflow/lite/delegates/gpu/cl/inference_context.cc
-index 93982f5c556..81879232a96 100644
+index 32cb168b505..3fe6e345aff 100644
 --- a/tensorflow/lite/delegates/gpu/cl/inference_context.cc
 +++ b/tensorflow/lite/delegates/gpu/cl/inference_context.cc
-@@ -267,6 +267,13 @@ absl::Status InferenceContext::InitFromGpuModel(
+@@ -316,6 +316,13 @@ absl::Status InferenceContext::InitFromGpuModel(
    shared_buffers_parent_ptr_ = shared_buffer;
    RETURN_IF_ERROR(AllocateMemory(*gpu_model, env->GetDevicePtr()->GetInfo(),
                                   &create_info, &env->context()));
@@ -43,7 +31,7 @@ index 93982f5c556..81879232a96 100644
    InitFromGpuModel(gpu_model);
  
    CreationContext creation_context;
-@@ -319,8 +326,6 @@ absl::Status InferenceContext::InitFromGpuModel(
+@@ -368,8 +375,6 @@ absl::Status InferenceContext::InitFromGpuModel(
      external_tensor.second = nullptr;
    }
  
@@ -52,7 +40,7 @@ index 93982f5c556..81879232a96 100644
    if (serialized_model) {
      auto encoded_fb = Encode(*env->GetDevicePtr(), *env->program_cache(),
                               gpu_model_fb, &builder);
-@@ -421,6 +426,9 @@ void InferenceContext::InitFromGpuModel(GpuModel* gpu_model) {
+@@ -470,6 +475,9 @@ void InferenceContext::InitFromGpuModel(GpuModel* gpu_model) {
    for (const auto& output : gpu_model->output_ids_and_refs) {
      output_ids_.push_back(output.first);
    }
@@ -62,7 +50,7 @@ index 93982f5c556..81879232a96 100644
    nodes_.resize(gpu_model->nodes.size());
    for (int i = 0; i < gpu_model->nodes.size(); ++i) {
      nodes_[i].cl_operation.Init(std::move(gpu_model->nodes[i].gpu_operation));
-@@ -791,6 +799,42 @@ void InferenceContext::PrepareExternal() {
+@@ -840,6 +848,42 @@ void InferenceContext::PrepareExternal() {
    }
  }
  
@@ -105,7 +93,7 @@ index 93982f5c556..81879232a96 100644
  absl::Status InferenceContext::AddToQueue(CLCommandQueue* queue) {
    if (recordable_queue_ && recordable_queue_->IsSupported()) {
      return recordable_queue_->Execute(queue);
-@@ -802,13 +846,17 @@ absl::Status InferenceContext::AddToQueue(CLCommandQueue* queue) {
+@@ -851,13 +895,17 @@ absl::Status InferenceContext::AddToQueue(CLCommandQueue* queue) {
      RETURN_IF_ERROR(
          queue->EnqueueEvent(&execution_hints_.prev_enqueue_start_point));
    }
@@ -131,7 +119,7 @@ index 93982f5c556..81879232a96 100644
    }
    if (execution_hints_.need_flush) {
 diff --git a/tensorflow/lite/delegates/gpu/cl/inference_context.h b/tensorflow/lite/delegates/gpu/cl/inference_context.h
-index e5e883b07c3..e5170ab0b77 100644
+index e964b6185cb..b900b4e1494 100644
 --- a/tensorflow/lite/delegates/gpu/cl/inference_context.h
 +++ b/tensorflow/lite/delegates/gpu/cl/inference_context.h
 @@ -84,6 +84,7 @@ class InferenceContext {
@@ -142,16 +130,16 @@ index e5e883b07c3..e5170ab0b77 100644
    absl::Status Profile(ProfilingCommandQueue* queue, ProfilingInfo* result);
    // for profiling and memory statistics
    uint64_t GetSizeOfMemoryAllocatedForIntermediateTensors() const;
-@@ -149,6 +150,8 @@ class InferenceContext {
- 
-   absl::Status ProfileTime(ProfilingCommandQueue* queue, ProfilingInfo* result);
+@@ -155,6 +156,8 @@ class InferenceContext {
+   absl::Status ClarifyTimeWithCommandBuffer(ProfilingCommandQueue* queue,
+                                             ProfilingInfo* result);
  
 +  absl::Status AddCommandBufferToQueue(CLCommandQueue *queue);
 +
    struct ExecutionHints {
      bool need_flush = false;
  
-@@ -197,6 +200,11 @@ class InferenceContext {
+@@ -203,6 +206,11 @@ class InferenceContext {
  
    std::unique_ptr<RecordableQueue> recordable_queue_ = nullptr;
  
@@ -163,52 +151,3 @@ index e5e883b07c3..e5170ab0b77 100644
    GpuInfo gpu_info_;
  };
  
-diff --git a/tensorflow/lite/delegates/gpu/cl/opencl_wrapper.cc b/tensorflow/lite/delegates/gpu/cl/opencl_wrapper.cc
-index 57e47d5c8eb..4e1731c6bcd 100644
---- a/tensorflow/lite/delegates/gpu/cl/opencl_wrapper.cc
-+++ b/tensorflow/lite/delegates/gpu/cl/opencl_wrapper.cc
-@@ -288,18 +288,23 @@ void LoadOpenCLFunctions(void* libopencl, bool use_wrapper) {
-   LoadFunction(clEnqueueAcquireEGLObjectsKHR);
-   LoadFunction(clEnqueueReleaseEGLObjectsKHR);
- 
--  // cl_khr_command_buffer extension
--  LoadFunction(clCreateCommandBufferKHR);
--  LoadFunction(clRetainCommandBufferKHR);
--  LoadFunction(clReleaseCommandBufferKHR);
--  LoadFunction(clFinalizeCommandBufferKHR);
--  LoadFunction(clEnqueueCommandBufferKHR);
--  LoadFunction(clCommandNDRangeKernelKHR);
--  LoadFunction(clGetCommandBufferInfoKHR);
--
-   LoadQcomExtensionFunctions();
- }
- 
-+void LoadOpenCLFunctionExtensions(cl_platform_id plat_id) {
-+#define LoadFunctionExtension(function) \
-+  function = reinterpret_cast<PFN_##function>(   \
-+      clGetExtensionFunctionAddressForPlatform(plat_id, #function));
-+  // cl_khr_command_buffer extension
-+  LoadFunctionExtension(clCreateCommandBufferKHR);
-+  LoadFunctionExtension(clRetainCommandBufferKHR);
-+  LoadFunctionExtension(clReleaseCommandBufferKHR);
-+  LoadFunctionExtension(clFinalizeCommandBufferKHR);
-+  LoadFunctionExtension(clEnqueueCommandBufferKHR);
-+  LoadFunctionExtension(clCommandNDRangeKernelKHR);
-+  LoadFunctionExtension(clGetCommandBufferInfoKHR);
-+}
-+
- // No OpenCL support, do not set function addresses
- PFN_clGetPlatformIDs clGetPlatformIDs;
- PFN_clGetPlatformInfo clGetPlatformInfo;
-diff --git a/tensorflow/lite/delegates/gpu/cl/opencl_wrapper.h b/tensorflow/lite/delegates/gpu/cl/opencl_wrapper.h
-index f946e8e29c0..321ee806f6f 100644
---- a/tensorflow/lite/delegates/gpu/cl/opencl_wrapper.h
-+++ b/tensorflow/lite/delegates/gpu/cl/opencl_wrapper.h
-@@ -29,6 +29,7 @@ namespace gpu {
- namespace cl {
- 
- absl::Status LoadOpenCL();
-+void LoadOpenCLFunctionExtensions(cl_platform_id plat_id);
- 
- typedef cl_int(CL_API_CALL *PFN_clGetPlatformIDs)(
-     cl_uint /* num_entries */, cl_platform_id * /* platforms */,

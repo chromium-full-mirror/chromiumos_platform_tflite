@@ -118,6 +118,22 @@ TfLiteStatus CrosSampleDelegateAsyncKernel::SetAttributes(
   return kTfLiteOk;
 }
 
+TfLiteStatus CrosSampleDelegateAsyncKernel::SetBufferAttributes(
+    const TfLiteBackendBuffer* buffer,
+    const TfLiteAttributeMap* attrs) {
+  // TODO(b/348328994): Implement this. This is a no-op function for now to
+  // unblock TensorFlow uprev.
+  return kTfLiteDelegateError;
+}
+
+TfLiteStatus CrosSampleDelegateAsyncKernel::GetBufferAttributes(
+    const TfLiteBackendBuffer* buffer,
+    TfLiteAttributeMap* attrs) {
+  // TODO(b/348328994): Implement this. This is a no-op function for now to
+  // unblock TensorFlow uprev.
+  return kTfLiteDelegateError;
+}
+
 TfLiteStatus CrosSampleDelegateAsyncKernel::Prepare(
     TfLiteOpaqueContext* context,
     TfLiteOpaqueNode* node) {

@@ -1,0 +1,15 @@
+Disable latest ops in xnnpack for b/352513578
+
+diff --git a/tensorflow/lite/delegates/xnnpack/BUILD b/tensorflow/lite/delegates/xnnpack/BUILD
+index d83fd8161b7..5733cfff732 100644
+--- a/tensorflow/lite/delegates/xnnpack/BUILD
++++ b/tensorflow/lite/delegates/xnnpack/BUILD
+@@ -230,7 +230,7 @@ cc_library(
+     }) + select({
+         ":xnnpack_use_latest_ops_explicit": ["-DXNNPACK_DELEGATE_USE_LATEST_OPS=1"],
+         # copybara:uncomment "//conditions:default": [],
+-        "//conditions:default": ["-DXNNPACK_DELEGATE_USE_LATEST_OPS=1"],  # copybara:comment
++        "//conditions:default": [],  # copybara:comment
+     }) + select({
+         ":xnnpack_use_transient_indirection_buffers_explicit": ["-DXNNPACK_DELEGATE_USE_TRANSIENT_INDIRECTION_BUFFERS=1"],
+         "//conditions:default": [],

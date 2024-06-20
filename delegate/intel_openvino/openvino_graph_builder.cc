@@ -192,7 +192,7 @@ TfLiteStatus OpenVINOGraphBuilder::CreateOpClass(
     TfLiteRegistrationExternal *registration,
     std::shared_ptr<OperationsBase> &op_base) {
   if (registration == nullptr) return kTfLiteError;
-  auto builtin_code = TfLiteRegistrationExternalGetBuiltInCode(registration);
+  auto builtin_code = TfLiteOperatorGetBuiltInCode(registration);
   op_base = CreateOpForCode(builtin_code);
   return op_base != nullptr ? kTfLiteOk : kTfLiteError;
 }

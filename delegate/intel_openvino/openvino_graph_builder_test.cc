@@ -474,7 +474,7 @@ TEST_F(OpenVINOGraphBuilderTest, UpdateResultNodes_InvalidIndex) {
 }
 
 TEST_F(OpenVINOGraphBuilderTest, CreateOpClass_Valid) {
-  struct TfLiteRegistrationExternal registration;
+  TfLiteRegistrationExternal registration;
   registration.version = 1;
   registration.builtin_code = kTfLiteBuiltinAdd;
   registration.node_index = 1;

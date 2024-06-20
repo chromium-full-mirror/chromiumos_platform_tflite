@@ -51,7 +51,7 @@ TfLiteStatus CrosSampleDelegateCore::Init(
                                               &registration);
 
     NodeInfo info = {
-        .op = TfLiteRegistrationExternalGetBuiltInCode(registration),
+        .op = TfLiteOperatorGetBuiltInCode(registration),
         .input1 = TfLiteOpaqueNodeGetInput(context, node, 0),
         .input2 = TfLiteOpaqueNodeGetInput(context, node, 1),
         .output = TfLiteOpaqueNodeGetOutput(context, node, 0),

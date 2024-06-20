@@ -34,6 +34,7 @@
 #include "delegate/mtk_neuron/neuron_implementation.h"
 #include "tensorflow/lite/builtin_ops.h"
 #include "tensorflow/lite/c/builtin_op_data.h"
+#include "tensorflow/lite/c/c_api.h"
 #include "tensorflow/lite/context_util.h"
 #include "tensorflow/lite/util.h"
 
@@ -288,7 +289,7 @@ TfLiteStatus PreGetSupportedForWholeGraph(TfLiteOpaqueContext* context,
           tflite::TFLITE_LOG_ERROR,
           "PreOpCheck: OP %s (v%d) is not supported (%s)",
           tflite::EnumNameBuiltinOperator(static_cast<BuiltinOperator>(
-              TfLiteRegistrationExternalGetBuiltInCode(ref_reg))),
+              TfLiteOperatorGetBuiltInCode(ref_reg))),
           TfLiteRegistrationExternalGetVersion(ref_reg),
           failure.size() > 0 ? failure[0].message.c_str() : "");
       TFLITE_LOG_PROD(tflite::TFLITE_LOG_ERROR,
@@ -321,8 +322,7 @@ bool Validate(const TfLiteRegistrationExternal* registration,
               std::vector<NeuronValidationFailure>* map_failures) {
   OpValidationContext val_ctx{true, map_failures};
 
-  const auto builtin_code =
-      TfLiteRegistrationExternalGetBuiltInCode(registration);
+  const auto builtin_code = TfLiteOperatorGetBuiltInCode(registration);
   const auto version = TfLiteRegistrationExternalGetVersion(registration);
   switch (builtin_code) {
     case kTfLiteBuiltinAdd: {

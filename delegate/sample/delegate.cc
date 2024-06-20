@@ -22,7 +22,7 @@ bool CrosSampleDelegate::IsNodeSupportedByDelegate(
     const TfLiteOpaqueNode* node,
     TfLiteOpaqueContext* context) const {
   TfLiteBuiltinOperator builtin_operator =
-      TfLiteRegistrationExternalGetBuiltInCode(registration_external);
+      TfLiteOperatorGetBuiltInCode(registration_external);
   void* builtin_data = TfLiteOpaqueNodeGetBuiltinData(node);
 
   // The delegate only supports addition and subtraction operations without

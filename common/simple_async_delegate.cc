@@ -22,18 +22,18 @@ namespace {
 TfLiteRegistrationExternal* CreateDelegateKernelRegistration(
     SimpleAsyncDelegateInterface* delegate) {
   TfLiteRegistrationExternal* kernel_registration =
-      TfLiteRegistrationExternalCreate(kTfLiteBuiltinDelegate, delegate->Name(),
-                                       /*version=*/1);
+      TfLiteOperatorCreateWithData(kTfLiteBuiltinDelegate, delegate->Name(),
+                                   /*version=*/1, /*user_data=*/nullptr);
 
-  TfLiteRegistrationExternalSetFree(
+  TfLiteOperatorSetFreeWithData(
       kernel_registration,
-      [](TfLiteOpaqueContext* context, void* buffer) -> void {
+      [](void* user_data, TfLiteOpaqueContext* context, void* buffer) -> void {
         delete reinterpret_cast<SimpleAsyncDelegateInterface*>(buffer);
       });
 
-  TfLiteRegistrationExternalSetInit(
+  TfLiteOperatorSetInitWithData(
       kernel_registration,
-      [](TfLiteOpaqueContext* context, const char* buffer,
+      [](void* user_data, TfLiteOpaqueContext* context, const char* buffer,
          size_t length) -> void* {
         const TfLiteOpaqueDelegateParams* params =
             reinterpret_cast<const TfLiteOpaqueDelegateParams*>(buffer);
@@ -49,18 +49,18 @@ TfLiteRegistrationExternal* CreateDelegateKernelRegistration(
         }
         return delegate_kernel.release();
       });
-  TfLiteRegistrationExternalSetPrepare(
+  TfLiteOperatorSetPrepareWithData(
       kernel_registration,
-      [](TfLiteOpaqueContext* context,
+      [](void* user_data, TfLiteOpaqueContext* context,
          TfLiteOpaqueNode* opaque_node) -> TfLiteStatus {
         SimpleAsyncDelegateKernelInterface* delegate_kernel =
             reinterpret_cast<SimpleAsyncDelegateKernelInterface*>(
                 TfLiteOpaqueNodeGetUserData(opaque_node));
         return delegate_kernel->Prepare(context, opaque_node);
       });
-  TfLiteRegistrationExternalSetInvoke(
+  TfLiteOperatorSetInvokeWithData(
       kernel_registration,
-      [](TfLiteOpaqueContext* context,
+      [](void* user_data, TfLiteOpaqueContext* context,
          TfLiteOpaqueNode* opaque_node) -> TfLiteStatus {
         SimpleAsyncDelegateKernelInterface* delegate_kernel =
             reinterpret_cast<SimpleAsyncDelegateKernelInterface*>(
@@ -68,9 +68,9 @@ TfLiteRegistrationExternal* CreateDelegateKernelRegistration(
         TFLITE_DCHECK(delegate_kernel != nullptr);
         return delegate_kernel->Eval(context, opaque_node);
       });
-  TfLiteRegistrationExternalSetAsyncKernel(
+  TfLiteOperatorSetAsyncKernelWithData(
       kernel_registration,
-      [](TfLiteOpaqueContext* context,
+      [](void* user_data, TfLiteOpaqueContext* context,
          TfLiteOpaqueNode* opaque_node) -> TfLiteAsyncKernel* {
         SimpleAsyncDelegateKernelInterface* delegate_kernel =
             reinterpret_cast<SimpleAsyncDelegateKernelInterface*>(

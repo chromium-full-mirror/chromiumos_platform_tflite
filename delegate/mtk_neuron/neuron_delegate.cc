@@ -36,6 +36,7 @@
 #include "delegate/mtk_neuron/neuron_version.h"
 #include "tensorflow/lite/builtin_ops.h"
 #include "tensorflow/lite/c/builtin_op_data.h"
+#include "tensorflow/lite/c/c_api.h"
 #include "tensorflow/lite/c/c_api_opaque.h"
 #include "tensorflow/lite/context_util.h"
 #include "tensorflow/lite/delegates/utils/simple_opaque_delegate.h"
@@ -84,7 +85,7 @@ bool NeuronStableDelegate::IsNodeSupportedByDelegate(
     TFLITE_LOG_PROD(
         tflite::TFLITE_LOG_ERROR, "OP %s (v%d) is not supported (%s)",
         tflite::EnumNameBuiltinOperator(static_cast<BuiltinOperator>(
-            TfLiteRegistrationExternalGetBuiltInCode(registration))),
+            TfLiteOperatorGetBuiltInCode(registration))),
         TfLiteRegistrationExternalGetVersion(registration),
         failure.size() > 0 ? failure[0].message.c_str() : "");
   }

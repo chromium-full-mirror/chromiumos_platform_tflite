@@ -63,6 +63,10 @@ class DelegateAsyncKernel : public BackendAsyncKernelInterface {
   TfLiteStatus SetAttributes(TfLiteOpaqueContext* context,
                              TfLiteOpaqueNode* node, int tensor_index,
                              const TfLiteAttributeMap* attrs) override;
+  TfLiteStatus SetBufferAttributes(const TfLiteBackendBuffer* buffer,
+                                   const TfLiteAttributeMap* attrs) override;
+  TfLiteStatus GetBufferAttributes(const TfLiteBackendBuffer* buffer,
+                                   TfLiteAttributeMap* attrs) override;
   TfLiteStatus Prepare(TfLiteOpaqueContext* context,
                        TfLiteOpaqueNode* node) override;
 

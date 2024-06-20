@@ -77,7 +77,7 @@ bool OpenVINODelegate::CheckNodeSupportByOpenVINO(
   int num_inputs;
   if (TfLiteOpaqueNodeInputs(node, &inputs, &num_inputs) != kTfLiteOk)
     return false;
-  switch (TfLiteRegistrationExternalGetBuiltInCode(registration)) {
+  switch (TfLiteOperatorGetBuiltInCode(registration)) {
     case kTfLiteBuiltinAdd: {
       return CheckDataTypeSupported(context, node,
                                     {{kTfLiteFloat32}, {kTfLiteFloat32}}) &&
