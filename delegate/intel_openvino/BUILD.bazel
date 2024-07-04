@@ -98,7 +98,7 @@ cc_library_with_tflite(
 )
 
 cc_library_with_tflite(
-    name = "openvino_external_delegate",
+    name = "openvino_delegate_external",
     srcs = [
         "openvino_delegate_external.cc",
     ],
@@ -127,7 +127,7 @@ tflite_cc_shared_object(
     ],
     visibility = ["//:__pkg__"],
     deps = [
-        ":openvino_external_delegate",
+        ":openvino_delegate_external",
         "@org_tensorflow//tensorflow/lite/delegates/utils/experimental/stable_delegate:version_script.lds",
     ],
 )

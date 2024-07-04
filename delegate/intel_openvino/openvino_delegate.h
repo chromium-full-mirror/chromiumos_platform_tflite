@@ -7,6 +7,7 @@
 #define DELEGATE_INTEL_OPENVINO_OPENVINO_DELEGATE_H_
 
 #include <memory>
+#include <string>
 #include <vector>
 
 #include "delegate/intel_openvino/openvino_delegate_kernel.h"
@@ -16,8 +17,13 @@ static const char kOpenVINOStableDelegateName[] = "intel_openvino_delegate";
 static const char kOpenVINOStableDelegateVersion[] = "1.0.0";
 
 struct TfLiteOpenVINODelegateOptions {
-  /* debug_level for the OpenVINO delegate */
-  int debug_level = 0;
+  // Directory to store compilation cache.
+  // TODO(b/344503269): Integrate this with OpenVINO.
+  std::string cache_dir;
+
+  // Unique token identifying the model that will run on this delegate instance.
+  // TODO(b/344503269): Integrate this with OpenVINO.
+  std::string model_token;
 };
 
 namespace tflite {
@@ -35,6 +41,7 @@ class OpenVINODelegate : public SimpleOpaqueDelegateInterface {
     } else {
       options_ = *options;
     }
+    VLOGF(1) << DUMP(options_);
   }
 
   bool IsNodeSupportedByDelegate(const TfLiteRegistrationExternal *registration,
