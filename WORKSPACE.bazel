@@ -34,6 +34,7 @@ maybe(
         "//patch:0011-mtk-neuron.patch",
         "//patch:0012-absl-log.patch",
         "//patch:0013-absl-random.patch",
+        "//patch:0014-cl-khr-command-buffer.patch",
     ],
     sha256 = "c729e56efc945c6df08efe5c9f5b8b89329c7c91b8f40ad2bb3e13900bd4876d",
     strip_prefix = "tensorflow-{}".format(TENSORFLOW_VERSION),
