@@ -240,6 +240,12 @@ bool List(const std::string& input_path) {
     std::string output_dump = DumpTensorsInfo(op->outputs, subgraph->tensors);
     table.push_back({std::to_string(i), op_name, input_dump, output_dump});
   }
+  std::cout << "Subgraph inputs: "
+            << DumpTensorsInfo(subgraph->inputs, subgraph->tensors)
+            << std::endl;
+  std::cout << "Subgraph outputs: "
+            << DumpTensorsInfo(subgraph->outputs, subgraph->tensors)
+            << std::endl;
   std::cout << TableStringify(table) << std::endl;
   return true;
 }
