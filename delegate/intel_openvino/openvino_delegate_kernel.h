@@ -10,6 +10,7 @@
 
 #include <memory>
 
+#include "delegate/intel_openvino/openvino_delegate.h"
 #include "delegate/intel_openvino/openvino_delegate_core.h"
 #include "tensorflow/lite/delegates/utils/simple_opaque_delegate.h"
 
@@ -17,9 +18,11 @@ namespace tflite {
 namespace openvinodelegate {
 class OpenVINODelegateKernel : public SimpleOpaqueDelegateKernelInterface {
  public:
-  OpenVINODelegateKernel()
+  OpenVINODelegateKernel(TfLiteOpenVINODelegateOptions options)
       : ov_delegate_core_(std::make_unique<OpenVINODelegateCore>(
-            "/etc/openvino/plugins.xml")) {}
+            "/etc/openvino/plugins.xml")) {
+    options_ = options;
+  }
 
   TfLiteStatus Init(TfLiteOpaqueContext *context,
                     const TfLiteOpaqueDelegateParams *params) override;
@@ -32,6 +35,7 @@ class OpenVINODelegateKernel : public SimpleOpaqueDelegateKernelInterface {
 
  private:
   std::unique_ptr<OpenVINODelegateCore> ov_delegate_core_;
+  TfLiteOpenVINODelegateOptions options_;
 };
 
 }  // namespace openvinodelegate

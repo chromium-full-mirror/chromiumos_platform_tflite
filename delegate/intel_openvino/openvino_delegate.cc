@@ -8,6 +8,7 @@
 #include <memory>
 #include <vector>
 
+#include "delegate/intel_openvino/openvino_delegate_kernel.h"
 #include "tensorflow/lite/builtin_ops.h"
 #include "tensorflow/lite/c/c_api_opaque.h"
 #include "tensorflow/lite/c/c_api_types.h"
@@ -219,7 +220,7 @@ const char *OpenVINODelegate::Name() const {
 std::unique_ptr<tflite::SimpleOpaqueDelegateKernelInterface>
 OpenVINODelegate::CreateDelegateKernelInterface() {
   return std::unique_ptr<tflite::openvinodelegate::OpenVINODelegateKernel>(
-      new tflite::openvinodelegate::OpenVINODelegateKernel());
+      new tflite::openvinodelegate::OpenVINODelegateKernel(options_));
 }
 
 }  // namespace openvinodelegate

@@ -10,7 +10,7 @@
 #include <string>
 #include <vector>
 
-#include "delegate/intel_openvino/openvino_delegate_kernel.h"
+#include "delegate/intel_openvino/log.h"
 #include "tensorflow/lite/delegates/utils/simple_opaque_delegate.h"
 
 static const char kOpenVINOStableDelegateName[] = "intel_openvino_delegate";

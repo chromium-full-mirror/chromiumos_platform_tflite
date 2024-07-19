@@ -10,6 +10,7 @@
 
 #include "tensorflow/lite/builtin_ops.h"
 #include "tensorflow/lite/c/c_api.h"
+#include "tensorflow/lite/c/c_api_opaque.h"
 #include "tensorflow/lite/core/kernels/builtin_op_kernels.h"
 #include "tensorflow/lite/interpreter.h"
 #include "tensorflow/lite/interpreter_builder.h"

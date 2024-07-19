@@ -41,7 +41,10 @@ cc_library_with_tflite(
 cc_library_with_tflite(
     name = "openvino_delegate_core",
     srcs = ["openvino_delegate_core.cc"],
-    hdrs = ["openvino_delegate_core.h"],
+    hdrs = [
+        "openvino_delegate.h",
+        "openvino_delegate_core.h",
+    ],
     copts = tflite_copts(),
     deps = [
         ":log",
@@ -52,6 +55,7 @@ cc_library_with_tflite(
         "@org_tensorflow//tensorflow/lite/c:c_api_experimental",
         "@org_tensorflow//tensorflow/lite/c:c_api_types",
         "@org_tensorflow//tensorflow/lite/c:common",
+        "@org_tensorflow//tensorflow/lite/delegates/utils:simple_opaque_delegate",
         "@org_tensorflow//tensorflow/lite/kernels:kernel_util",
     ],
 )
@@ -59,7 +63,10 @@ cc_library_with_tflite(
 cc_library_with_tflite(
     name = "openvino_delegate_kernel",
     srcs = ["openvino_delegate_kernel.cc"],
-    hdrs = ["openvino_delegate_kernel.h"],
+    hdrs = [
+        "openvino_delegate.h",
+        "openvino_delegate_kernel.h",
+    ],
     copts = tflite_copts(),
     deps = [
         ":log",
@@ -82,6 +89,7 @@ cc_library_with_tflite(
     hdrs = ["openvino_delegate.h"],
     copts = tflite_copts(),
     deps = [
+        ":log",
         ":openvino_delegate_kernel",
         "@intel_openvino//:openvino",
         "@org_tensorflow//tensorflow/lite:kernel_api",

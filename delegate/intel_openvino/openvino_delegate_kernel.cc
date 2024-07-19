@@ -20,7 +20,10 @@ TfLiteStatus OpenVINODelegateKernel::Init(
   if (init_status != kTfLiteOk) return init_status;
 
   TfLiteStatus set_status =
-      ov_delegate_core_->CreateGraphfromTfLite(context, params);
+      ov_delegate_core_->CreateModel(context, params, &options_);
+  if (set_status != kTfLiteOk) return set_status;
+
+  set_status = ov_delegate_core_->CompileAndInfer();
   if (set_status != kTfLiteOk) return set_status;
 
   return kTfLiteOk;

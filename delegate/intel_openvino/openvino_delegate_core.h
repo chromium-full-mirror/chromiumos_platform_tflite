@@ -12,6 +12,7 @@
 #include <string>
 #include <vector>
 
+#include "delegate/intel_openvino/openvino_delegate.h"
 #include "delegate/intel_openvino/openvino_graph_builder.h"
 
 namespace tflite {
@@ -28,10 +29,16 @@ class OpenVINODelegateCore {
 
   ov::InferRequest getInferRequest() const { return infer_request_; }
 
-  TfLiteStatus CreateGraphfromTfLite(TfLiteOpaqueContext *context,
-                                     const TfLiteOpaqueDelegateParams *params);
+  TfLiteStatus CreateModel(TfLiteOpaqueContext *context,
+                           const TfLiteOpaqueDelegateParams *params,
+                           const TfLiteOpenVINODelegateOptions *options);
+  TfLiteStatus CompileAndInfer();
 
  private:
+  TfLiteStatus InitializeModel(TfLiteOpaqueContext *context,
+                               const TfLiteOpaqueDelegateParams *params,
+                               bool caching_enabled,
+                               const std::string &cache_file_name = "");
   std::unique_ptr<OpenVINOGraphBuilder> openvino_graph_builder_;
   ov::Core ov_core_;
   std::shared_ptr<ov::Model> model_;
