@@ -4,6 +4,7 @@
  * found in the LICENSE file.
  */
 
+#include <algorithm>
 #include <fstream>
 #include <iostream>
 #include <string>
@@ -11,6 +12,7 @@
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
 #include "absl/flags/usage.h"
+#include "absl/strings/numbers.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "tensorflow/lite/core/model_builder.h"
@@ -18,7 +20,10 @@
 
 ABSL_FLAG(std::string, input, "", "input tflite model");
 ABSL_FLAG(std::string, output, "", "output tflite model");
-ABSL_FLAG(int, op_index, -1, "operator index");
+ABSL_FLAG(std::vector<std::string>,
+          op_index,
+          std::vector<std::string>{},
+          "operator indices");
 
 namespace {
 
@@ -30,10 +35,11 @@ list --input=<input tflite file>
   Lists all operators in the |input| and shows the their information.
 
 decompose --input=<input tflite file> --output=<output tflite file>
-          --op_index=<operator index>
-  Decomposes the |input| model by extracting the operator with index |op_index|
-  and rebuild a single-op model with the extracted operator. The new model
-  is saved to |output|.
+          --op_index=<operator indices>
+  Decomposes the |input| model by extracting the operators with indices
+  |op_index| and rebuild a model with the extracted operators, where |op_index|
+  is the list of indices seperated by comma, e.g. `--op_index=0,2,3`.
+  The new model is saved to |output|.
 )";
 
 void PrintUsage() {
@@ -76,37 +82,41 @@ std::unique_ptr<tflite::ModelT> GetUnpackedModel(const std::string& path) {
   return model;
 }
 
-// Decomposes |model|. Extracts the operator of index |op_index| as a single-op
+// Decomposes |model|. Extracts the operators of indices |op_indices| as a new
 // model and re-pack it into |model|.
-bool DecomposeModel(tflite::ModelT& model, int op_index) {
+bool DecomposeModel(tflite::ModelT& model, const std::vector<int>& op_indices) {
   if (model.subgraphs.size() != 1) {
     return false;
   }
   auto& subgraph = model.subgraphs[0];
 
-  // Prunes the other operators and keeps only operator with index |op_index|.
+  // Prunes the other operators and keeps only operators with indices
+  // |op_indices|.
   auto& operators = subgraph->operators;
-  if (operators.size() <= op_index) {
-    return false;
+  for (int i = 0; i < op_indices.size(); ++i) {
+    if (operators.size() <= op_indices[i]) {
+      return false;
+    }
+    operators[i] = std::move(operators[op_indices[i]]);
   }
-  operators[0] = std::move(operators[op_index]);
-  operators.resize(1);
-  auto& op = operators[0];
+  operators.resize(op_indices.size());
 
   // Prunes the unused tensors.
   std::map<int, int> tensor_map;
   int tensor_map_index = 0;
-  for (auto& tensors : {std::ref(op->inputs), std::ref(op->outputs)}) {
-    for (int& index : tensors.get()) {
-      // Optional input -1 should be skipped.
-      if (index < 0) {
-        continue;
+  for (auto& op : operators) {
+    for (auto& tensors : {std::ref(op->inputs), std::ref(op->outputs)}) {
+      for (int& index : tensors.get()) {
+        // Optional input -1 should be skipped.
+        if (index < 0) {
+          continue;
+        }
+        auto it = tensor_map.find(index);
+        if (it == tensor_map.end()) {
+          tensor_map.emplace(index, tensor_map_index++);
+        }
+        index = tensor_map[index];
       }
-      auto it = tensor_map.find(index);
-      if (it == tensor_map.end()) {
-        tensor_map.emplace(index, tensor_map_index++);
-      }
-      index = tensor_map[index];
     }
   }
   std::vector<std::unique_ptr<tflite::TensorT>> new_tensors(tensor_map_index);
@@ -137,32 +147,45 @@ bool DecomposeModel(tflite::ModelT& model, int op_index) {
 
   // TODO: b/331900692 - Consider also pruning unused operator code.
 
-  // Reassigns input/output of the remaining operator with empty buffers to
+  // Reassigns input/output of the remaining operators with empty buffers to
   // input/output of the subgraph.
   subgraph->inputs.clear();
-  for (int index : op->inputs) {
-    if (index < 0) {
-      continue;
+  subgraph->outputs.clear();
+  std::set<int> op_inputs, op_outputs;
+  for (auto& op : operators) {
+    for (int index : op->inputs) {
+      if (index < 0) {
+        continue;
+      }
+      int buffer_idx = subgraph->tensors[index]->buffer;
+      // Input of the subgraph should contain only empty buffers.
+      if (model.buffers[buffer_idx]->data.size() == 0) {
+        op_inputs.insert(index);
+      }
     }
-    int buffer_idx = subgraph->tensors[index]->buffer;
-    // Input of the subgraph should contain only empty buffers.
-    if (model.buffers[buffer_idx]->data.size() == 0) {
-      subgraph->inputs.push_back(index);
+    for (int index : op->outputs) {
+      op_outputs.insert(index);
     }
   }
-  subgraph->outputs = op->outputs;
+  // Any tensor as both input and output of operators is not considered as the
+  // input/output of the subgraph.
+  std::vector<int> inputs, outputs;
+  std::ranges::set_difference(op_inputs, op_outputs,
+                              std::back_inserter(subgraph->inputs));
+  std::ranges::set_difference(op_outputs, op_inputs,
+                              std::back_inserter(subgraph->outputs));
   return true;
 }
 
 bool Decompose(const std::string& input_path,
                const std::string& output_path,
-               int op_index) {
+               const std::vector<int>& op_indices) {
   std::unique_ptr<tflite::ModelT> model = GetUnpackedModel(input_path);
   if (!model) {
     return false;
   }
 
-  if (!DecomposeModel(*model, op_index)) {
+  if (!DecomposeModel(*model, op_indices)) {
     std::cerr << "Failed to decompose model." << std::endl;
     return false;
   }
@@ -234,12 +257,25 @@ int main(int argc, char** argv) {
   if (subcmd == "decompose") {
     std::string input_path = absl::GetFlag(FLAGS_input);
     std::string output_path = absl::GetFlag(FLAGS_output);
-    int op_index = absl::GetFlag(FLAGS_op_index);
-    if (input_path.empty() || output_path.empty() || op_index == -1) {
+    std::vector<std::string> raw_op_indices = absl::GetFlag(FLAGS_op_index);
+    if (input_path.empty() || output_path.empty() || raw_op_indices.empty()) {
       PrintUsage();
       return 1;
     }
-    if (!Decompose(input_path, output_path, op_index)) {
+    std::vector<int> op_indices;
+    for (std::string& raw_index : raw_op_indices) {
+      int index = -1;
+      if (!absl::SimpleAtoi(raw_index, &index)) {
+        std::cerr << "Failed to convert index: " << raw_index << std::endl;
+        PrintUsage();
+        return 1;
+      }
+      op_indices.push_back(index);
+    }
+    std::sort(op_indices.begin(), op_indices.end());
+    auto it = std::unique(op_indices.begin(), op_indices.end());
+    op_indices.erase(it, op_indices.end());
+    if (!Decompose(input_path, output_path, op_indices)) {
       return 1;
     }
   } else if (subcmd == "list") {
