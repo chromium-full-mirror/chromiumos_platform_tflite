@@ -12,7 +12,7 @@ package(
 # `schema_fbs[]` and length as `schema_fbs_len`.
 genrule(
     name = "schema_fbs_embed",
-    srcs = ["@org_tensorflow//tensorflow/lite/schema:schema.fbs"],
+    srcs = ["@org_tensorflow//tensorflow/compiler/mlir/lite/schema:schema.fbs"],
     outs = ["schema_fbs_embed-inl.h"],
     cmd = """
       xxd -name schema_fbs -include $(<) > $(@)
