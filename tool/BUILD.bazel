@@ -54,6 +54,7 @@ cc_binary(
     name = "decompose_model",
     srcs = ["decompose_model.cc"],
     deps = [
+        "//common:log",
         "@com_google_absl//absl/flags:parse",
         "@com_google_absl//absl/strings",
         "@org_tensorflow//tensorflow/lite/c:c_api",

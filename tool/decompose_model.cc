@@ -15,6 +15,7 @@
 #include "absl/strings/numbers.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
+#include "common/log.h"
 #include "tensorflow/lite/core/model_builder.h"
 #include "tensorflow/lite/schema/schema_utils.h"
 
@@ -71,12 +72,12 @@ std::unique_ptr<tflite::ModelT> GetUnpackedModel(const std::string& path) {
   std::unique_ptr<tflite::FlatBufferModel> fb_model =
       tflite::FlatBufferModel::BuildFromFile(path.c_str());
   if (!fb_model) {
-    std::cerr << "Failed to build model from file." << std::endl;
+    LOG(ERROR) << "Failed to build model from file";
     return nullptr;
   }
   std::unique_ptr<tflite::ModelT> model(fb_model->GetModel()->UnPack());
   if (!model) {
-    std::cerr << "Failed to unpack model." << std::endl;
+    LOG(ERROR) << "Failed to unpack model";
     return nullptr;
   }
   return model;
@@ -86,6 +87,7 @@ std::unique_ptr<tflite::ModelT> GetUnpackedModel(const std::string& path) {
 // model and re-pack it into |model|.
 bool DecomposeModel(tflite::ModelT& model, const std::vector<int>& op_indices) {
   if (model.subgraphs.size() != 1) {
+    LOG(ERROR) << "There is more than one subgraph";
     return false;
   }
   auto& subgraph = model.subgraphs[0];
@@ -95,6 +97,8 @@ bool DecomposeModel(tflite::ModelT& model, const std::vector<int>& op_indices) {
   auto& operators = subgraph->operators;
   for (int i = 0; i < op_indices.size(); ++i) {
     if (operators.size() <= op_indices[i]) {
+      LOG(ERROR) << "operator index is out of range: " << op_indices[i]
+                 << ", size = " << operators.size();
       return false;
     }
     operators[i] = std::move(operators[op_indices[i]]);
@@ -186,7 +190,7 @@ bool Decompose(const std::string& input_path,
   }
 
   if (!DecomposeModel(*model, op_indices)) {
-    std::cerr << "Failed to decompose model." << std::endl;
+    LOG(ERROR) << "Failed to decompose model";
     return false;
   }
   // Packs the model back.
@@ -223,6 +227,7 @@ bool List(const std::string& input_path) {
     return false;
   }
   if (model->subgraphs.size() != 1) {
+    LOG(ERROR) << "There is more than one subgraph";
     return false;
   }
   auto& subgraph = model->subgraphs[0];
@@ -271,9 +276,8 @@ int main(int argc, char** argv) {
     std::vector<int> op_indices;
     for (std::string& raw_index : raw_op_indices) {
       int index = -1;
-      if (!absl::SimpleAtoi(raw_index, &index)) {
-        std::cerr << "Failed to convert index: " << raw_index << std::endl;
-        PrintUsage();
+      if (!absl::SimpleAtoi(raw_index, &index) || index < 0) {
+        LOG(ERROR) << "Failed to convert index: " << raw_index;
         return 1;
       }
       op_indices.push_back(index);
