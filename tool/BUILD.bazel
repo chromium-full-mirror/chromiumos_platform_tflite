@@ -49,3 +49,14 @@ cc_binary(
         "@org_tensorflow//tensorflow/lite/tools:utils",
     ],
 )
+
+cc_binary(
+    name = "decompose_model",
+    srcs = ["decompose_model.cc"],
+    deps = [
+        "@com_google_absl//absl/flags:parse",
+        "@com_google_absl//absl/strings",
+        "@org_tensorflow//tensorflow/lite/c:c_api",
+        "@org_tensorflow//tensorflow/lite/c:common",
+    ],
+)
