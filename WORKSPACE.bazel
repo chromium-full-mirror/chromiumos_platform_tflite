@@ -9,7 +9,7 @@ load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
 
 # Update `bazel_external_uris` in ebuild as well when upgrading TensorFlow, and
 # all the required dependencies need to be upload to our mirror first.
-TENSORFLOW_VERSION = "2.17.0-rc0"
+TENSORFLOW_VERSION = "2.17.0"
 
 # Use the provided tensorflow repo if it exists. Currently the ebuild will
 # download and unpack tensorflow for us.
@@ -36,7 +36,7 @@ maybe(
         "//patch:0013-cl-khr-command-buffer.patch",
         "//patch:0014-xnnpack-disable-latest-ops.patch",
     ],
-    sha256 = "b70f159f8a61cab727b99bca1533d74111278a8f3297315100b011308672463c",
+    sha256 = "9cc4d5773b8ee910079baaecb4086d0c28939f024dd74b33fc5e64779b6533dc",
     strip_prefix = "tensorflow-{}".format(TENSORFLOW_VERSION),
     url = "https://github.com/tensorflow/tensorflow/archive/v{}.tar.gz".format(TENSORFLOW_VERSION),
 )
