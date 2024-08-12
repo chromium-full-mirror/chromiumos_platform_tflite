@@ -35,6 +35,7 @@ maybe(
         "//patch:0012-absl-base-prefetch.patch",
         "//patch:0013-cl-khr-command-buffer.patch",
         "//patch:0014-xnnpack-disable-latest-ops.patch",
+        "//patch:0015-cl-fast-relaxed-math.patch",
     ],
     sha256 = "9cc4d5773b8ee910079baaecb4086d0c28939f024dd74b33fc5e64779b6533dc",
     strip_prefix = "tensorflow-{}".format(TENSORFLOW_VERSION),

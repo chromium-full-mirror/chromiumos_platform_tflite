@@ -1,0 +1,36 @@
+diff --git a/tensorflow/lite/delegates/gpu/cl/BUILD b/tensorflow/lite/delegates/gpu/cl/BUILD
+index 84004f80218..07232776c88 100644
+--- a/tensorflow/lite/delegates/gpu/cl/BUILD
++++ b/tensorflow/lite/delegates/gpu/cl/BUILD
+@@ -259,6 +259,7 @@ cc_library(
+         ":cl_kernel",
+         ":program_cache",
+         ":tensor",
++        "//tensorflow/lite/delegates/gpu/common/task:compiler_options",
+         "//tensorflow/lite/delegates/gpu/common/task:gpu_operation",
+         "@com_google_absl//absl/strings",
+     ],
+diff --git a/tensorflow/lite/delegates/gpu/cl/cl_operation.cc b/tensorflow/lite/delegates/gpu/cl/cl_operation.cc
+index 1cc1738d071..caf0dc5bcbb 100644
+--- a/tensorflow/lite/delegates/gpu/cl/cl_operation.cc
++++ b/tensorflow/lite/delegates/gpu/cl/cl_operation.cc
+@@ -17,6 +17,8 @@ limitations under the License.
+ 
+ #include <string>
+ 
++#include "tensorflow/lite/delegates/gpu/common/task/compiler_options.h"
++
+ namespace tflite {
+ namespace gpu {
+ namespace cl {
+@@ -165,6 +167,10 @@ absl::Status ClOperation::Compile(const CreationContext& creation_context) {
+                                 creation_context.context, &operation_->args_,
+                                 &operation_->code_));
+   operation_->args_.ReleaseCPURepresentation();
++  if (creation_context.device->info_.opencl_info.IsCLVK()) {
++    operation_->compiler_options_.push_back(
++        CompilerOptions::kClFastRelaxedMath);
++  }
+   RETURN_IF_ERROR(creation_context.cache->GetOrCreateCLKernel(
+       operation_->code_, "main_function", operation_->compiler_options_,
+       *creation_context.context, *creation_context.device, &kernel_,
