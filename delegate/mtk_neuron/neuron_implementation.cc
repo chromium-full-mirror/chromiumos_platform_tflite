@@ -136,10 +136,8 @@ const NeuronApi LoadNeuronApi() {
   LOAD_FUNCTION(libneuron_adapter, NeuronCompilation_setPriority, neuron_api);
   LOAD_FUNCTION_OPTIONAL(libneuron_adapter,
                          NeuronCompilation_getCompiledNetworkSize, neuron_api);
-#if defined(NP8)
   LOAD_FUNCTION_OPTIONAL(libneuron_adapter,
                          NeuronCompilation_getSupportedOperations, neuron_api);
-#endif
   LOAD_FUNCTION_OPTIONAL(libneuron_adapter,
                          NeuronCompilation_setOptimizationHint, neuron_api);
   LOAD_FUNCTION(libneuron_adapter, NeuronCompilation_free, neuron_api);
@@ -147,7 +145,6 @@ const NeuronApi LoadNeuronApi() {
   LOAD_FUNCTION(libneuron_adapter, NeuronCompilation_setCaching, neuron_api);
   LOAD_FUNCTION(libneuron_adapter, NeuronCompilation_setL1MemorySizeKb,
                 neuron_api);
-#if defined(NP8)
   LOAD_FUNCTION_OPTIONAL(libneuron_adapter,
                          NeuronCompilation_getOptimizationString, neuron_api);
   LOAD_FUNCTION_OPTIONAL(libneuron_adapter,
@@ -155,7 +152,6 @@ const NeuronApi LoadNeuronApi() {
                          neuron_api);
   LOAD_FUNCTION_OPTIONAL(libneuron_adapter, Neuron_getNeuroPilotMagicNumber,
                          neuron_api);
-#endif
   LOAD_FUNCTION(libneuron_adapter, NeuronExecution_free, neuron_api);
   LOAD_FUNCTION(libneuron_adapter, NeuronExecution_setInput, neuron_api);
   LOAD_FUNCTION(libneuron_adapter, NeuronExecution_setInputFromMemory,
