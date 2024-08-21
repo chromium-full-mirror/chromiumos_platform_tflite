@@ -1,0 +1,7 @@
+# Copyright 2024 The ChromiumOS Authors
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+# Limit access to /dev/apusys to ml-core. This will allow us to
+# access APU on MTK-NPU devices.
+SUBSYSTEM=="misc", ENV{DEVNAME}=="/dev/apusys", GROUP="ml-core"
