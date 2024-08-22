@@ -922,6 +922,10 @@ bool Validate(const TfLiteRegistrationExternal* registration,
     } break;
 #ifndef MTK_INTERNAL_USE
     case kTfLiteBuiltinCustom: {
+      if (strcmp(TfLiteRegistrationExternalGetCustomName(registration),
+                 "cros-mtk-pre-compile") == 0) {
+        break;
+      }
       int32_t magic_number = -1;
       // get NP magic number
       if (neuronapi->Neuron_getNeuroPilotMagicNumber != nullptr) {

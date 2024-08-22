@@ -1145,6 +1145,18 @@ TfLiteStatus NeuronStableDelegateKernel::Map(
         mapping_args.builder->AddTensorOutput(outputs[3]);
         break;  // needed
       }
+      if (strcmp(TfLiteRegistrationExternalGetCustomName(
+                     mapping_args.registration),
+                 "cros-mtk-pre-compile") == 0) {
+        const void* init_data = nullptr;
+        int size = 0;
+        TF_LITE_ENSURE_STATUS(TfLiteOpaqueNodeGetCustomInitialData(
+            mapping_args.node, &init_data, &size));
+        mapping_args.builder->AddPreCompileExtensionOperand(
+            static_cast<const uint8_t*>(init_data), size);
+        mapping_args.builder->AddPreCompileExtensionOperand(nn_op_type);
+        break;  // needed
+      }
     }  // no break, pass to default
     default:
       // All other operators are not mapped.

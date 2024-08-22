@@ -45,6 +45,8 @@ constexpr int32_t kMinSdkVersionForNeuron13 = 30;
 
 static constexpr const char* kExtensionGeneralOpration =
     "com.mediatek.general_operation";
+static constexpr const char* kExtensionCompiledNetwork =
+    "com.mediatek.compiled_network";
 
 // Extension operand
 enum {
@@ -184,6 +186,43 @@ class NeuronOpBuilder {
 
   TfLiteStatus AddScalarFloat32Operand(float value) {
     return AddScalarOperand<float>(value, NEURON_FLOAT32);
+  }
+
+  TfLiteStatus AddPreCompileExtensionOperand(const uint8_t* value,
+                                             uint32_t length) {
+    uint16_t dla_ext_operand_type = 0x0100;
+    NeuronRuntimeVersion version;
+    neuronapi_->Neuron_getVersion(&version);
+    if (version.major >= 8) {
+      dla_ext_operand_type = 0x0200;
+    }
+
+    int32_t operand_type;
+    RETURN_TFLITE_ERROR_IF_NEURON_ERROR(
+        context_,
+        neuronapi_->NeuronModel_getExtensionOperandType(
+            nn_model_, kExtensionCompiledNetwork, dla_ext_operand_type,
+            &operand_type),
+        "getting extension operand type");
+
+    NeuronOperandType operand_ext_type = {};
+    operand_ext_type.type = operand_type;
+    operand_ext_type.scale = 0.0f;
+    operand_ext_type.zeroPoint = 0;
+    operand_ext_type.dimensionCount = 0;
+
+    RETURN_TFLITE_ERROR_IF_NEURON_ERROR(
+        context_,
+        neuronapi_->NeuronModel_addOperand(nn_model_, &operand_ext_type),
+        "adding extension operand");
+    const int neuron_index = operand_mapping_->add_new_non_tensor_operand();
+    RETURN_TFLITE_ERROR_IF_NEURON_ERROR(
+        context_,
+        neuronapi_->NeuronModel_setOperandValue(nn_model_, neuron_index, value,
+                                                length),
+        "setting new extension operand value");
+    augmented_inputs_.push_back(neuron_index);
+    return kTfLiteOk;
   }
 
   TfLiteStatus AddScalarExtensionOperand(const uint8_t* value,
@@ -637,6 +676,18 @@ class NeuronOpBuilder {
               ADAPTER_EXTENSION_GENERAL_OPERATION_TYPE, &operation_type),
           "getting extension operation type");
     }
+    *type = static_cast<NeuronOperationType>(operation_type);
+    return kTfLiteOk;
+  }
+
+  TfLiteStatus AddPreCompileExtensionOperand(NeuronOperationType* type) {
+    int32_t operation_type = 0;
+    RETURN_TFLITE_ERROR_IF_NEURON_ERROR(
+        context_,
+        neuronapi_->NeuronModel_getExtensionOperationType(
+            nn_model_, kExtensionCompiledNetwork,
+            ADAPTER_EXTENSION_GENERAL_OPERATION_TYPE, &operation_type),
+        "getting extension operation type");
     *type = static_cast<NeuronOperationType>(operation_type);
     return kTfLiteOk;
   }
