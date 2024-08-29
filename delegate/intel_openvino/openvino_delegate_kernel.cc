@@ -23,15 +23,14 @@ TfLiteStatus OpenVINODelegateKernel::Init(
       ov_delegate_core_->CreateModel(context, params, &options_);
   if (set_status != kTfLiteOk) return set_status;
 
-  set_status = ov_delegate_core_->CompileAndInfer();
-  if (set_status != kTfLiteOk) return set_status;
-
   return kTfLiteOk;
 }
 
 TfLiteStatus OpenVINODelegateKernel::Prepare(TfLiteOpaqueContext *context,
                                              TfLiteOpaqueNode *node) {
   TFLITE_LOG(INFO) << "inside Prepare";
+  TfLiteStatus set_status = ov_delegate_core_->CompileAndInfer();
+  if (set_status != kTfLiteOk) return set_status;
   return kTfLiteOk;
 }
 

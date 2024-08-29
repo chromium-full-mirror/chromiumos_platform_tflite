@@ -107,7 +107,8 @@ bool OpenVINODelegate::CheckNodeSupportByOpenVINO(
       // check type for 2 input tensors. Rest are assumed to have same type if
       // present
       return CheckDataTypeSupported(context, node,
-                                    {{kTfLiteFloat32}, {kTfLiteFloat32}});
+                                    {{kTfLiteFloat32}, {kTfLiteFloat32}}) &&
+             CheckDims(context, node, {{1, 2, 3, 4}, {1, 2, 3, 4}});
     }
     case kTfLiteBuiltinDepthwiseConv2d: {
       if (num_inputs == 2) {

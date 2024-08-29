@@ -65,7 +65,8 @@ TfLiteStatus OpenVINODelegateCore::InitializeModel(
       const void *data = nullptr;
       auto opaque_tensor = TfLiteOpaqueContextGetOpaqueTensor(context, t);
       auto allocation_type = TfLiteOpaqueTensorGetAllocationType(opaque_tensor);
-      if (allocation_type == kTfLiteMmapRo) {
+      if (allocation_type == kTfLiteMmapRo ||
+          allocation_type == kTfLitePersistentRo) {
         data = TfLiteOpaqueTensorData(opaque_tensor);
         if (!caching_enabled)
           if (openvino_graph_builder_->CreateConstNode(context, t) != kTfLiteOk)
@@ -150,5 +151,6 @@ TfLiteStatus OpenVINODelegateCore::CreateModel(
   }
   return kTfLiteOk;
 }
+
 }  // namespace openvinodelegate
 }  // namespace tflite
