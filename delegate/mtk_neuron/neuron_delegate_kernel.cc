@@ -2213,6 +2213,7 @@ TfLiteStatus NeuronStableDelegateKernel::GetSupportedOperations(
   TF_LITE_ENSURE_STATUS(
       BuildGraph(context, nullptr, input_tensors, output_tensors));
   initialised_ = true;
+  auto support_flags = std::make_unique<bool[]>(total_op_num_);
   // Determine the list of operations the device actually supports
   if (neuronapi_->NeuronCompilation_getSupportedOperations != nullptr) {
     TF_LITE_ENSURE_STATUS(Prepare(context, nullptr));
@@ -2221,7 +2222,7 @@ TfLiteStatus NeuronStableDelegateKernel::GetSupportedOperations(
     RETURN_TFLITE_ERROR_IF_NEURON_ERROR(
         context,
         neuronapi_->NeuronCompilation_getSupportedOperations(
-            nn_compilation_.get(), total_op_num_, is_supported),
+            nn_compilation_.get(), total_op_num_, support_flags.get()),
         "get supported operations for devices");
   } else {
     uint32_t num_devices = 0;
@@ -2253,7 +2254,7 @@ TfLiteStatus NeuronStableDelegateKernel::GetSupportedOperations(
       RETURN_TFLITE_ERROR_IF_NEURON_ERROR(
           context,
           neuronapi_->NeuronModel_getSupportedOperationsForDevices(
-              nn_model_.get(), device, device_count, is_supported),
+              nn_model_.get(), device, device_count, support_flags.get()),
           "get supported operations for devices");
 
     } else {
@@ -2262,10 +2263,27 @@ TfLiteStatus NeuronStableDelegateKernel::GetSupportedOperations(
       RETURN_TFLITE_ERROR_IF_NEURON_ERROR(
           context,
           neuronapi_->NeuronModel_getSupportedOperations(
-              nn_model_.get(), is_supported, total_op_num_),
+              nn_model_.get(), support_flags.get(), total_op_num_),
           "get supported operations");
     }
   }
+
+  // If the number of nodes is different from the nodes that we actually
+  // added to neuron, we cannot identify which nodes the support status
+  // results correspond to.
+  if (total_op_num_ != nodes_.size()) {
+    for (int i = 1; i < total_op_num_; ++i) {
+      if (support_flags[i] != support_flags[0]) {
+        std::fill(is_supported, is_supported + nodes_.size(), false);
+        TFLITE_LOG_PROD(tflite::TFLITE_LOG_WARNING,
+            "Currently cannot support if the number of nodes "
+            "is different from the nodes we actually added to neuron.");
+        return kTfLiteUnresolvedOps;
+      }
+    }
+  }
+  // Only copy the size of the original nodes to avoid exceeding the bounds.
+  std::copy(support_flags.get(), support_flags.get() + nodes_.size(), is_supported);
   return kTfLiteOk;
 }
 
@@ -2300,14 +2318,19 @@ TfLiteStatus NeuronStableDelegateKernel::GetSupportedOperationsForOneNode(
     memcpy(output_tensors->data, outputs, sizeof(int) * num_outputs);
   }
 
-  TF_LITE_OPAQUE_ENSURE_STATUS(GetSupportedOperations(
-      context, input_tensors, output_tensors, is_supported));
+  auto re = GetSupportedOperations(
+      context, input_tensors, output_tensors, is_supported);
 
   if (input_tensors) {
     TfLiteIntArrayFree(input_tensors);
   }
   if (output_tensors) {
     TfLiteIntArrayFree(output_tensors);
+  }
+  // If there's any nodes that added to neuron is unsupported,
+  // it return kTfLiteUnresolvedOps and mark this TFLite node as unsupported.
+  if (re != kTfLiteOk && re != kTfLiteUnresolvedOps) {
+    return re;
   }
   return kTfLiteOk;
 }
