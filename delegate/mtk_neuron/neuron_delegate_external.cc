@@ -157,6 +157,11 @@ TfLiteOpaqueDelegate* NeuronStableDelegateCreateFunc(const void* settings) {
       options.operation_check_mode =
           ConvertOperationCheckMode(neuron_settings->operation_check_mode());
     }
+
+    options.inference_deadline =
+        static_cast<uint16_t>(neuron_settings->inference_deadline_ms());
+    options.inference_abort_time =
+        static_cast<uint16_t>(neuron_settings->inference_abort_time_ms());
     options.allow_fp16 = neuron_settings->allow_fp16_precision_for_fp32();
     options.use_ahwb = neuron_settings->use_ahwb();
     options.use_cacheable_buffer = neuron_settings->use_cacheable_buffer();

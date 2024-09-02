@@ -245,6 +245,12 @@ struct NeuronApi {
   int (*NeuronExecution_setCacheFlushHint)(NeuronExecution* execution,
                                            uint8_t flushHint);
 
+  int (*NeuronExecution_setDeadline)(NeuronExecution* execution,
+                                     uint16_t deadline);
+
+  int (*NeuronExecution_setAbortTime)(NeuronExecution* execution,
+                                      uint16_t abortTime);
+
   int (*NeuronCompilation_setOptimizationString)(
       NeuronCompilation* compilation, const char* optimizationString);
 

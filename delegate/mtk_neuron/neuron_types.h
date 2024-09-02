@@ -530,6 +530,12 @@ typedef int (*NeuronExecution_setLoopTimeout_fn)(NeuronExecution* execution,
 typedef int (*NeuronExecution_setCacheFlushHint_fn)(NeuronExecution* execution,
                                                     uint8_t flushHint);
 
+typedef int (*NeuronExecution_setDeadline_fn)(NeuronExecution* execution,
+    uint16_t deadline);
+
+typedef int (*NeuronExecution_setAbortTime_fn)(NeuronExecution* execution,
+    uint16_t abortTime);
+
 typedef int (*NeuronCompilation_setOptimizationString_fn)(
     NeuronCompilation* compilation, const char* optimizationString);
 

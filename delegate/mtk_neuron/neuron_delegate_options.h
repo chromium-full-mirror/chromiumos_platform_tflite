@@ -87,6 +87,11 @@ typedef struct {
   std::string accelerator_name;
   // Whether to use supported operation check or not.
   NeuronOperationCheckMode operation_check_mode;
+  // Execution deadline for the inference (in msec)
+  uint16_t inference_deadline;
+  // Execution abort time is the hint for the the maximum inference time for
+  // the execution (in msec).
+  uint16_t inference_abort_time;
   // Optional path to the platform-dependent Neuron configuration file.
   // Unused on ChromeOS.
   std::string neuron_config_path;

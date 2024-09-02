@@ -170,6 +170,10 @@ const NeuronApi LoadNeuronApi() {
   LOAD_FUNCTION(libneuron_adapter, NeuronExecution_setLoopTimeout, neuron_api);
   LOAD_FUNCTION_OPTIONAL(libneuron_adapter, NeuronExecution_setCacheFlushHint,
                          neuron_api);
+  LOAD_FUNCTION_OPTIONAL(libneuron_adapter, NeuronExecution_setDeadline,
+                         neuron_api);
+  LOAD_FUNCTION_OPTIONAL(libneuron_adapter, NeuronExecution_setAbortTime,
+                         neuron_api);
   LOAD_FUNCTION(libneuron_adapter, NeuronCompilation_setOptimizationString,
                 neuron_api);
   LOAD_FUNCTION(libneuron_adapter, Neuron_getDeviceCount, neuron_api);

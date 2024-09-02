@@ -1598,6 +1598,24 @@ TfLiteStatus NeuronStableDelegateKernel::Eval(TfLiteOpaqueContext* context,
   }
 #endif
 
+  if (options_.inference_deadline > 0 &&
+      neuronapi_->NeuronExecution_setDeadline != nullptr) {
+    RETURN_TFLITE_ERROR_IF_NEURON_ERROR(
+      context,
+      neuronapi_->NeuronExecution_setDeadline(execution,
+                                              options_.inference_deadline),
+      "set deadline");
+  }
+
+  if (options_.inference_abort_time > 0 &&
+      neuronapi_->NeuronExecution_setAbortTime != nullptr) {
+    RETURN_TFLITE_ERROR_IF_NEURON_ERROR(
+      context,
+      neuronapi_->NeuronExecution_setAbortTime(execution,
+                                               options_.inference_abort_time),
+      "set abort time");
+  }
+
   RETURN_TFLITE_ERROR_IF_NEURON_ERROR(
       context, neuronapi_->NeuronExecution_compute(execution),
       "running computation");

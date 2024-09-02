@@ -60,6 +60,8 @@ NeuronDelegateOptions TfLiteNeuronDelegateOptionsDefault() {
       .compile_options = "",
       .accelerator_name = "",
       .operation_check_mode = kNoOperationCheck,
+      .inference_deadline = 0,
+      .inference_abort_time = 0,
   };
 
   // Return default options
