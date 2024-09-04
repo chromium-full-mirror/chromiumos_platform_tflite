@@ -80,8 +80,15 @@ TfLiteStatus OpenVINOGraphBuilder::AddInputParams(const TfLiteOpaqueTensor *t,
 
   if (dims.size() <= 0) return kTfLiteError;
 
+  TfLiteType tensor_type = TfLiteOpaqueTensorType(t);
+  ov::element::Type ov_element_type = GetOVElementType(tensor_type);
+  if (ov_element_type == ov::element::undefined) {
+    TFLITE_LOG(ERROR) << "Element type " << tensor_type << " not supported";
+    return kTfLiteError;
+  }
+
   auto input = std::make_shared<ov::opset3::Parameter>(
-      ov::element::f32, ov::Shape(dims.begin(), dims.end()));
+      ov_element_type, ov::Shape(dims.begin(), dims.end()));
   input_params_.push_back(input);
 
   node_manager_->setOutputAtOperandIndex(index, input);
