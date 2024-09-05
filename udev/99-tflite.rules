@@ -2,6 +2,6 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-# Limit access to /dev/dma_heap to ml-core. This will allow us to do
+# Limit access to /dev/dma_heap/system* to ml-core. This will allow us to do
 # dma-heap buffer allocation.
-SUBSYSTEM=="dma_heap", ENV{DEVNAME}=="/dev/dma_heap/*", GROUP="ml-core"
+SUBSYSTEM=="dma_heap", ENV{DEVNAME}=="/dev/dma_heap/system*", GROUP="ml-core"
