@@ -7,6 +7,7 @@
 #define DELEGATE_INTEL_OPENVINO_OPENVINO_DELEGATE_CORE_H_
 
 #include <openvino/openvino.hpp>
+#include <openvino/runtime/remote_context.hpp>
 
 #include <memory>
 #include <string>
@@ -33,6 +34,10 @@ class OpenVINODelegateCore {
                            const TfLiteOpaqueDelegateParams *params,
                            const TfLiteOpenVINODelegateOptions *options);
   TfLiteStatus CompileAndInfer();
+
+  ov::RemoteContext get_context() {
+    return ov_core_.get_default_context("NPU");
+  }
 
  private:
   TfLiteStatus InitializeModel(TfLiteOpaqueContext *context,

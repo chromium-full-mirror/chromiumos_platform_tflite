@@ -37,13 +37,13 @@ TfLiteOpaqueDelegate *OpenVINOStableDelegateCreateFunc(
 
   auto delegate =
       std::make_unique<tflite::openvinodelegate::OpenVINODelegate>(&options);
-  return tflite::TfLiteOpaqueDelegateFactory::CreateSimpleDelegate(
+  return tflite::cros::SimpleAsyncDelegateFactory::CreateAsyncDelegate(
       std::move(delegate));
 }
 
 void OpenVINOStableDelegateDestroyFunc(
     TfLiteOpaqueDelegate *openvino_stable_delegate) {
-  tflite::TfLiteOpaqueDelegateFactory::DeleteSimpleDelegate(
+  tflite::cros::SimpleAsyncDelegateFactory::DeleteAsyncDelegate(
       openvino_stable_delegate);
 }
 

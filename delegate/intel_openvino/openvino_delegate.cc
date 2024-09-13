@@ -197,6 +197,11 @@ bool OpenVINODelegate::CheckNodeSupportByOpenVINO(
                  {{kTfLiteFloat32}, {kTfLiteInt32, kTfLiteInt64}}) &&
              CheckDims(context, node, {{1, 2, 3, 4}, {2}});
     }
+    case kTfLiteBuiltinSub: {
+      return CheckDataTypeSupported(context, node,
+                                    {{kTfLiteFloat32}, {kTfLiteFloat32}}) &&
+             CheckDims(context, node, {{1, 2, 3, 4}, {1, 2, 3, 4}});
+    }
     default:
       return false;
   }
@@ -218,10 +223,10 @@ const char *OpenVINODelegate::Name() const {
   return "OpenVINO SimpleOpaqueDelegate";
 }
 
-std::unique_ptr<tflite::SimpleOpaqueDelegateKernelInterface>
+std::unique_ptr<cros::SimpleAsyncDelegateKernelInterface>
 OpenVINODelegate::CreateDelegateKernelInterface() {
-  return std::unique_ptr<tflite::openvinodelegate::OpenVINODelegateKernel>(
-      new tflite::openvinodelegate::OpenVINODelegateKernel(options_));
+  return std::unique_ptr<tflite::openvinodelegate::OpenVINOAsyncDelegateKernel>(
+      new tflite::openvinodelegate::OpenVINOAsyncDelegateKernel(options_));
 }
 
 }  // namespace openvinodelegate

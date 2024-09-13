@@ -10,6 +10,7 @@
 #include <string>
 #include <vector>
 
+#include "common/simple_async_delegate.h"
 #include "delegate/intel_openvino/log.h"
 #include "tensorflow/lite/delegates/utils/simple_opaque_delegate.h"
 
@@ -32,7 +33,7 @@ namespace openvinodelegate {
 // forward declaration
 class OpenVINODelegateTestPeer;
 
-class OpenVINODelegate : public SimpleOpaqueDelegateInterface {
+class OpenVINODelegate : public cros::SimpleAsyncDelegateInterface {
  public:
   explicit OpenVINODelegate(const TfLiteOpenVINODelegateOptions *options) {
     if (options == nullptr) {
@@ -52,7 +53,7 @@ class OpenVINODelegate : public SimpleOpaqueDelegateInterface {
 
   const char *Name() const override;
 
-  std::unique_ptr<SimpleOpaqueDelegateKernelInterface>
+  std::unique_ptr<cros::SimpleAsyncDelegateKernelInterface>
   CreateDelegateKernelInterface() override;
 
  private:

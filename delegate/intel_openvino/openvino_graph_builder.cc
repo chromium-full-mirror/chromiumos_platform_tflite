@@ -24,6 +24,7 @@
 #include "delegate/intel_openvino/operations/include/reshape.h"
 #include "delegate/intel_openvino/operations/include/resize_bilinear.h"
 #include "delegate/intel_openvino/operations/include/softmax.h"
+#include "delegate/intel_openvino/operations/include/sub.h"
 #include "delegate/intel_openvino/operations/include/tanh.h"
 #include "delegate/intel_openvino/operations/include/transpose_conv.h"
 #include "delegate/intel_openvino/operations/utility.h"
@@ -171,6 +172,9 @@ std::shared_ptr<OperationsBase> OpenVINOGraphBuilder::CreateOpForCode(
     }
     case kTfLiteBuiltinSoftmax: {
       return std::make_shared<Softmax>();
+    }
+    case kTfLiteBuiltinSub: {
+      return std::make_shared<Sub>();
     }
     case kTfLiteBuiltinTanh: {
       return std::make_shared<Tanh>();
