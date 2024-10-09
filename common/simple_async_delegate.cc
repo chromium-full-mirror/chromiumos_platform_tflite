@@ -19,6 +19,10 @@
 
 namespace tflite::cros {
 namespace {
+
+// The custom op for the pre-compiled MTK graph.
+constexpr char kCrosMtkPreCompile[] = "cros-mtk-pre-compile";
+
 TfLiteRegistrationExternal* CreateDelegateKernelRegistration(
     SimpleAsyncDelegateInterface* delegate) {
   TfLiteRegistrationExternal* kernel_registration =
@@ -82,18 +86,32 @@ TfLiteRegistrationExternal* CreateDelegateKernelRegistration(
   return kernel_registration;
 }
 
-TfLiteStatus DelegatePrepare(TfLiteOpaqueContext* opaque_context,
-                             TfLiteOpaqueDelegate* opaque_delegate,
-                             void* data) {
-  auto* simple_async_delegate =
-      reinterpret_cast<SimpleAsyncDelegateInterface*>(data);
-  TF_LITE_ENSURE_STATUS(simple_async_delegate->Initialize(opaque_context));
-
+std::vector<int> GetSupportedNodes(
+    TfLiteOpaqueContext* opaque_context,
+    SimpleAsyncDelegateInterface* simple_async_delegate,
+    IntArrayUniquePtr plan) {
   std::vector<int> supported_nodes;
-  TfLiteIntArray* execution_plan;
-  TF_LITE_ENSURE_STATUS(
-      TfLiteOpaqueContextGetExecutionPlan(opaque_context, &execution_plan));
-  IntArrayUniquePtr plan(TfLiteIntArrayCopy(execution_plan));
+
+  // TODO(b/374028782): Remove this after we have fine-grained delegation
+  // control in TFLite.
+  for (int i = 0; i < plan->size; ++i) {
+    const int node_id = plan->data[i];
+
+    TfLiteOpaqueNode* opaque_node;
+    TfLiteRegistrationExternal* registration_external;
+    TfLiteOpaqueContextGetNodeAndRegistration(
+        opaque_context, node_id, &opaque_node, &registration_external);
+
+    const char* custom = TfLiteOperatorGetCustomName(registration_external);
+    if (custom && strcmp(custom, kCrosMtkPreCompile) == 0) {
+      supported_nodes.push_back(node_id);
+    }
+  }
+  // If the graph contains pre-compiled graph, we don't need to compile the
+  // remaining graph again. And the remaining graph should be running on CPU.
+  if (!supported_nodes.empty()) {
+    return supported_nodes;
+  }
 
   for (int i = 0; i < plan->size; ++i) {
     const int node_id = plan->data[i];
@@ -108,6 +126,23 @@ TfLiteStatus DelegatePrepare(TfLiteOpaqueContext* opaque_context,
       supported_nodes.push_back(node_id);
     }
   }
+  return supported_nodes;
+}
+
+TfLiteStatus DelegatePrepare(TfLiteOpaqueContext* opaque_context,
+                             TfLiteOpaqueDelegate* opaque_delegate,
+                             void* data) {
+  auto* simple_async_delegate =
+      reinterpret_cast<SimpleAsyncDelegateInterface*>(data);
+  TF_LITE_ENSURE_STATUS(simple_async_delegate->Initialize(opaque_context));
+
+  TfLiteIntArray* execution_plan;
+  TF_LITE_ENSURE_STATUS(
+      TfLiteOpaqueContextGetExecutionPlan(opaque_context, &execution_plan));
+  IntArrayUniquePtr plan(TfLiteIntArrayCopy(execution_plan));
+
+  std::vector<int> supported_nodes =
+      GetSupportedNodes(opaque_context, simple_async_delegate, std::move(plan));
 
   TfLiteRegistrationExternal* delegate_kernel_registration =
       CreateDelegateKernelRegistration(simple_async_delegate);
