@@ -29,6 +29,7 @@
 #include <sys/ioctl.h>
 #include <sys/mman.h>
 
+#include <algorithm>
 #include <iostream>
 
 #include "common/minimal_logging.h"
@@ -2275,7 +2276,8 @@ TfLiteStatus NeuronStableDelegateKernel::GetSupportedOperations(
     for (int i = 1; i < total_op_num_; ++i) {
       if (support_flags[i] != support_flags[0]) {
         std::fill(is_supported, is_supported + nodes_.size(), false);
-        TFLITE_LOG_PROD(tflite::TFLITE_LOG_WARNING,
+        TFLITE_LOG_PROD(
+            tflite::TFLITE_LOG_WARNING,
             "Currently cannot support if the number of nodes "
             "is different from the nodes we actually added to neuron.");
         return kTfLiteUnresolvedOps;
@@ -2283,7 +2285,8 @@ TfLiteStatus NeuronStableDelegateKernel::GetSupportedOperations(
     }
   }
   // Only copy the size of the original nodes to avoid exceeding the bounds.
-  std::copy(support_flags.get(), support_flags.get() + nodes_.size(), is_supported);
+  std::copy(support_flags.get(), support_flags.get() + nodes_.size(),
+            is_supported);
   return kTfLiteOk;
 }
 
@@ -2318,8 +2321,8 @@ TfLiteStatus NeuronStableDelegateKernel::GetSupportedOperationsForOneNode(
     memcpy(output_tensors->data, outputs, sizeof(int) * num_outputs);
   }
 
-  auto re = GetSupportedOperations(
-      context, input_tensors, output_tensors, is_supported);
+  auto re = GetSupportedOperations(context, input_tensors, output_tensors,
+                                   is_supported);
 
   if (input_tensors) {
     TfLiteIntArrayFree(input_tensors);
