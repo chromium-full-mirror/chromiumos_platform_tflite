@@ -163,16 +163,25 @@ TfLiteStatus NeuronStableDelegate::GenModelToken(TfLiteOpaqueContext* context) {
     TFLITE_LOG_PROD(tflite::TFLITE_LOG_ERROR, "Fail to get exexution plan");
     return kTfLiteError;
   }
-  TfLiteOpaqueNode *input_node, *output_node;
-  TfLiteRegistrationExternal* registration;
-  if (TfLiteOpaqueContextGetNodeAndRegistration(context, 0, &input_node,
-                                                &registration) != kTfLiteOk ||
-      TfLiteOpaqueContextGetNodeAndRegistration(
-          context, execution_plan->size - 1, &output_node, &registration) !=
-          kTfLiteOk) {
-    TFLITE_LOG_PROD(tflite::TFLITE_LOG_ERROR,
-                    "Fail to get Node and Registration.");
-    return kTfLiteError;
+
+  const int *inputs = nullptr, *outputs = nullptr;
+  int num_inputs = 0, num_outputs = 0;
+  if (execution_plan->size > 0) {
+    TfLiteOpaqueNode *input_node, *output_node;
+    TfLiteRegistrationExternal* registration;
+    if (TfLiteOpaqueContextGetNodeAndRegistration(context, 0, &input_node,
+                                                  &registration) != kTfLiteOk ||
+        TfLiteOpaqueContextGetNodeAndRegistration(
+            context, execution_plan->size - 1, &output_node, &registration) !=
+            kTfLiteOk) {
+      TFLITE_LOG_PROD(tflite::TFLITE_LOG_ERROR,
+                      "Fail to get Node and Registration.");
+      return kTfLiteError;
+    }
+    TF_LITE_OPAQUE_ENSURE_STATUS(
+        TfLiteOpaqueNodeInputs(input_node, &inputs, &num_inputs));
+    TF_LITE_OPAQUE_ENSURE_STATUS(
+        TfLiteOpaqueNodeOutputs(output_node, &outputs, &num_outputs));
   }
 
   std::string bytes_count_str =
@@ -181,13 +190,8 @@ TfLiteStatus NeuronStableDelegate::GenModelToken(TfLiteOpaqueContext* context) {
   uint64_t token_parts[4];
   token_parts[0] = ::util::Fingerprint64(model_token, std::strlen(model_token));
   token_parts[1] = GetHash(execution_plan);
-  const int *inputs, *outputs;
-  int num_inputs, num_outputs;
-  TF_LITE_OPAQUE_ENSURE_STATUS(
-      TfLiteOpaqueNodeInputs(input_node, &inputs, &num_inputs));
+
   token_parts[2] = GetHash(inputs, num_inputs);
-  TF_LITE_OPAQUE_ENSURE_STATUS(
-      TfLiteOpaqueNodeOutputs(output_node, &outputs, &num_outputs));
   token_parts[3] = GetHash(outputs, num_outputs);
   std::vector<uint8_t> nnapi_cache_token(32, 0);
   uint8_t* p = reinterpret_cast<uint8_t*>(token_parts);
