@@ -1,0 +1,22 @@
+commit ac672c4c2ac7b9e65f50f7b20b9cca936d56829e
+Author: Tommy Chiang <ototot@google.com>
+Date:   Tue Oct 8 04:08:10 2024 -0700
+
+    Use ArrayFloatNear to check values in PowOpModel.BroadcastFloatTest
+    
+    PiperOrigin-RevId: 683560684
+
+diff --git a/tensorflow/lite/kernels/pow_test.cc b/tensorflow/lite/kernels/pow_test.cc
+index 553159c5fdd..0eb381f4a9c 100644
+--- a/tensorflow/lite/kernels/pow_test.cc
++++ b/tensorflow/lite/kernels/pow_test.cc
+@@ -119,7 +119,8 @@ TEST(PowOpModel, BroadcastFloatTest) {
+   model.PopulateTensor<float>(model.input2(), {4});
+   ASSERT_EQ(model.Invoke(), kTfLiteOk);
+   EXPECT_THAT(model.GetOutputShape(), ElementsAre(1, 2, 2, 1));
+-  EXPECT_THAT(model.GetOutput(), ElementsAre(20736, 16, 2401, 4096));
++  EXPECT_THAT(model.GetOutput(),
++              ElementsAreArray(ArrayFloatNear({20736, 16, 2401, 4096})));
+ }
+ 
+ template <typename T>

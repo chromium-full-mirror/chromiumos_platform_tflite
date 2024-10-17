@@ -39,6 +39,7 @@ maybe(
         "//patch:0016-dts-fp16-mode.patch",
         "//patch:0017-Add-cros-mtk-pre-compile-custom-op.patch",
         "//patch:0018-stop-dts-validation-early.patch",
+        "//patch:0019-dts-powopmodel-broadcastfloattest.patch",
     ],
     sha256 = "9cc4d5773b8ee910079baaecb4086d0c28939f024dd74b33fc5e64779b6533dc",
     strip_prefix = "tensorflow-{}".format(TENSORFLOW_VERSION),
