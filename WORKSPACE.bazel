@@ -42,6 +42,7 @@ maybe(
         "//patch:0019-dts-powopmodel-broadcastfloattest.patch",
         "//patch:0020-dts-rsqrtint16.patch",
         "//patch:0021-dts-stridedsliceoptests.patch",
+        "//patch:0022-dts-rsqrt-nan.patch",
     ],
     sha256 = "9cc4d5773b8ee910079baaecb4086d0c28939f024dd74b33fc5e64779b6533dc",
     strip_prefix = "tensorflow-{}".format(TENSORFLOW_VERSION),
