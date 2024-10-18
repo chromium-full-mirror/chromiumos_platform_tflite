@@ -124,6 +124,36 @@ def init_git_repo(repo: Path):
     )
 
 
+def apply_patches(repo: Path, patches: List[str]):
+    logging.info("Apply patches to the repository at %s", repo)
+
+    # Note that this function uses `git am` to apply patches, which requires
+    # each patch file to be in the format produced by `git format-patch`. This
+    # format includes commit metadata such as the author, date, and commit
+    # message in the header.
+    #
+    # This approach is stricter than Bazel's patch application process. Bazel
+    # applies patches using the `patch -p1` command, which works with plain
+    # diff patches that may not include commit metadata.
+    #
+    # By using `git am`, we can apply each patch as a separate commit,
+    # preserving the original commit messages and author information. This
+    # makes it easier to manage and track changes in the repository.
+    #
+    # TODO(shik): Document the patch management workflow in README.
+    for patch in patches:
+        patch_path = get_workspace_root() / "patch" / patch
+        run(
+            [
+                "git",
+                "am",
+                "--whitespace=nowarn",  # Silent warning from upstream code
+                str(patch_path),
+            ],
+            cwd=repo,
+        )
+
+
 def cmd_eject(args: argparse.Namespace):
     del args
 
@@ -140,7 +170,7 @@ def cmd_eject(args: argparse.Namespace):
     download_archive(url, dest)
 
     init_git_repo(dest)
-    # TODO(shik): Apply patches.
+    apply_patches(dest, patches)
 
 
 def cmd_seal(args: argparse.Namespace):
