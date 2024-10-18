@@ -33,14 +33,18 @@ def shell_join(cmd: List[str]) -> str:
     return " ".join(shlex.quote(c) for c in cmd)
 
 
-def run(args: List[str]) -> int:
+def run(args: List[str], *, cwd: Optional[Path] = None) -> int:
     logging.debug("$ %s", shell_join(args))
-    return subprocess.check_call(args, cwd=get_workspace_root())
+    if cwd is None:
+        cwd = get_workspace_root()
+    return subprocess.check_call(args, cwd=cwd)
 
 
-def check_output(args: List[str]) -> str:
+def check_output(args: List[str], *, cwd: Optional[Path] = None) -> str:
     logging.debug("$ %s", shell_join(args))
-    return subprocess.check_output(args, text=True, cwd=get_workspace_root())
+    if cwd is None:
+        cwd = get_workspace_root()
+    return subprocess.check_output(args, text=True, cwd=cwd)
 
 
 def xml_get_value(el: xml.etree.ElementTree.Element, key="value") -> str:
@@ -101,6 +105,25 @@ def download_archive(url: str, dest: Path):
     run(["sh", "-c", f"{curl} | {tar}"])
 
 
+def init_git_repo(repo: Path):
+    logging.info("Initialize Git repository in %s", str(repo))
+
+    run(["git", "init"], cwd=repo)
+    run(["git", "config", "user.name", "TFLite Patcher"], cwd=repo)
+    run(["git", "config", "user.email", "tflite@localhost"], cwd=repo)
+    run(["git", "add", "."], cwd=repo)
+    run(
+        [
+            "git",
+            "commit",
+            "--quiet",
+            "--message",
+            "Initial commit from ejected repo",
+        ],
+        cwd=repo,
+    )
+
+
 def cmd_eject(args: argparse.Namespace):
     del args
 
@@ -115,6 +138,8 @@ def cmd_eject(args: argparse.Namespace):
     logging.debug("url = %s", url)
     logging.debug("patches = %s", patches)
     download_archive(url, dest)
+
+    init_git_repo(dest)
     # TODO(shik): Apply patches.
 
 
