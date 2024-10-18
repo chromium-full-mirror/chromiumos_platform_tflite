@@ -1,23 +1,29 @@
-commit 12aff1ce98994b1c3a842c6675c5f28fe403d4bb
-Author: Tommy Chiang <ototot@google.com>
-Date:   Wed Oct 9 00:49:13 2024 -0700
+From 4dfaaa3d0e5b00c3bd06bb640d7a2d365f457779 Mon Sep 17 00:00:00 2001
+From: Tommy Chiang <ototot@google.com>
+Date: Wed, 9 Oct 2024 00:49:13 -0700
+Subject: [PATCH] Fix inaccurate RsqrtInt16 test
 
-    Fix inaccurate RsqrtInt16 test
-    
-    ElementWise.RsqrtInt16 expects rsqrt(0.1) to be ~3.19407 from the reference kernel, while the correct answer is ~= 3.16228.
-    This breaks some correctly-implemented delegates.
-    
-    Fix the accuracy issue by using the right error range and the output produced from CPU.
-    
-    Note that this CL also renames some variable names for clarity.
-    
-    PiperOrigin-RevId: 683924801
+ElementWise.RsqrtInt16 expects rsqrt(0.1) to be ~3.19407 from the
+reference kernel, while the correct answer is ~= 3.16228. This breaks
+some correctly-implemented delegates.
+
+Fix the accuracy issue by using the right error range and the output
+produced from CPU.
+
+Note that this CL also renames some variable names for clarity.
+
+PiperOrigin-RevId: 683924801
+
+PATCH_NAME=dts-rsqrtint16
+---
+ tensorflow/lite/kernels/elementwise_test.cc | 109 +++++++++++---------
+ 1 file changed, 61 insertions(+), 48 deletions(-)
 
 diff --git a/tensorflow/lite/kernels/elementwise_test.cc b/tensorflow/lite/kernels/elementwise_test.cc
-index 1dabbd18328..42f123f8534 100644
+index 57b39de3..97e42fb9 100644
 --- a/tensorflow/lite/kernels/elementwise_test.cc
 +++ b/tensorflow/lite/kernels/elementwise_test.cc
-@@ -258,12 +258,13 @@ TEST(ElementWise, AbsInt32) {
+@@ -252,12 +252,13 @@ TEST(ElementWise, AbsInt32) {
  }
  
  TEST(ElementWise, AbsInt8) {
@@ -36,7 +42,7 @@ index 1dabbd18328..42f123f8534 100644
    const float abs_max = std::max(std::abs(*minmax.first), *minmax.second);
    const float kInputScale = (*minmax.second - *minmax.first) / 255.0;
    const float kOutputScale = abs_max / 255.0;
-@@ -281,19 +282,20 @@ TEST(ElementWise, AbsInt8) {
+@@ -275,19 +276,20 @@ TEST(ElementWise, AbsInt8) {
         {kInputScale},
         {input_zero_point}},
        {TensorType_INT8, {1, 8}, 0, abs_max, kOutputScale, output_zero_point});
@@ -64,7 +70,7 @@ index 1dabbd18328..42f123f8534 100644
    const float abs_max = std::max(std::abs(*minmax.first), *minmax.second);
    const float kInputScale = (*minmax.second - *minmax.first) / 255.0;
    const int input_zero_point = 127 - *minmax.second;
-@@ -309,26 +311,28 @@ TEST(ElementWise, AbsSameScaleInt8) {
+@@ -303,26 +305,28 @@ TEST(ElementWise, AbsSameScaleInt8) {
         {kInputScale},
         {input_zero_point}},
        {TensorType_INT8, {1, 8}, 0, abs_max, kInputScale, input_zero_point});
@@ -102,7 +108,7 @@ index 1dabbd18328..42f123f8534 100644
  }
  
  TEST(ElementWise, Sqrt) {
-@@ -350,10 +354,11 @@ TEST(ElementWise, Rsqrt) {
+@@ -344,10 +348,11 @@ TEST(ElementWise, Rsqrt) {
  }
  
  TEST(ElementWise, RsqrtInt8) {
@@ -118,7 +124,7 @@ index 1dabbd18328..42f123f8534 100644
    }
    float kInputScale = 142.0 / 255.0;
    float kOutputScale = 1.0 / 255.0;
-@@ -377,17 +382,18 @@ TEST(ElementWise, RsqrtInt8) {
+@@ -371,17 +376,18 @@ TEST(ElementWise, RsqrtInt8) {
                                   true,
                                   {kOutputScale},
                                   {zero_point}});
@@ -143,7 +149,7 @@ index 1dabbd18328..42f123f8534 100644
    }
    float kInputScale = 142.0 / 255.0;
    float kOutputScale = 3.16 / 255.0;
-@@ -411,17 +417,18 @@ TEST(ElementWise, RsqrtCloseTo0Int8) {
+@@ -405,17 +411,18 @@ TEST(ElementWise, RsqrtCloseTo0Int8) {
                                   true,
                                   {kOutputScale},
                                   {zero_point}});
@@ -168,7 +174,7 @@ index 1dabbd18328..42f123f8534 100644
    }
    float kInputScale = 142.0 / 127.0;
    float kOutputScale = 1.0 / 255.0;
-@@ -446,29 +453,35 @@ TEST(ElementWise, RsqrtNanInt8) {
+@@ -440,29 +447,35 @@ TEST(ElementWise, RsqrtNanInt8) {
                                   true,
                                   {kOutputScale},
                                   {output_zero_point}});
@@ -215,3 +221,6 @@ index 1dabbd18328..42f123f8534 100644
  }
  
  TEST(ElementWise, RsqrtNanInt16) {
+-- 
+2.47.0.rc1.288.g06298d1525-goog
+

@@ -1,10 +1,19 @@
-Force enable NnApiDelegate for ChromeOS.
+From bdf22b505b912f5aa10421e46ee0ff9b75b92ac2 Mon Sep 17 00:00:00 2001
+From: TFLite Patcher <tflite@localhost>
+Date: Fri, 18 Oct 2024 17:58:05 +0800
+Subject: [PATCH] Force enable NnApiDelegate for ChromeOS.
+
+PATCH_NAME=nnapi-delegate
+---
+ tensorflow/lite/BUILD                    | 2 ++
+ tensorflow/lite/tools/evaluation/utils.h | 1 +
+ 2 files changed, 3 insertions(+)
 
 diff --git a/tensorflow/lite/BUILD b/tensorflow/lite/BUILD
-index d58f3f7f12f..0c9a23c892b 100644
+index 07d4435c..d4993082 100644
 --- a/tensorflow/lite/BUILD
 +++ b/tensorflow/lite/BUILD
-@@ -556,6 +556,8 @@ cc_library_with_tflite(
+@@ -562,6 +562,8 @@ cc_library_with_tflite(
          "//tensorflow/lite/core/api",
          "//tensorflow/lite/core/api:verifier",
          "//tensorflow/lite/core/c:common",
@@ -14,7 +23,7 @@ index d58f3f7f12f..0c9a23c892b 100644
          "//tensorflow/lite/internal:signature_def",
          "//tensorflow/lite/profiling:root_profiler",
 diff --git a/tensorflow/lite/tools/evaluation/utils.h b/tensorflow/lite/tools/evaluation/utils.h
-index 1735b9ee08a..9266d164ade 100644
+index ed89f609..201564cd 100644
 --- a/tensorflow/lite/tools/evaluation/utils.h
 +++ b/tensorflow/lite/tools/evaluation/utils.h
 @@ -27,6 +27,7 @@ limitations under the License.
@@ -25,3 +34,6 @@ index 1735b9ee08a..9266d164ade 100644
  #define TFLITE_SUPPORTS_GPU_DELEGATE 1
  #endif  // defined(__ANDROID__)
  #endif  // TFLITE_WITH_STABLE_ABI
+-- 
+2.47.0.rc1.288.g06298d1525-goog
+

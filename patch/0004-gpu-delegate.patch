@@ -1,10 +1,24 @@
-Enable Gpu Delegate for ChromeOS.
+From aa11974612407311efb226f2cdf3aa9d23bccc0c Mon Sep 17 00:00:00 2001
+From: TFLite Patcher <tflite@localhost>
+Date: Fri, 18 Oct 2024 17:59:37 +0800
+Subject: [PATCH] Enable Gpu Delegate for ChromeOS.
+
+PATCH_NAME=gpu-delegate
+---
+ tensorflow/lite/BUILD                           |  1 +
+ .../acceleration/configuration/gpu_plugin.h     |  2 +-
+ tensorflow/lite/core/kernels/BUILD              | 17 +++--------------
+ tensorflow/lite/delegates/gpu/BUILD             |  6 ++++++
+ tensorflow/lite/delegates/gpu/build_defs.bzl    |  2 +-
+ tensorflow/lite/delegates/gpu/cl/BUILD          |  2 +-
+ tensorflow/lite/tools/evaluation/utils.h        |  2 +-
+ 7 files changed, 14 insertions(+), 18 deletions(-)
 
 diff --git a/tensorflow/lite/BUILD b/tensorflow/lite/BUILD
-index d58f3f7f12f..cf26081ec16 100644
+index d4993082..a603bb69 100644
 --- a/tensorflow/lite/BUILD
 +++ b/tensorflow/lite/BUILD
-@@ -1385,6 +1385,7 @@ tflite_cc_shared_object(
+@@ -1435,6 +1435,7 @@ tflite_cc_shared_object(
          ":tflite_exported_symbols.lds",
          ":tflite_version_script.lds",
          "//tensorflow/lite/kernels:builtin_ops_all_linked",
@@ -13,7 +27,7 @@ index d58f3f7f12f..cf26081ec16 100644
  )
  
 diff --git a/tensorflow/lite/acceleration/configuration/gpu_plugin.h b/tensorflow/lite/acceleration/configuration/gpu_plugin.h
-index a45c44d8ca3..048795eab47 100644
+index a45c44d8..048795ea 100644
 --- a/tensorflow/lite/acceleration/configuration/gpu_plugin.h
 +++ b/tensorflow/lite/acceleration/configuration/gpu_plugin.h
 @@ -18,7 +18,7 @@ limitations under the License.
@@ -26,10 +40,10 @@ index a45c44d8ca3..048795eab47 100644
  #endif
  
 diff --git a/tensorflow/lite/core/kernels/BUILD b/tensorflow/lite/core/kernels/BUILD
-index 81d643a6759..981c41a54d6 100644
+index 71f9980f..0e69dee4 100644
 --- a/tensorflow/lite/core/kernels/BUILD
 +++ b/tensorflow/lite/core/kernels/BUILD
-@@ -28,25 +28,14 @@ cc_test(
+@@ -30,25 +30,14 @@ cc_test(
      ],
  )
  
@@ -59,7 +73,7 @@ index 81d643a6759..981c41a54d6 100644
  
  # For internal usage by shared libraries only.
 diff --git a/tensorflow/lite/delegates/gpu/BUILD b/tensorflow/lite/delegates/gpu/BUILD
-index bd47abe9057..4856274cc2d 100644
+index 5eeb1764..e8a55c56 100644
 --- a/tensorflow/lite/delegates/gpu/BUILD
 +++ b/tensorflow/lite/delegates/gpu/BUILD
 @@ -33,6 +33,11 @@ config_setting(
@@ -83,7 +97,7 @@ index bd47abe9057..4856274cc2d 100644
      ],
  )
 diff --git a/tensorflow/lite/delegates/gpu/build_defs.bzl b/tensorflow/lite/delegates/gpu/build_defs.bzl
-index cdea91aec86..58b8386e610 100644
+index cdea91ae..58b8386e 100644
 --- a/tensorflow/lite/delegates/gpu/build_defs.bzl
 +++ b/tensorflow/lite/delegates/gpu/build_defs.bzl
 @@ -3,7 +3,7 @@
@@ -96,10 +110,10 @@ index cdea91aec86..58b8386e610 100644
              # We don't need to link libGLESv3, because if it exists,
              # it is a symlink to libGLESv2.
 diff --git a/tensorflow/lite/delegates/gpu/cl/BUILD b/tensorflow/lite/delegates/gpu/cl/BUILD
-index 84004f80218..75bb4953406 100644
+index cc593ef4..3291e3a9 100644
 --- a/tensorflow/lite/delegates/gpu/cl/BUILD
 +++ b/tensorflow/lite/delegates/gpu/cl/BUILD
-@@ -350,7 +350,7 @@ cc_library(
+@@ -364,7 +364,7 @@ cc_library(
      srcs = ["gpu_api_delegate.cc"],
      hdrs = ["gpu_api_delegate.h"],
      linkopts = select({
@@ -109,7 +123,7 @@ index 84004f80218..75bb4953406 100644
              "-lGLESv3",
          ],
 diff --git a/tensorflow/lite/tools/evaluation/utils.h b/tensorflow/lite/tools/evaluation/utils.h
-index 1735b9ee08a..5e096a5412d 100644
+index 201564cd..46fa87c1 100644
 --- a/tensorflow/lite/tools/evaluation/utils.h
 +++ b/tensorflow/lite/tools/evaluation/utils.h
 @@ -23,7 +23,7 @@ limitations under the License.
@@ -121,3 +135,6 @@ index 1735b9ee08a..5e096a5412d 100644
  #define TFLITE_SUPPORTS_NNAPI_DELEGATE 1
  #define TFLITE_SUPPORTS_GPU_DELEGATE 1
  #elif defined(CL_DELEGATE_NO_GL)
+-- 
+2.47.0.rc1.288.g06298d1525-goog
+

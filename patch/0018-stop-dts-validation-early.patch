@@ -1,21 +1,27 @@
-commit caac24fee3d029ac5a57070cf4064949d4ea93a5
-Author: Tommy Chiang <ototot@google.com>
-Date:   Mon Oct 7 02:04:45 2024 -0700
+From 5bdb4ef6decceebcde53b04d69c50e92502acbb7 Mon Sep 17 00:00:00 2001
+From: Tommy Chiang <ototot@google.com>
+Date: Mon, 7 Oct 2024 02:04:45 -0700
+Subject: [PATCH] Stop validation if no delegates have been applied
 
-    Stop validation if no delegates have been applied
-    
-    Some tests like StablehloPadModelTest.DefaultModelFails doesn't run model inference at all,
-    which triggers a null pointer deference when validating acceleration.
-    
-    Force the validation to be stopped if no delegates have been applied to avoid such the case.
-    
-    PiperOrigin-RevId: 683090747
+Some tests like StablehloPadModelTest.DefaultModelFails doesn't run
+model inference at all, which triggers a null pointer deference when
+validating acceleration.
+
+Force the validation to be stopped if no delegates have been applied to
+avoid such the case.
+
+PiperOrigin-RevId: 683090747
+
+PATCH_NAME=stop-dts-validation-early
+---
+ .../experimental/stable_delegate/kernel_test_main.cc      | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
 
 diff --git a/tensorflow/lite/delegates/utils/experimental/stable_delegate/kernel_test_main.cc b/tensorflow/lite/delegates/utils/experimental/stable_delegate/kernel_test_main.cc
-index 56aa40d2580..65bf981c962 100644
+index f3fe76d3..c45a0e4e 100644
 --- a/tensorflow/lite/delegates/utils/experimental/stable_delegate/kernel_test_main.cc
 +++ b/tensorflow/lite/delegates/utils/experimental/stable_delegate/kernel_test_main.cc
-@@ -89,11 +89,11 @@ void ValidateAcceleration(const SingleOpModel& model) {
+@@ -90,11 +90,11 @@ void ValidateAcceleration(const SingleOpModel& model) {
      // We only want to check the delegate is working properly, so an error due
      // to incompatibility between the model and the delegate is not considered a
      // failure here.
@@ -29,7 +35,7 @@ index 56aa40d2580..65bf981c962 100644
                kTfLiteOk);
    }
  
-@@ -107,10 +107,10 @@ void ValidateAcceleration(const SingleOpModel& model) {
+@@ -108,10 +108,10 @@ void ValidateAcceleration(const SingleOpModel& model) {
      return;
    }
    TFLITE_LOG(INFO) << "Validating acceleration with the stable delegate";
@@ -42,3 +48,6 @@ index 56aa40d2580..65bf981c962 100644
  }
  
  bool InitKernelTest(int* argc, char** argv) {
+-- 
+2.47.0.rc1.288.g06298d1525-goog
+

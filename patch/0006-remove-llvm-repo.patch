@@ -1,11 +1,23 @@
-llvm is over 150MB which takes a long time to download but it's not needed
-for our building the TFLite. So we remove it to speed up the build.
+From bf64f72f47a127ab927ee8f85fb184ce0af47b79 Mon Sep 17 00:00:00 2001
+From: TFLite Patcher <tflite@localhost>
+Date: Fri, 18 Oct 2024 18:01:42 +0800
+Subject: [PATCH] Remove LLVM from workspace
+
+llvm is over 150MB which takes a long time to download but it's not
+needed for our building the TFLite. So we remove it to speed up the
+build.
+
+PATCH_NAME=remove-llvm-repo
+---
+ tensorflow/workspace2.bzl | 2 --
+ tensorflow/workspace3.bzl | 4 ----
+ 2 files changed, 6 deletions(-)
 
 diff --git a/tensorflow/workspace2.bzl b/tensorflow/workspace2.bzl
-index 9e15c75c183..82c48fd5838 100644
+index fd29dff0..23b438ec 100644
 --- a/tensorflow/workspace2.bzl
 +++ b/tensorflow/workspace2.bzl
-@@ -32,7 +32,6 @@ load("//third_party/implib_so:workspace.bzl", implib_so = "repo")
+@@ -39,7 +39,6 @@ load("//third_party/implib_so:workspace.bzl", implib_so = "repo")
  load("//third_party/jpeg:workspace.bzl", jpeg = "repo")
  load("//third_party/kissfft:workspace.bzl", kissfft = "repo")
  load("//third_party/libprotobuf_mutator:workspace.bzl", libprotobuf_mutator = "repo")
@@ -22,7 +34,7 @@ index 9e15c75c183..82c48fd5838 100644
      # Intel openMP that is part of LLVM sources.
      tf_http_archive(
 diff --git a/tensorflow/workspace3.bzl b/tensorflow/workspace3.bzl
-index 7d187724bb1..8e5d175e070 100644
+index d7b32f01..a326ff55 100644
 --- a/tensorflow/workspace3.bzl
 +++ b/tensorflow/workspace3.bzl
 @@ -58,10 +58,6 @@ def workspace():
@@ -36,3 +48,6 @@ index 7d187724bb1..8e5d175e070 100644
  # Alias so it can be loaded without assigning to a different symbol to prevent
  # shadowing previous loads and trigger a buildifier warning.
  tf_workspace3 = workspace
+-- 
+2.47.0.rc1.288.g06298d1525-goog
+

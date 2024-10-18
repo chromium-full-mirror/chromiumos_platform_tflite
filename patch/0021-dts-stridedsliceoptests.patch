@@ -1,16 +1,21 @@
-commit 1d7f4da9eac697ca99eaf1dfff648b26399a9a41
-Author: Tommy Chiang <ototot@google.com>
-Date:   Wed Oct 9 07:34:39 2024 -0700
+From 9235163e561ea42c2d675b3385c0b9b8377fe1b1 Mon Sep 17 00:00:00 2001
+From: Tommy Chiang <ototot@google.com>
+Date: Wed, 9 Oct 2024 07:34:39 -0700
+Subject: [PATCH] Use ArrayFloatNear to check values in StridedSliceOpTests
 
-    Use ArrayFloatNear to check values in StridedSliceOpTests
-    
-    Since StridedSliceOpTests use TYPED_TEST to test StridedSliceOp with different types,
-    this CL introduce a helper function ElementsAreTypedArray to help testing float values.
-    
-    PiperOrigin-RevId: 684031126
+Since StridedSliceOpTests use TYPED_TEST to test StridedSliceOp with
+different types, this CL introduce a helper function
+ElementsAreTypedArray to help testing float values.
+
+PiperOrigin-RevId: 684031126
+
+PATCH_NAME=dts-stridedsliceoptests
+---
+ tensorflow/lite/kernels/strided_slice_test.cc | 155 ++++++++++--------
+ 1 file changed, 89 insertions(+), 66 deletions(-)
 
 diff --git a/tensorflow/lite/kernels/strided_slice_test.cc b/tensorflow/lite/kernels/strided_slice_test.cc
-index 9e63abebe73..e769831c839 100644
+index 9e63abeb..e769831c 100644
 --- a/tensorflow/lite/kernels/strided_slice_test.cc
 +++ b/tensorflow/lite/kernels/strided_slice_test.cc
 @@ -156,6 +156,15 @@ using DataTypes =
@@ -637,3 +642,6 @@ index 9e63abebe73..e769831c839 100644
  }
  }  // namespace
  }  // namespace tflite
+-- 
+2.47.0.rc1.288.g06298d1525-goog
+

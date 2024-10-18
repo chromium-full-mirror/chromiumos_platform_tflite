@@ -1,7 +1,15 @@
-Add bazel rule for absl/base:prefetch
+From 540afb47a0eee0d9bfcf066980ce35cac9ee9076 Mon Sep 17 00:00:00 2001
+From: TFLite Patcher <tflite@localhost>
+Date: Fri, 18 Oct 2024 18:12:37 +0800
+Subject: [PATCH] Add bazel rule for absl/base:prefetch
+
+PATCH_NAME=absl-base-prefetch
+---
+ third_party/absl/system.absl.base.BUILD | 9 +++++++++
+ 1 file changed, 9 insertions(+)
 
 diff --git a/third_party/absl/system.absl.base.BUILD b/third_party/absl/system.absl.base.BUILD
-index d6bf8748dee..3addca5de65 100644
+index d6bf8748..3addca5d 100644
 --- a/third_party/absl/system.absl.base.BUILD
 +++ b/third_party/absl/system.absl.base.BUILD
 @@ -98,6 +98,15 @@ cc_library(
@@ -20,3 +28,6 @@ index d6bf8748dee..3addca5de65 100644
  cc_library(
      name = "strerror",
      linkopts = ["-labsl_strerror"],
+-- 
+2.47.0.rc1.288.g06298d1525-goog
+

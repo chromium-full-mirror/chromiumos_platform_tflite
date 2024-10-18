@@ -1,5 +1,15 @@
+From ca037e8b301ea1a91b02b908c251a8689aca1a2b Mon Sep 17 00:00:00 2001
+From: TFLite Patcher <tflite@localhost>
+Date: Fri, 18 Oct 2024 18:00:33 +0800
+Subject: [PATCH] Fix NNAPI loading error
+
+PATCH_NAME=nnapi-loading-errors
+---
+ tensorflow/lite/nnapi/nnapi_implementation.cc | 2 --
+ 1 file changed, 2 deletions(-)
+
 diff --git a/tensorflow/lite/nnapi/nnapi_implementation.cc b/tensorflow/lite/nnapi/nnapi_implementation.cc
-index 5f77293ba7f..df1dd42989c 100644
+index 64474a13..7a157e91 100644
 --- a/tensorflow/lite/nnapi/nnapi_implementation.cc
 +++ b/tensorflow/lite/nnapi/nnapi_implementation.cc
 @@ -198,7 +198,6 @@ const NnApi LoadNnApi() {
@@ -18,3 +28,6 @@ index 5f77293ba7f..df1dd42989c 100644
  
    nnapi.nnapi_exists = libneuralnetworks != nullptr;
  
+-- 
+2.47.0.rc1.288.g06298d1525-goog
+

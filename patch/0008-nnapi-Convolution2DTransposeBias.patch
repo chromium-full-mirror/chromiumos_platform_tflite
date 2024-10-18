@@ -1,5 +1,15 @@
+From f8ab5c447bb7a77c2a0ecf748d43fe0ba9f5d6af Mon Sep 17 00:00:00 2001
+From: TFLite Patcher <tflite@localhost>
+Date: Fri, 18 Oct 2024 18:05:59 +0800
+Subject: [PATCH] Implement Convolution2DTransposeBias in NNAPI delegate
+
+PATCH_NAME=nnapi-Convolution2DTransposeBias
+---
+ .../lite/delegates/nnapi/nnapi_delegate.cc    | 47 +++++++++++++++++++
+ 1 file changed, 47 insertions(+)
+
 diff --git a/tensorflow/lite/delegates/nnapi/nnapi_delegate.cc b/tensorflow/lite/delegates/nnapi/nnapi_delegate.cc
-index a9a5cd1a784..b6c60ff70f5 100644
+index a9a5cd1a..b6c60ff7 100644
 --- a/tensorflow/lite/delegates/nnapi/nnapi_delegate.cc
 +++ b/tensorflow/lite/delegates/nnapi/nnapi_delegate.cc
 @@ -3630,6 +3630,8 @@ bool NNAPIDelegateKernel::Validate(
@@ -70,3 +80,6 @@ index a9a5cd1a784..b6c60ff70f5 100644
        } else {
          TF_LITE_ENSURE_STATUS(
              builder.AddTensorInput(input_index, hybrid_op, input_tensor_flags));
+-- 
+2.47.0.rc1.288.g06298d1525-goog
+

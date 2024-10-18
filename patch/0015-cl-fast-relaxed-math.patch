@@ -1,8 +1,19 @@
+From 3a58d00d43cc577b8deb8730e7b6218599e3c810 Mon Sep 17 00:00:00 2001
+From: TFLite Patcher <tflite@localhost>
+Date: Fri, 18 Oct 2024 18:15:12 +0800
+Subject: [PATCH] Use fast relaxed math on CLVK
+
+PATCH_NAME=cl-fast-relaxed-math
+---
+ tensorflow/lite/delegates/gpu/cl/BUILD           | 1 +
+ tensorflow/lite/delegates/gpu/cl/cl_operation.cc | 6 ++++++
+ 2 files changed, 7 insertions(+)
+
 diff --git a/tensorflow/lite/delegates/gpu/cl/BUILD b/tensorflow/lite/delegates/gpu/cl/BUILD
-index 84004f80218..07232776c88 100644
+index 3291e3a9..28ff6f30 100644
 --- a/tensorflow/lite/delegates/gpu/cl/BUILD
 +++ b/tensorflow/lite/delegates/gpu/cl/BUILD
-@@ -259,6 +259,7 @@ cc_library(
+@@ -273,6 +273,7 @@ cc_library(
          ":cl_kernel",
          ":program_cache",
          ":tensor",
@@ -11,7 +22,7 @@ index 84004f80218..07232776c88 100644
          "@com_google_absl//absl/strings",
      ],
 diff --git a/tensorflow/lite/delegates/gpu/cl/cl_operation.cc b/tensorflow/lite/delegates/gpu/cl/cl_operation.cc
-index 1cc1738d071..caf0dc5bcbb 100644
+index 1cc1738d..8fd94938 100644
 --- a/tensorflow/lite/delegates/gpu/cl/cl_operation.cc
 +++ b/tensorflow/lite/delegates/gpu/cl/cl_operation.cc
 @@ -17,6 +17,8 @@ limitations under the License.
@@ -34,3 +45,6 @@ index 1cc1738d071..caf0dc5bcbb 100644
    RETURN_IF_ERROR(creation_context.cache->GetOrCreateCLKernel(
        operation_->code_, "main_function", operation_->compiler_options_,
        *creation_context.context, *creation_context.device, &kernel_,
+-- 
+2.47.0.rc1.288.g06298d1525-goog
+

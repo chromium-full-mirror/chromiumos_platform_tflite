@@ -1,7 +1,15 @@
-Disable latest ops in xnnpack for b/352513578
+From 0324d7d35699e46ee8cd74231a306a0cc390baa8 Mon Sep 17 00:00:00 2001
+From: TFLite Patcher <tflite@localhost>
+Date: Fri, 18 Oct 2024 18:14:26 +0800
+Subject: [PATCH] Disable latest ops in xnnpack for b/352513578
+
+PATCH_NAME=xnnpack-disable-latest-ops
+---
+ tensorflow/lite/delegates/xnnpack/BUILD | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/tensorflow/lite/delegates/xnnpack/BUILD b/tensorflow/lite/delegates/xnnpack/BUILD
-index d83fd8161b7..5733cfff732 100644
+index d83fd816..5733cfff 100644
 --- a/tensorflow/lite/delegates/xnnpack/BUILD
 +++ b/tensorflow/lite/delegates/xnnpack/BUILD
 @@ -230,7 +230,7 @@ cc_library(
@@ -13,3 +21,6 @@ index d83fd8161b7..5733cfff732 100644
      }) + select({
          ":xnnpack_use_transient_indirection_buffers_explicit": ["-DXNNPACK_DELEGATE_USE_TRANSIENT_INDIRECTION_BUFFERS=1"],
          "//conditions:default": [],
+-- 
+2.47.0.rc1.288.g06298d1525-goog
+

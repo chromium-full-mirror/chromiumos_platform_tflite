@@ -1,7 +1,15 @@
-Remove unneeded repositories
+From cda8d56f74ed2eadb390850123078b10a3cd384d Mon Sep 17 00:00:00 2001
+From: TFLite Patcher <tflite@localhost>
+Date: Fri, 18 Oct 2024 17:47:24 +0800
+Subject: [PATCH] Remove unneeded repositories
+
+PATCH_NAME=bazel-toolchains
+---
+ tensorflow/workspace0.bzl | 3 ---
+ 1 file changed, 3 deletions(-)
 
 diff --git a/tensorflow/workspace0.bzl b/tensorflow/workspace0.bzl
-index 0fdb0342fae..d617f7d02d2 100644
+index 0fdb0342..d617f7d0 100644
 --- a/tensorflow/workspace0.bzl
 +++ b/tensorflow/workspace0.bzl
 @@ -1,6 +1,5 @@
@@ -20,3 +28,6 @@ index 0fdb0342fae..d617f7d02d2 100644
      # Apple rules for Bazel. https://github.com/bazelbuild/rules_apple.
      # Note: We add this to fix Kokoro builds.
      # The rules below call into `rules_proto` but the hash has changed and
+-- 
+2.47.0.rc1.288.g06298d1525-goog
+

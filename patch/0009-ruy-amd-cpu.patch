@@ -1,8 +1,20 @@
+From bf9fba29265bf0e87a58bdbeca048e61d2529ff9 Mon Sep 17 00:00:00 2001
+From: TFLite Patcher <tflite@localhost>
+Date: Fri, 18 Oct 2024 18:08:07 +0800
+Subject: [PATCH] Fix cpuinfo on some AMD model
+
+PATCH_NAME=ruy-amd-cpu
+---
+ tensorflow/workspace2.bzl |  1 +
+ third_party/cpuinfo.patch | 16 ++++++++++++++++
+ 2 files changed, 17 insertions(+)
+ create mode 100644 third_party/cpuinfo.patch
+
 diff --git a/tensorflow/workspace2.bzl b/tensorflow/workspace2.bzl
-index 9e15c75c183..e5b14ed6622 100644
+index 23b438ec..1e099870 100644
 --- a/tensorflow/workspace2.bzl
 +++ b/tensorflow/workspace2.bzl
-@@ -173,6 +173,7 @@ def _tf_repositories():
+@@ -172,6 +172,7 @@ def _tf_repositories():
      tf_http_archive(
          name = "cpuinfo",
          strip_prefix = "cpuinfo-ef634603954d88d2643d5809011288b890ac126e",
@@ -12,7 +24,7 @@ index 9e15c75c183..e5b14ed6622 100644
      )
 diff --git a/third_party/cpuinfo.patch b/third_party/cpuinfo.patch
 new file mode 100644
-index 00000000000..290947ed64d
+index 00000000..290947ed
 --- /dev/null
 +++ b/third_party/cpuinfo.patch
 @@ -0,0 +1,16 @@
@@ -32,3 +44,6 @@ index 00000000000..290947ed64d
 + 
 + 		cpuinfo_x86_detect_cache(
 + 			max_base_index, max_extended_index, amd_topology_extensions, vendor, &model_info,
+-- 
+2.47.0.rc1.288.g06298d1525-goog
+

@@ -1,7 +1,17 @@
-Use cl_khr_command_buffer extension with clvk
+From ca43de6753a8028d9cb288f8eb37d0c9ac148285 Mon Sep 17 00:00:00 2001
+From: TFLite Patcher <tflite@localhost>
+Date: Fri, 18 Oct 2024 18:13:53 +0800
+Subject: [PATCH] Use cl_khr_command_buffer extension with clvk
+
+PATCH_NAME=cl-khr-command-buffer
+---
+ tensorflow/lite/delegates/gpu/cl/api.cc       |  2 +-
+ .../delegates/gpu/cl/inference_context.cc     | 66 ++++++++++++++++---
+ .../lite/delegates/gpu/cl/inference_context.h |  8 +++
+ 3 files changed, 66 insertions(+), 10 deletions(-)
 
 diff --git a/tensorflow/lite/delegates/gpu/cl/api.cc b/tensorflow/lite/delegates/gpu/cl/api.cc
-index dc9a8d3a6ca..da97b755db2 100644
+index dc9a8d3a..da97b755 100644
 --- a/tensorflow/lite/delegates/gpu/cl/api.cc
 +++ b/tensorflow/lite/delegates/gpu/cl/api.cc
 @@ -586,7 +586,7 @@ class InferenceRunnerImpl : public CLInferenceRunner {
@@ -14,7 +24,7 @@ index dc9a8d3a6ca..da97b755db2 100644
    }
  
 diff --git a/tensorflow/lite/delegates/gpu/cl/inference_context.cc b/tensorflow/lite/delegates/gpu/cl/inference_context.cc
-index 32cb168b505..3fe6e345aff 100644
+index 32cb168b..3fe6e345 100644
 --- a/tensorflow/lite/delegates/gpu/cl/inference_context.cc
 +++ b/tensorflow/lite/delegates/gpu/cl/inference_context.cc
 @@ -316,6 +316,13 @@ absl::Status InferenceContext::InitFromGpuModel(
@@ -119,7 +129,7 @@ index 32cb168b505..3fe6e345aff 100644
    }
    if (execution_hints_.need_flush) {
 diff --git a/tensorflow/lite/delegates/gpu/cl/inference_context.h b/tensorflow/lite/delegates/gpu/cl/inference_context.h
-index e964b6185cb..b900b4e1494 100644
+index e964b618..b900b4e1 100644
 --- a/tensorflow/lite/delegates/gpu/cl/inference_context.h
 +++ b/tensorflow/lite/delegates/gpu/cl/inference_context.h
 @@ -84,6 +84,7 @@ class InferenceContext {
@@ -151,3 +161,6 @@ index e964b6185cb..b900b4e1494 100644
    GpuInfo gpu_info_;
  };
  
+-- 
+2.47.0.rc1.288.g06298d1525-goog
+

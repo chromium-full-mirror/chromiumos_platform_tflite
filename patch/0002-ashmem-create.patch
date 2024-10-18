@@ -1,15 +1,15 @@
-Tensorflow uses its own implementation of ashmem_create if it is
-not being built for Android.
+From 33c983c0ffd7c91e032ec32546bf7864b12c71b6 Mon Sep 17 00:00:00 2001
+From: TFLite Patcher <tflite@localhost>
+Date: Fri, 18 Oct 2024 17:55:33 +0800
+Subject: [PATCH] Fix ASharedMemory_create in nnapi
 
-That implementation has a bug, where if the same 'name' is passed in
-for multiple invocations, it will resize the underlying shared memory
-file, effectively ignoring the 'anonymous' aspect expected of ashmem.
-
-Our implementation handles this better, and this ensures all of the ashmem
-functionlity is consistenly served from our implementation.
+PATCH_NAME=ashmem-create
+---
+ tensorflow/lite/nnapi/nnapi_implementation.cc | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
 diff --git a/tensorflow/lite/nnapi/nnapi_implementation.cc b/tensorflow/lite/nnapi/nnapi_implementation.cc
-index 5f77293ba7f..64474a138a0 100644
+index 5f77293b..64474a13 100644
 --- a/tensorflow/lite/nnapi/nnapi_implementation.cc
 +++ b/tensorflow/lite/nnapi/nnapi_implementation.cc
 @@ -254,7 +254,8 @@ const NnApi LoadNnApi() {
@@ -22,3 +22,6 @@ index 5f77293ba7f..64474a138a0 100644
    }
  #endif  // __ANDROID__
  
+-- 
+2.47.0.rc1.288.g06298d1525-goog
+

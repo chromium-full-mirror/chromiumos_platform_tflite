@@ -1,18 +1,25 @@
-commit 9c17b4aaa2b1aa196e7ad96ce83154a7864b2d02
-Author: Tommy Chiang <ototot@google.com>
-Date:   Wed Oct 16 22:37:09 2024 -0700
+From db0058d2b02f6527cbb4ac0baf7846ebcc22c3aa Mon Sep 17 00:00:00 2001
+From: Tommy Chiang <ototot@google.com>
+Date: Wed, 16 Oct 2024 22:37:09 -0700
+Subject: [PATCH] rsqrt should report error when the input contains negative
+ values
 
-    rsqrt should report error when the input contains negative values
-    
-    Due to the change of the behaviour, RsqrtNanInt{8,16} is now renamed to RsqrtNegativeInt{8,16}
-    
-    PiperOrigin-RevId: 686774011
+Due to the change of the behaviour, RsqrtNanInt{8,16} is now renamed to
+RsqrtNegativeInt{8,16}
+
+PiperOrigin-RevId: 686774011
+
+PATCH_NAME=dts-rsqrt-nan
+---
+ tensorflow/lite/kernels/elementwise.cc      |  6 ++++++
+ tensorflow/lite/kernels/elementwise_test.cc | 22 +++------------------
+ 2 files changed, 9 insertions(+), 19 deletions(-)
 
 diff --git a/tensorflow/lite/kernels/elementwise.cc b/tensorflow/lite/kernels/elementwise.cc
-index 5552f125818..c71fe04d3d9 100644
+index 1ac5680d..71645fde 100644
 --- a/tensorflow/lite/kernels/elementwise.cc
 +++ b/tensorflow/lite/kernels/elementwise.cc
-@@ -384,6 +384,12 @@ TfLiteStatus RsqrtEvalQuantizedInt16(TfLiteContext* context, TfLiteNode* node,
+@@ -415,6 +415,12 @@ TfLiteStatus RsqrtEvalQuantizedInt16(TfLiteContext* context, TfLiteNode* node,
    TF_LITE_ENSURE_OK(context, GetInputSafe(context, node, 0, &input));
    TfLiteTensor* output;
    TF_LITE_ENSURE_OK(context, GetOutputSafe(context, node, 0, &output));
@@ -26,10 +33,10 @@ index 5552f125818..c71fe04d3d9 100644
        GetTensorData<int16_t>(input),
        MatchingFlatSize(GetTensorShape(input), GetTensorShape(output)),
 diff --git a/tensorflow/lite/kernels/elementwise_test.cc b/tensorflow/lite/kernels/elementwise_test.cc
-index 42f123f8534..601397d69ac 100644
+index 97e42fb9..aa0965d2 100644
 --- a/tensorflow/lite/kernels/elementwise_test.cc
 +++ b/tensorflow/lite/kernels/elementwise_test.cc
-@@ -423,13 +423,9 @@ TEST(ElementWise, RsqrtCloseTo0Int8) {
+@@ -417,13 +417,9 @@ TEST(ElementWise, RsqrtCloseTo0Int8) {
                ElementsAreArray(ArrayFloatNear(expected_output, kInputScale)));
  }
  
@@ -44,7 +51,7 @@ index 42f123f8534..601397d69ac 100644
    float kInputScale = 142.0 / 127.0;
    float kOutputScale = 1.0 / 255.0;
    int32_t input_zero_point = 0;
-@@ -484,24 +480,12 @@ TEST(ElementWise, RsqrtInt16) {
+@@ -478,24 +474,12 @@ TEST(ElementWise, RsqrtInt16) {
        ElementsAreArray(ArrayFloatNear(expected_output, kQuantizedTolerance)));
  }
  
@@ -71,3 +78,6 @@ index 42f123f8534..601397d69ac 100644
  }
  
  TEST(ElementWise, Square) {
+-- 
+2.47.0.rc1.288.g06298d1525-goog
+

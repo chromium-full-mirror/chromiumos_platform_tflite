@@ -1,3 +1,47 @@
+From 1b6dba3630324c58e4b8ff791b5d4f3509a869e0 Mon Sep 17 00:00:00 2001
+From: TFLite Patcher <tflite@localhost>
+Date: Fri, 18 Oct 2024 18:15:55 +0800
+Subject: [PATCH] Backport fp16 DTS testing mode from upstream
+
+PATCH_NAME=dts-fp16-mode
+---
+ tensorflow/lite/kernels/BUILD                 |   2 +
+ tensorflow/lite/kernels/activations_test.cc   |  56 ++++---
+ tensorflow/lite/kernels/add_n_test.cc         |   7 +-
+ tensorflow/lite/kernels/add_test.cc           |  17 +-
+ tensorflow/lite/kernels/batch_matmul_test.cc  | 108 +++++++------
+ tensorflow/lite/kernels/cast_test.cc          |  28 ++--
+ tensorflow/lite/kernels/ceil_test.cc          |  26 ++--
+ tensorflow/lite/kernels/concatenation_test.cc |   9 +-
+ tensorflow/lite/kernels/conv_test.cc          |  32 ++--
+ .../lite/kernels/depth_to_space_test.cc       |   3 +-
+ tensorflow/lite/kernels/elementwise_test.cc   |   9 +-
+ tensorflow/lite/kernels/fill_test.cc          |  17 +-
+ tensorflow/lite/kernels/floor_test.cc         |  29 ++--
+ tensorflow/lite/kernels/gather_nd_test.cc     |  39 ++---
+ tensorflow/lite/kernels/l2norm_test.cc        |  21 +--
+ .../lite/kernels/maximum_minimum_test.cc      |   6 +-
+ tensorflow/lite/kernels/mul_test.cc           |   4 +-
+ tensorflow/lite/kernels/neg_test.cc           |   5 +-
+ .../lite/kernels/non_max_suppression_test.cc  |  15 +-
+ tensorflow/lite/kernels/one_hot_test.cc       |   4 +-
+ tensorflow/lite/kernels/pooling3d_test.cc     |  15 +-
+ tensorflow/lite/kernels/pooling_test.cc       |  35 +++--
+ tensorflow/lite/kernels/segment_sum_test.cc   |  11 +-
+ tensorflow/lite/kernels/select_test.cc        |   7 +-
+ .../lite/kernels/space_to_depth_test.cc       |   6 +-
+ .../lite/kernels/stablehlo_min_max_test.cc    |   6 +-
+ tensorflow/lite/kernels/sub_test.cc           |   5 +-
+ .../lite/kernels/test_delegate_providers.cc   |  11 ++
+ .../lite/kernels/test_delegate_providers.h    |   4 +
+ .../kernels/test_delegate_providers_test.cc   |   5 +-
+ tensorflow/lite/kernels/test_util.cc          | 113 +++++++++++++-
+ tensorflow/lite/kernels/test_util.h           |  29 +++-
+ tensorflow/lite/kernels/test_util_test.cc     | 146 ++++++++++++++++++
+ .../lite/kernels/transpose_conv_test.cc       |  69 +++++----
+ tensorflow/lite/kernels/zeros_like_test.cc    |   2 +-
+ 35 files changed, 637 insertions(+), 264 deletions(-)
+
 diff --git a/tensorflow/lite/kernels/BUILD b/tensorflow/lite/kernels/BUILD
 index e627daf1..e53761a4 100644
 --- a/tensorflow/lite/kernels/BUILD
@@ -1978,3 +2022,6 @@ index 64157a13..ab937ab8 100644
    EXPECT_THAT(m.GetTensorShape(m.output()), ElementsAreArray({2, 3}));
  }
  
+-- 
+2.47.0.rc1.288.g06298d1525-goog
+
