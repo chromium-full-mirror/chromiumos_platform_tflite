@@ -33,6 +33,11 @@ def shell_join(cmd: List[str]) -> str:
     return " ".join(shlex.quote(c) for c in cmd)
 
 
+def run(args: List[str]) -> int:
+    logging.debug("$ %s", shell_join(args))
+    return subprocess.check_call(args, cwd=get_workspace_root())
+
+
 def check_output(args: List[str]) -> str:
     logging.debug("$ %s", shell_join(args))
     return subprocess.check_output(args, text=True, cwd=get_workspace_root())
@@ -83,13 +88,33 @@ def get_url_and_patches() -> Tuple[str, List[str]]:
     return (url, patches)
 
 
+def download_archive(url: str, dest: Path):
+    logging.info("Download and extract %s into %s", url, dest)
+
+    # It's easier and faster to download and extract the tarball by running the
+    # shell command with a pipe. Having a Python implementation requires 10x
+    # more lines of code, is actually slower, and consumes more memory.
+    # Since it's a developer-facing script, we are okay to shell out here.
+    assert url.endswith(".tar.gz")
+    curl = shell_join(["curl", "-L", url])
+    tar = shell_join(["tar", "-xz", "--strip-components=1", "-C", str(dest)])
+    run(["sh", "-c", f"{curl} | {tar}"])
+
+
 def cmd_eject(args: argparse.Namespace):
     del args
 
+    # TODO(shik): Make the destination configurable.
+    dest = get_workspace_root() / "tensorflow"
+    if dest.exists():
+        # TODO(shik): Add a --force flag to override the existing one
+        logging.fatal("tensorflow/ is already ejected")
+    dest.mkdir()
+
     url, patches = get_url_and_patches()
-    logging.info("url = %s", url)
-    logging.info("patches = %s", patches)
-    # TODO(shik): Download and extract archive.
+    logging.debug("url = %s", url)
+    logging.debug("patches = %s", patches)
+    download_archive(url, dest)
     # TODO(shik): Apply patches.
 
 

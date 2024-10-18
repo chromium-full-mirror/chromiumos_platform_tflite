@@ -1,6 +1,9 @@
 # Compilation database for clangd
 /compile_commands.json
 
+# Ejected by patcher
+/tensorflow/
+
 # Artifacts from bazel
 /.cache
 /bazel-*
