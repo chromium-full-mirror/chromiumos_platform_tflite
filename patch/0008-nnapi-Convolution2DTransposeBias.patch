@@ -1,4 +1,4 @@
-From f8ab5c447bb7a77c2a0ecf748d43fe0ba9f5d6af Mon Sep 17 00:00:00 2001
+From 4aa6669b85746436929c19dee88e69e6f716746f Mon Sep 17 00:00:00 2001
 From: TFLite Patcher <tflite@localhost>
 Date: Fri, 18 Oct 2024 18:05:59 +0800
 Subject: [PATCH] Implement Convolution2DTransposeBias in NNAPI delegate

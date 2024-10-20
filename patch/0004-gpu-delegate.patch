@@ -1,4 +1,4 @@
-From aa11974612407311efb226f2cdf3aa9d23bccc0c Mon Sep 17 00:00:00 2001
+From 16cf01380c78fd469d0912e99ea10cdfd8ee84e8 Mon Sep 17 00:00:00 2001
 From: TFLite Patcher <tflite@localhost>
 Date: Fri, 18 Oct 2024 17:59:37 +0800
 Subject: [PATCH] Enable Gpu Delegate for ChromeOS.

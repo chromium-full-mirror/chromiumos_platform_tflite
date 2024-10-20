@@ -1,4 +1,4 @@
-From cda8d56f74ed2eadb390850123078b10a3cd384d Mon Sep 17 00:00:00 2001
+From bdc2d751eedc4995a3e8bec87e31c5dec1c5726b Mon Sep 17 00:00:00 2001
 From: TFLite Patcher <tflite@localhost>
 Date: Fri, 18 Oct 2024 17:47:24 +0800
 Subject: [PATCH] Remove unneeded repositories

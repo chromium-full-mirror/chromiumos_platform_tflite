@@ -1,4 +1,4 @@
-From 540afb47a0eee0d9bfcf066980ce35cac9ee9076 Mon Sep 17 00:00:00 2001
+From 3f4c88e118184bcda13b38ab78ba979a56c9702b Mon Sep 17 00:00:00 2001
 From: TFLite Patcher <tflite@localhost>
 Date: Fri, 18 Oct 2024 18:12:37 +0800
 Subject: [PATCH] Add bazel rule for absl/base:prefetch

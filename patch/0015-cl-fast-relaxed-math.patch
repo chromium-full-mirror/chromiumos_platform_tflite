@@ -1,4 +1,4 @@
-From 3a58d00d43cc577b8deb8730e7b6218599e3c810 Mon Sep 17 00:00:00 2001
+From 20114f119b4e1e8c825e094fc8d0365bfddcbaf2 Mon Sep 17 00:00:00 2001
 From: TFLite Patcher <tflite@localhost>
 Date: Fri, 18 Oct 2024 18:15:12 +0800
 Subject: [PATCH] Use fast relaxed math on CLVK

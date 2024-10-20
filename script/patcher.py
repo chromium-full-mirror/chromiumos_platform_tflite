@@ -8,13 +8,21 @@
 import argparse
 import functools
 import logging
+import os
 from pathlib import Path
 import re
 import shlex
 import subprocess
 import sys
-from typing import List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 import xml.etree.ElementTree
+
+
+# Set a fixed random date to ensure a stable commit hash. The hash is derived
+# from both the tree content and the commit object, which includes the author
+# and committer dates.
+# The commit object can be inspected with `git cat-file -p $COMMIT_HASH`.
+INIT_COMMIT_DATE = "2024-10-01T00:00:00+08:00"
 
 
 # TODO(shik): Extract common utilities into a module.
@@ -33,18 +41,32 @@ def shell_join(cmd: List[str]) -> str:
     return " ".join(shlex.quote(c) for c in cmd)
 
 
-def run(args: List[str], *, cwd: Optional[Path] = None) -> int:
+def run(
+    args: List[str],
+    *,
+    cwd: Optional[Path] = None,
+    env: Optional[Dict[str, str]] = None,
+) -> int:
     logging.debug("$ %s", shell_join(args))
     if cwd is None:
         cwd = get_workspace_root()
-    return subprocess.check_call(args, cwd=cwd)
+    if env is not None:
+        env = {**os.environ, **env}
+    return subprocess.check_call(args, cwd=cwd, env=env)
 
 
-def check_output(args: List[str], *, cwd: Optional[Path] = None) -> str:
+def check_output(
+    args: List[str],
+    *,
+    cwd: Optional[Path] = None,
+    env: Optional[Dict[str, str]] = None,
+) -> str:
     logging.debug("$ %s", shell_join(args))
     if cwd is None:
         cwd = get_workspace_root()
-    return subprocess.check_output(args, text=True, cwd=cwd)
+    if env is not None:
+        env = {**os.environ, **env}
+    return subprocess.check_output(args, text=True, cwd=cwd, env=env)
 
 
 def xml_get_value(el: xml.etree.ElementTree.Element, key="value") -> str:
@@ -121,6 +143,11 @@ def init_git_repo(repo: Path):
             "Initial commit from ejected repo",
         ],
         cwd=repo,
+        env={
+            # https://git-scm.com/docs/git-commit/2.24.0#_date_formats
+            "GIT_COMMITTER_DATE": INIT_COMMIT_DATE,
+            "GIT_AUTHOR_DATE": INIT_COMMIT_DATE,
+        },
     )
 
 
@@ -148,6 +175,7 @@ def apply_patches(repo: Path, patches: List[str]):
                 "git",
                 "am",
                 "--whitespace=nowarn",  # Silent warning from upstream code
+                "--committer-date-is-author-date",
                 str(patch_path),
             ],
             cwd=repo,

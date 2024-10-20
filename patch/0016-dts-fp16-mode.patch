@@ -1,4 +1,4 @@
-From 1b6dba3630324c58e4b8ff791b5d4f3509a869e0 Mon Sep 17 00:00:00 2001
+From d9b2ca61b9a5a0afd02b48a90891a9be25f6860d Mon Sep 17 00:00:00 2001
 From: TFLite Patcher <tflite@localhost>
 Date: Fri, 18 Oct 2024 18:15:55 +0800
 Subject: [PATCH] Backport fp16 DTS testing mode from upstream

@@ -1,4 +1,4 @@
-From bdf22b505b912f5aa10421e46ee0ff9b75b92ac2 Mon Sep 17 00:00:00 2001
+From 2609a35a4a1a4e71c8c5702bed5be28ffc9c7b56 Mon Sep 17 00:00:00 2001
 From: TFLite Patcher <tflite@localhost>
 Date: Fri, 18 Oct 2024 17:58:05 +0800
 Subject: [PATCH] Force enable NnApiDelegate for ChromeOS.

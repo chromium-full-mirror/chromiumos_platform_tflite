@@ -1,4 +1,4 @@
-From 94fbe6f15c5ea1519678e4cbbef4c36abeb8d620 Mon Sep 17 00:00:00 2001
+From 678798b2c0a7b17e85470cc4d19d759150bded80 Mon Sep 17 00:00:00 2001
 From: Yi Chou <yich@google.com>
 Date: Fri, 23 Aug 2024 13:13:34 +0800
 Subject: [PATCH] Add cros-mtk-pre-compile custom op

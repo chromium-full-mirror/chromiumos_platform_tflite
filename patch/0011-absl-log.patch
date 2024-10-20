@@ -1,4 +1,4 @@
-From 18699d1c4d2999878c9e9d9dae5dd930ff055345 Mon Sep 17 00:00:00 2001
+From 5051a0d9a18c0708a2c109d7d331f19220c77928 Mon Sep 17 00:00:00 2001
 From: TFLite Patcher <tflite@localhost>
 Date: Fri, 18 Oct 2024 18:11:43 +0800
 Subject: [PATCH] Add system lib BUILD rules for absl/log

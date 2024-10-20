@@ -1,4 +1,4 @@
-From 4dfaaa3d0e5b00c3bd06bb640d7a2d365f457779 Mon Sep 17 00:00:00 2001
+From 89af599590f9793eabf575ab185dc8ea1f577e95 Mon Sep 17 00:00:00 2001
 From: Tommy Chiang <ototot@google.com>
 Date: Wed, 9 Oct 2024 00:49:13 -0700
 Subject: [PATCH] Fix inaccurate RsqrtInt16 test
