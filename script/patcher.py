@@ -14,6 +14,7 @@ import re
 import shlex
 import subprocess
 import sys
+import tempfile
 from typing import Dict, List, Optional, Tuple
 import xml.etree.ElementTree
 
@@ -67,6 +68,16 @@ def check_output(
     if env is not None:
         env = {**os.environ, **env}
     return subprocess.check_output(args, text=True, cwd=cwd, env=env)
+
+
+def format_path(path: Path) -> str:
+    cwd = Path.cwd()
+    if path.is_relative_to(cwd):
+        path = path.relative_to(cwd)
+    s = str(path)
+    if path.is_dir():
+        s += "/"
+    return s
 
 
 def xml_get_value(el: xml.etree.ElementTree.Element, key="value") -> str:
@@ -201,10 +212,86 @@ def cmd_eject(args: argparse.Namespace):
     apply_patches(dest, patches)
 
 
+def get_patch_commits(repo: Path) -> List[str]:
+    initial_commit = check_output(
+        ["git", "rev-list", "--max-parents=0", "HEAD"], cwd=repo
+    ).strip()
+
+    commits = check_output(
+        ["git", "rev-list", "--reverse", f"{initial_commit}..HEAD"], cwd=repo
+    ).splitlines()
+
+    return commits
+
+
+def get_patch_name(repo: Path, commit: str) -> Optional[str]:
+    msg = check_output(["git", "show", "-s", "--format=%B", commit], cwd=repo)
+
+    names = re.findall(r"^PATCH_NAME=([-\w]+)", msg, re.MULTILINE)
+    if len(names) >= 2:
+        logging.fatal("Found more than one PATCH_NAME tag")
+
+    return names[0] if names else None
+
+
+def generate_patch(repo: Path, commit: str, index: int, out_dir: Path) -> Path:
+    patch = Path(
+        check_output(
+            [
+                "git",
+                "format-patch",
+                "-1",
+                f"--start-number={index}",
+                "--no-numbered",
+                f"--output-directory={out_dir}",
+                commit,
+            ],
+            cwd=repo,
+        ).strip()
+    )
+    assert patch.is_file()
+
+    # Check if there is a preferred name specified in commit message.
+    patch_name = get_patch_name(repo, commit)
+    if patch_name is not None:
+        full_name = f"{index:04d}-{patch_name}.patch"
+        patch = patch.rename(out_dir / full_name)
+
+    return patch
+
+
 def cmd_seal(args: argparse.Namespace):
     del args
-    logging.info("Not implemented yet")
-    # TODO(shik): Implement seal.
+
+    repo = get_workspace_root() / "tensorflow"
+    if not (repo / ".git").exists():
+        logging.fatal("%s is not a git repository", repo)
+        sys.exit(1)
+
+    commits = get_patch_commits(repo)
+
+    with tempfile.TemporaryDirectory(prefix="tflite_") as tmp_dir:
+        logging.debug("tmp_dir = %s", tmp_dir)
+        tmp_dir = Path(tmp_dir)
+
+        for idx, commit in enumerate(commits, start=1):
+            patch = generate_patch(repo, commit, idx, tmp_dir)
+            logging.debug("Generated patch %s", patch)
+
+        # Update the patches.
+        patch_dir = get_workspace_root() / "patch"
+        assert patch_dir.exists()
+
+        for patch in patch_dir.glob("*.patch"):
+            patch.unlink()
+
+        for patch in tmp_dir.glob("*.patch"):
+            patch.rename(patch_dir / patch.name)
+
+    logging.info("Patches have been generated in %s", format_path(patch_dir))
+
+    # TODO(shik): Update WORKSPACE.bazel automatically as well.
+    logging.info("Please update WORKSPACE.bazel if needed")
 
 
 def setup_argument_parser() -> argparse.ArgumentParser:
