@@ -44,6 +44,7 @@ maybe(
         "//patch:0021-dts-stridedsliceoptests.patch",
         "//patch:0022-dts-rsqrt-nan.patch",
         "//patch:0023-mtk-preemption.patch",
+        "//patch:0024-accel-config-optimization.patch",
     ],
     sha256 = "9cc4d5773b8ee910079baaecb4086d0c28939f024dd74b33fc5e64779b6533dc",
     strip_prefix = "tensorflow-{}".format(TENSORFLOW_VERSION),
