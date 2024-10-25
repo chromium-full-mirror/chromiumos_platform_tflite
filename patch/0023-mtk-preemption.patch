@@ -1,9 +1,10 @@
-From c1687f6f24237e29ce7ef31da8dfedf9fc061875 Mon Sep 17 00:00:00 2001
+From 954899ffda26a3ca8f5dc6a61d9f57891f43961f Mon Sep 17 00:00:00 2001
 From: Tommy Chiang <ototot@google.com>
 Date: Tue, 22 Oct 2024 01:47:18 +0000
 Subject: [PATCH] Add QoS/Preemption options to MtkNeuronSettings
 
 PiperOrigin-RevId: 687135593
+PATCH_NAME=mtk-preemption
 ---
  .../configuration/configuration.proto         | 11 +++++
  .../configuration/configuration_generated.h   | 46 ++++++++++++++++---
