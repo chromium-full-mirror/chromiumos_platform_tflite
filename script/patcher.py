@@ -244,6 +244,7 @@ def generate_patch(repo: Path, commit: str, index: int, out_dir: Path) -> Path:
                 f"--start-number={index}",
                 "--no-numbered",
                 f"--output-directory={out_dir}",
+                "--no-signature",
                 commit,
             ],
             cwd=repo,

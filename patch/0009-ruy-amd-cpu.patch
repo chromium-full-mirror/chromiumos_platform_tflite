@@ -44,6 +44,3 @@ index 00000000..290947ed
 + 
 + 		cpuinfo_x86_detect_cache(
 + 			max_base_index, max_extended_index, amd_topology_extensions, vendor, &model_info,
--- 
-2.47.0.rc1.288.g06298d1525-goog
-

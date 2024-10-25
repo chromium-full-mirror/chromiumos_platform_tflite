@@ -2022,6 +2022,3 @@ index 64157a13..ab937ab8 100644
    EXPECT_THAT(m.GetTensorShape(m.output()), ElementsAreArray({2, 3}));
  }
  
--- 
-2.47.0.rc1.288.g06298d1525-goog
-

@@ -20,6 +20,3 @@ index a603bb69..ce169871 100644
          "//tensorflow/lite/profiling:root_profiler",
          "//tensorflow/lite/schema:schema_fbs",
          "@flatbuffers//:runtime_cc",
--- 
-2.47.0.rc1.288.g06298d1525-goog
-

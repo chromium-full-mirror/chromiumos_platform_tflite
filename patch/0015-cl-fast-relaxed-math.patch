@@ -45,6 +45,3 @@ index 1cc1738d..8fd94938 100644
    RETURN_IF_ERROR(creation_context.cache->GetOrCreateCLKernel(
        operation_->code_, "main_function", operation_->compiler_options_,
        *creation_context.context, *creation_context.device, &kernel_,
--- 
-2.47.0.rc1.288.g06298d1525-goog
-

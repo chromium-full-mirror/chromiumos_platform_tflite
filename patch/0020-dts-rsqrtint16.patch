@@ -221,6 +221,3 @@ index 57b39de3..97e42fb9 100644
  }
  
  TEST(ElementWise, RsqrtNanInt16) {
--- 
-2.47.0.rc1.288.g06298d1525-goog
-

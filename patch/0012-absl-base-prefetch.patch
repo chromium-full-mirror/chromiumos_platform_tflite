@@ -28,6 +28,3 @@ index d6bf8748..3addca5d 100644
  cc_library(
      name = "strerror",
      linkopts = ["-labsl_strerror"],
--- 
-2.47.0.rc1.288.g06298d1525-goog
-

@@ -28,6 +28,3 @@ index 64474a13..7a157e91 100644
  
    nnapi.nnapi_exists = libneuralnetworks != nullptr;
  
--- 
-2.47.0.rc1.288.g06298d1525-goog
-

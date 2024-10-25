@@ -32,6 +32,3 @@ index bd22f5d1..9c5b0fe0 100644
    RegisterSelectedOps(resolver_.get());
    InterpreterBuilder(*model_, *resolver_)(&interpreter_);
    if (!interpreter_) {
--- 
-2.47.0.rc1.288.g06298d1525-goog
-

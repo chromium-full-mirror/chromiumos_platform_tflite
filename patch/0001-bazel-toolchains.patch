@@ -28,6 +28,3 @@ index 0fdb0342..d617f7d0 100644
      # Apple rules for Bazel. https://github.com/bazelbuild/rules_apple.
      # Note: We add this to fix Kokoro builds.
      # The rules below call into `rules_proto` but the hash has changed and
--- 
-2.47.0.rc1.288.g06298d1525-goog
-

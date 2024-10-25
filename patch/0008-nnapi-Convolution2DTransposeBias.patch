@@ -80,6 +80,3 @@ index a9a5cd1a..b6c60ff7 100644
        } else {
          TF_LITE_ENSURE_STATUS(
              builder.AddTensorInput(input_index, hybrid_op, input_tensor_flags));
--- 
-2.47.0.rc1.288.g06298d1525-goog
-

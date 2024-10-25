@@ -48,6 +48,3 @@ index f3fe76d3..c45a0e4e 100644
  }
  
  bool InitKernelTest(int* argc, char** argv) {
--- 
-2.47.0.rc1.288.g06298d1525-goog
-

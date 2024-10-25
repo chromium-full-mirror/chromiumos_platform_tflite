@@ -78,6 +78,3 @@ index 97e42fb9..aa0965d2 100644
  }
  
  TEST(ElementWise, Square) {
--- 
-2.47.0.rc1.288.g06298d1525-goog
-
