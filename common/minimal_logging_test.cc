@@ -18,7 +18,7 @@ using ::testing::EndsWith;
 using ::testing::HasSubstr;
 
 TEST_F(LogTest, Severity) {
-  // No `--v=` is specifed when running this test.
+  // No `--v=` is specified when running this test.
   TFLITE_LOG(TFLITE_LOG_VERBOSE, "This should not output anything");
   EXPECT_EQ(ConsumeOutput(), "");
 
@@ -35,7 +35,7 @@ TEST_F(LogTest, Severity) {
               AllOf(HasSubstr("ERROR"), HasSubstr("cat"), EndsWith("\n")));
 }
 
-TEST_F(LogTest, MacroVaraint) {
+TEST_F(LogTest, MacroVariant) {
   auto test_once = [&](const auto& log_once_fn) {
     log_once_fn("dog");
     EXPECT_THAT(ConsumeOutput(), HasSubstr("dog"));

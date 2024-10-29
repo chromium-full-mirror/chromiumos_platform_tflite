@@ -61,7 +61,7 @@ TEST(AHardwareBuffer, BasicOps) {
   ASSERT_EQ(AHardwareBuffer_unlock(buffer, /*fence=*/nullptr), 0);
   addr = nullptr;
 
-  // Decrease the refernce count to zero so lock() should fail.
+  // Decrease the reference count to zero so lock() should fail.
   AHardwareBuffer_release(buffer);
   ASSERT_NE(AHardwareBuffer_lock(buffer, kUsage, /*fence=*/-1, /*rect=*/nullptr,
                                  &addr),
