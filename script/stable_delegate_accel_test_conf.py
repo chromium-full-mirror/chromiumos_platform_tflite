@@ -39,6 +39,7 @@ def list_test(
 def run_tests(
     stable_delegate_test_suite: Path,
     stable_delegate_settings_file: Path,
+    allow_fp16_precision_for_fp32: bool,
     gtest_filter: str,
 ) -> Tuple[Dict[str, List[Tuple[str, bool]]], List[str]]:
     test_results: Dict[str, List[Tuple[str, bool]]] = {}
@@ -50,6 +51,8 @@ def run_tests(
             str(stable_delegate_test_suite.absolute()),
             "--stable_delegate_settings_file=%s"
             % (stable_delegate_settings_file.absolute(),),
+            "--allow_fp16_precision_for_fp32=%s"
+            % str(allow_fp16_precision_for_fp32).lower(),
             "--gtest_filter=%s" % test,
         ]
         result = subprocess.run(
@@ -88,6 +91,7 @@ def run_tests(
 def generate_accel_test_conf(
     stable_delegate_test_suite: Path,
     stable_delegate_settings_file: Path,
+    allow_fp16_precision_for_fp32: bool,
     output_file: TextIO,
     crash_output_file: TextIO,
     gtest_filter: str,
@@ -96,7 +100,10 @@ def generate_accel_test_conf(
     assert stable_delegate_settings_file.is_file()
 
     test_results, crashed_tests = run_tests(
-        stable_delegate_test_suite, stable_delegate_settings_file, gtest_filter
+        stable_delegate_test_suite,
+        stable_delegate_settings_file,
+        allow_fp16_precision_for_fp32,
+        gtest_filter,
     )
 
     passed_subtests: List[str] = []
@@ -154,6 +161,19 @@ def setup_argument_parser() -> argparse.ArgumentParser:
         help="The path to the delegate settings JSON file.",
     )
     parser.add_argument(
+        "--allow_fp16_precision_for_fp32",
+        dest="allow_fp16_precision_for_fp32",
+        action="store_true",
+        help="Allow FP16 precision for FP32 operators in DTS.",
+    )
+    parser.add_argument(
+        "--no-allow_fp16_precision_for_fp32",
+        dest="allow_fp16_precision_for_fp32",
+        action="store_false",
+        help="Don't allow FP16 precision for FP32 operators in DTS.",
+    )
+    parser.set_defaults(allow_fp16_precision_for_fp32=True)
+    parser.add_argument(
         "--output",
         default="accel_test.conf",
         type=argparse.FileType("w"),
@@ -196,6 +216,7 @@ def main(argv: Optional[List[str]] = None) -> Optional[int]:
     generate_accel_test_conf(
         args.stable_delegate_test_suite,
         args.stable_delegate_settings_file,
+        args.allow_fp16_precision_for_fp32,
         args.output,
         args.crash_output,
         args.gtest_filter,
