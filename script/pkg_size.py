@@ -88,7 +88,7 @@ def get_package_size(board: str, package: str) -> PackageSize:
         # TODO(shik): Ignore files listed in install_mask.py instead of
         # hard-coding common masks here. Reference:
         # https://www.chromium.org/chromium-os/developer-library/guides/portage/ebuild-faq/#how-do-i-find-out-the-on-disk-package-size
-        if re.match(r"/usr/(include|lib/debug)/", file):
+        if re.search(r"^/usr/(include|lib/debug)/|\.(a|c|cc|h|hpp)$", file):
             continue
 
         path = sysroot / file.lstrip("/")
