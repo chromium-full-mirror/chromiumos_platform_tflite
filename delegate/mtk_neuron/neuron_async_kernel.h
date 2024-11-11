@@ -15,7 +15,6 @@
 #include "tensorflow/lite/async/backend_async_kernel_interface.h"
 #include "tensorflow/lite/core/async/interop/c/constants.h"
 #include "tensorflow/lite/delegates/utils/async_type_helpers.h"
-#include "tensorflow/lite/delegates/utils/ret_macros.h"
 
 namespace tflite::neuron {
 
