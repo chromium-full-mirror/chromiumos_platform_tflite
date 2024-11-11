@@ -12,6 +12,7 @@ import os
 from pathlib import Path
 import re
 import shlex
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -194,13 +195,17 @@ def apply_patches(repo: Path, patches: List[str]):
 
 
 def cmd_eject(args: argparse.Namespace):
+    force: bool = args.force
     del args
 
     # TODO(shik): Make the destination configurable.
     dest = get_workspace_root() / "tensorflow"
     if dest.exists():
-        # TODO(shik): Add a --force flag to override the existing one
-        logging.fatal("tensorflow/ is already ejected")
+        if force:
+            logging.info("Removing existing %s", dest)
+            shutil.rmtree(dest)
+        else:
+            logging.fatal("tensorflow/ is already ejected")
     dest.mkdir()
 
     url, patches = get_url_and_patches()
@@ -310,6 +315,11 @@ def setup_argument_parser() -> argparse.ArgumentParser:
     eject_parser = subparsers.add_parser(
         "eject",
         help="Eject tensorflow to a local git repo with patches as commits",
+    )
+    eject_parser.add_argument(
+        "--force",
+        action="store_true",
+        help="force eject even if tensorflow/ already exists",
     )
     eject_parser.set_defaults(func=cmd_eject)
 
