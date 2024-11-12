@@ -28,7 +28,8 @@ TfLiteStatus MaxPool2D::CreateNode() {
                    (size_t)max_pool_params->filter_width};
 
   ov::op::PadType auto_pad;
-  TfLiteStatus tf_status = CalculatePadding(max_pool_params->padding, auto_pad);
+  if (CalculatePadding(max_pool_params->padding, auto_pad) != kTfLiteOk)
+    return kTfLiteError;
 
   std::shared_ptr<ov::Node> transposed_input_node;
   if (Transpose(NHWC_NCHW, input_node, transposed_input_node) != kTfLiteOk)
