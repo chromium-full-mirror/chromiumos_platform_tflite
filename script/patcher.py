@@ -292,7 +292,7 @@ def cmd_seal(args: argparse.Namespace):
             patch.unlink()
 
         for patch in tmp_dir.glob("*.patch"):
-            patch.rename(patch_dir / patch.name)
+            shutil.move(patch, patch_dir / patch.name)
 
     logging.info("Patches have been generated in %s", format_path(patch_dir))
 
