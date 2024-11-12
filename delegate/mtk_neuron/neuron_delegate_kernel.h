@@ -181,16 +181,15 @@ class NeuronStableDelegateKernel
   NeuronStableDelegateKernel();
   explicit NeuronStableDelegateKernel(const NeuronApi* neuronapi,
                                       const NeuronDelegateOptions& options)
-      : neuronapi_(neuronapi),
+      : async_kernel_(std::make_unique<DelegateAsyncKernel>(this)),
+        neuronapi_(neuronapi),
         options_(options),
         nn_model_(nullptr, NNFreeModel(neuronapi_)),
-        nn_compilation_(nullptr, NNFreeCompilation(neuronapi_))
+        nn_compilation_(nullptr, NNFreeCompilation(neuronapi_)),
 #ifdef NEURON_REUSABLE_EXECUTION
-        ,
         nn_execution_(nullptr, NNFreeExecution(neuronapi_))
 #endif
-        ,
-        async_kernel_(std::make_unique<DelegateAsyncKernel>(this)) {
+  {
   }
 
   virtual ~NeuronStableDelegateKernel() = default;

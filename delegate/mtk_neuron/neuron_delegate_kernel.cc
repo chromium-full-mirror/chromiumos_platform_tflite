@@ -1207,7 +1207,7 @@ TfLiteStatus NeuronStableDelegateKernel::Prepare(TfLiteOpaqueContext* context,
       context, neuronapi_->Neuron_getDeviceCount(&num_devices),
       "getting device count");
 
-  NeuronDevice* device[num_devices];
+  std::vector<NeuronDevice*> device(num_devices);
 
   int device_count = 0;
   if (strlen(options_.accelerator_name.c_str()) != 0) {
@@ -1230,7 +1230,7 @@ TfLiteStatus NeuronStableDelegateKernel::Prepare(TfLiteOpaqueContext* context,
     RETURN_TFLITE_ERROR_IF_NEURON_ERROR(
         context,
         neuronapi_->NeuronCompilation_createForDevices(
-            nn_model_.get(), device, device_count, &compilation),
+            nn_model_.get(), device.data(), device_count, &compilation),
         "creating Neuron compilation user specified device");
   } else {
     RETURN_TFLITE_ERROR_IF_NEURON_ERROR(
@@ -1601,19 +1601,19 @@ TfLiteStatus NeuronStableDelegateKernel::Eval(TfLiteOpaqueContext* context,
   if (options_.inference_deadline > 0 &&
       neuronapi_->NeuronExecution_setDeadline != nullptr) {
     RETURN_TFLITE_ERROR_IF_NEURON_ERROR(
-      context,
-      neuronapi_->NeuronExecution_setDeadline(execution,
-                                              options_.inference_deadline),
-      "set deadline");
+        context,
+        neuronapi_->NeuronExecution_setDeadline(execution,
+                                                options_.inference_deadline),
+        "set deadline");
   }
 
   if (options_.inference_abort_time > 0 &&
       neuronapi_->NeuronExecution_setAbortTime != nullptr) {
     RETURN_TFLITE_ERROR_IF_NEURON_ERROR(
-      context,
-      neuronapi_->NeuronExecution_setAbortTime(execution,
-                                               options_.inference_abort_time),
-      "set abort time");
+        context,
+        neuronapi_->NeuronExecution_setAbortTime(execution,
+                                                 options_.inference_abort_time),
+        "set abort time");
   }
 
   RETURN_TFLITE_ERROR_IF_NEURON_ERROR(
@@ -2262,7 +2262,7 @@ TfLiteStatus NeuronStableDelegateKernel::GetSupportedOperations(
         context, neuronapi_->Neuron_getDeviceCount(&num_devices),
         "getting device count");
 
-    NeuronDevice* device[num_devices];
+    std::vector<NeuronDevice*> device(num_devices);
     int device_count = 0;
     if (strlen(options_.accelerator_name.c_str()) != 0) {
       char* device_split_name = std::strtok(
@@ -2285,7 +2285,8 @@ TfLiteStatus NeuronStableDelegateKernel::GetSupportedOperations(
       RETURN_TFLITE_ERROR_IF_NEURON_ERROR(
           context,
           neuronapi_->NeuronModel_getSupportedOperationsForDevices(
-              nn_model_.get(), device, device_count, support_flags.get()),
+              nn_model_.get(), device.data(), device_count,
+              support_flags.get()),
           "get supported operations for devices");
 
     } else {
