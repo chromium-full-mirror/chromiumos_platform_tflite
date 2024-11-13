@@ -7,6 +7,7 @@
 
 import argparse
 import functools
+import json
 import logging
 import os
 from pathlib import Path
@@ -266,6 +267,25 @@ def generate_patch(repo: Path, commit: str, index: int, out_dir: Path) -> Path:
     return patch
 
 
+def update_workspace():
+    patch_dir = get_workspace_root() / "patch"
+    assert patch_dir.is_dir()
+    patches = sorted(f"//patch:{p.name}" for p in patch_dir.glob("*.patch"))
+
+    workspace = get_workspace_root() / "WORKSPACE.bazel"
+    new_bzl = re.sub(
+        r'(name = "org_tensorflow".*patches\s*=\s*)(\[.*?\])',
+        lambda m: m.group(1) + json.dumps(patches),
+        workspace.read_text(),
+        count=1,
+        flags=re.MULTILINE | re.DOTALL,
+    )
+    workspace.write_text(new_bzl)
+
+    run(["cros", "format", str(workspace)])
+    logging.info("Updated %s", format_path(workspace))
+
+
 def cmd_seal(args: argparse.Namespace):
     del args
 
@@ -286,7 +306,7 @@ def cmd_seal(args: argparse.Namespace):
 
         # Update the patches.
         patch_dir = get_workspace_root() / "patch"
-        assert patch_dir.exists()
+        assert patch_dir.is_dir()
 
         for patch in patch_dir.glob("*.patch"):
             patch.unlink()
@@ -295,9 +315,7 @@ def cmd_seal(args: argparse.Namespace):
             shutil.move(patch, patch_dir / patch.name)
 
     logging.info("Patches have been generated in %s", format_path(patch_dir))
-
-    # TODO(shik): Update WORKSPACE.bazel automatically as well.
-    logging.info("Please update WORKSPACE.bazel if needed")
+    update_workspace()
 
 
 def setup_argument_parser() -> argparse.ArgumentParser:
