@@ -118,7 +118,7 @@ TEST_F(OpenVINODelegateCoreTest, CreateModel_InvalidContext) {
           EXPECT_EQ(kTfLiteError,
                     ov_delegate_core_test->CreateModel(opaque_context, params,
                                                        &delegate_options));
-          void* void_fake_ptr;
+          void* void_fake_ptr = nullptr;
           return void_fake_ptr;
         });
 

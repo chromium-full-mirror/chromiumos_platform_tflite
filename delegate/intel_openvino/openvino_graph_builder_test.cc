@@ -127,7 +127,7 @@ TEST_F(OpenVINOGraphBuilderTest, CreateConstNode_Invalid) {
         TfLiteOpaqueContextGetExecutionPlan(opaque_context, &execution_plan));
     for (int i = 0; i < execution_plan->size; ++i) {
       TfLiteOpaqueNode *node = nullptr;
-      TfLiteRegistrationExternal *registration = nullptr;
+      TfLiteOperator *registration = nullptr;
       TfLiteOpaqueContextGetNodeAndRegistration(opaque_context, i, &node,
                                                 &registration);
       auto openvino_graph_builder_test = std::make_unique<OpenVINOGraphBuilder>(
@@ -137,10 +137,10 @@ TEST_F(OpenVINOGraphBuilderTest, CreateConstNode_Invalid) {
                                   opaque_context, 0));
     }
 
-    TfLiteRegistrationExternal *registration_external =
-        TfLiteRegistrationExternalCreate(kTfLiteBuiltinDelegate,
-                                         /*name*/ nullptr,
-                                         /*version=*/1);
+    TfLiteOperator *registration_external =
+        TfLiteOperatorCreate(kTfLiteBuiltinDelegate,
+                             /*name*/ nullptr,
+                             /*version=*/1);
     return TfLiteOpaqueContextReplaceNodeSubsetsWithDelegateKernels(
         opaque_context, registration_external, execution_plan,
         opaque_delegate_);
@@ -179,7 +179,7 @@ TEST_F(OpenVINOGraphBuilderTest, CreateConstNode_InvalidIndex) {
         TfLiteOpaqueContextGetExecutionPlan(opaque_context, &execution_plan));
     for (int i = 0; i < execution_plan->size; ++i) {
       TfLiteOpaqueNode *node = nullptr;
-      TfLiteRegistrationExternal *registration = nullptr;
+      TfLiteOperator *registration = nullptr;
       TfLiteOpaqueContextGetNodeAndRegistration(opaque_context, i, &node,
                                                 &registration);
       auto openvino_graph_builder_test = std::make_unique<OpenVINOGraphBuilder>(
@@ -189,10 +189,10 @@ TEST_F(OpenVINOGraphBuilderTest, CreateConstNode_InvalidIndex) {
                                   opaque_context, 1));
     }
 
-    TfLiteRegistrationExternal *registration_external =
-        TfLiteRegistrationExternalCreate(kTfLiteBuiltinDelegate,
-                                         /*name*/ nullptr,
-                                         /*version=*/1);
+    TfLiteOperator *registration_external =
+        TfLiteOperatorCreate(kTfLiteBuiltinDelegate,
+                             /*name*/ nullptr,
+                             /*version=*/1);
     return TfLiteOpaqueContextReplaceNodeSubsetsWithDelegateKernels(
         opaque_context, registration_external, execution_plan,
         opaque_delegate_);
@@ -210,20 +210,23 @@ TEST_F(OpenVINOGraphBuilderTest, CreateConstNode_InvalidIndex) {
 
 TEST_F(OpenVINOGraphBuilderTest, UpdateResultNodes_Valid) {
   TfLiteOpaqueDelegateBuilder opaque_delegate_builder{};
-  bool delegate_prepared = false;
+  struct UserData {
+    bool delegate_prepared_ = false;
+    ov::CompiledModel compiled_model_;
+  } user_data;
 
-  opaque_delegate_builder.data = &delegate_prepared;
+  opaque_delegate_builder.data = &user_data;
   opaque_delegate_builder.Prepare = [](TfLiteOpaqueContext *opaque_context,
                                        TfLiteOpaqueDelegate *opaque_delegate_,
                                        void *data) -> TfLiteStatus {
-    auto delegate_prepared = static_cast<bool *>(data);
-    *delegate_prepared = true;
-    auto reg_ex = TfLiteRegistrationExternalCreate(
-        kTfLiteBuiltinDelegate, "Test driver Openvino delegate", /*version=*/1);
-    TfLiteRegistrationExternalSetInit(
+    static_cast<UserData *>(data)->delegate_prepared_ = true;
+    auto reg_ex = TfLiteOperatorCreateWithData(kTfLiteBuiltinDelegate,
+                                               "Test driver Openvino delegate",
+                                               /*version=*/1, data);
+    TfLiteOperatorSetInitWithData(
         reg_ex,
-        [](TfLiteOpaqueContext *opaque_context, const char *buffer,
-           size_t length) -> void * {
+        [](void *user_data, TfLiteOpaqueContext *opaque_context,
+           const char *buffer, size_t length) -> void * {
           auto openvino_graph_builder_test =
               std::make_unique<OpenVINOGraphBuilder>(
                   std::make_unique<NodeManager>());
@@ -243,7 +246,7 @@ TEST_F(OpenVINOGraphBuilderTest, UpdateResultNodes_Valid) {
           for (int i = 0; i < params->nodes_to_replace->size; ++i) {
             const int delegate_node_id = params->nodes_to_replace->data[i];
             TfLiteOpaqueNode *node = nullptr;
-            TfLiteRegistrationExternal *registration = nullptr;
+            TfLiteOperator *registration = nullptr;
             TfLiteOpaqueContextGetNodeAndRegistration(
                 opaque_context, delegate_node_id, &node, &registration);
 
@@ -290,22 +293,24 @@ TEST_F(OpenVINOGraphBuilderTest, UpdateResultNodes_Valid) {
               openvino_graph_builder_test->getInputParams());
 
           ov::Core ov_core_(kPluginsXmlPath);
-          ov::CompiledModel compiled_model_;
           std::string deviceStr = "CPU";
           ov::InferRequest infer_request_;
+          auto &compiled_model_ =
+              static_cast<UserData *>(user_data)->compiled_model_;
           compiled_model_ = ov_core_.compile_model(model, deviceStr);
 
           infer_request_ = compiled_model_.create_infer_request();
           return &compiled_model_;
         });
 
-    TfLiteRegistrationExternalSetInvoke(
-        reg_ex,
-        [](TfLiteOpaqueContext *context, TfLiteOpaqueNode *opaque_node)
-            -> TfLiteStatus { return kTfLiteOk; });
+    TfLiteOperatorSetInvoke(reg_ex,
+                            [](TfLiteOpaqueContext *context,
+                               TfLiteOpaqueNode *opaque_node) -> TfLiteStatus {
+                              return kTfLiteOk;
+                            });
 
-    TfLiteRegistrationExternalSetFree(
-        reg_ex, [](TfLiteOpaqueContext *context, void *data) {});
+    TfLiteOperatorSetFree(reg_ex,
+                          [](TfLiteOpaqueContext *context, void *data) {});
 
     TfLiteIntArray *execution_plan;
     TF_LITE_ENSURE_STATUS(
@@ -327,7 +332,7 @@ TEST_F(OpenVINOGraphBuilderTest, UpdateResultNodes_Valid) {
   TfLiteInterpreter *interpreter = TfLiteInterpreterCreate(model, options);
   ASSERT_NE(interpreter, nullptr);
 
-  EXPECT_TRUE(delegate_prepared);
+  EXPECT_TRUE(user_data.delegate_prepared_);
 
   TfLiteInterpreterOptionsDelete(options);
   TfLiteInterpreterDelete(interpreter);
@@ -344,20 +349,23 @@ TEST_F(OpenVINOGraphBuilderTest, UpdateResultNodes_InvalidContext) {
 
 TEST_F(OpenVINOGraphBuilderTest, UpdateResultNodes_InvalidIndex) {
   TfLiteOpaqueDelegateBuilder opaque_delegate_builder{};
-  bool delegate_prepared = false;
+  struct UserData {
+    bool delegate_prepared_ = false;
+    ov::CompiledModel compiled_model_;
+  } user_data;
 
-  opaque_delegate_builder.data = &delegate_prepared;
+  opaque_delegate_builder.data = &user_data;
   opaque_delegate_builder.Prepare = [](TfLiteOpaqueContext *opaque_context,
                                        TfLiteOpaqueDelegate *opaque_delegate_,
                                        void *data) -> TfLiteStatus {
-    auto delegate_prepared = static_cast<bool *>(data);
-    *delegate_prepared = true;
-    auto reg_ex = TfLiteRegistrationExternalCreate(
-        kTfLiteBuiltinDelegate, "Test driver Openvino delegate", /*version=*/1);
-    TfLiteRegistrationExternalSetInit(
+    static_cast<UserData *>(data)->delegate_prepared_ = true;
+    auto reg_ex = TfLiteOperatorCreateWithData(kTfLiteBuiltinDelegate,
+                                               "Test driver Openvino delegate",
+                                               /*version=*/1, data);
+    TfLiteOperatorSetInitWithData(
         reg_ex,
-        [](TfLiteOpaqueContext *opaque_context, const char *buffer,
-           size_t length) -> void * {
+        [](void *user_data, TfLiteOpaqueContext *opaque_context,
+           const char *buffer, size_t length) -> void * {
           auto openvino_graph_builder_test =
               std::make_unique<OpenVINOGraphBuilder>(
                   std::make_unique<NodeManager>());
@@ -377,7 +385,7 @@ TEST_F(OpenVINOGraphBuilderTest, UpdateResultNodes_InvalidIndex) {
           for (int i = 0; i < params->nodes_to_replace->size; ++i) {
             const int delegate_node_id = params->nodes_to_replace->data[i];
             TfLiteOpaqueNode *node = nullptr;
-            TfLiteRegistrationExternal *registration = nullptr;
+            TfLiteOperator *registration = nullptr;
             TfLiteOpaqueContextGetNodeAndRegistration(
                 opaque_context, delegate_node_id, &node, &registration);
 
@@ -428,22 +436,24 @@ TEST_F(OpenVINOGraphBuilderTest, UpdateResultNodes_InvalidIndex) {
               openvino_graph_builder_test->getInputParams());
 
           ov::Core ov_core_(kPluginsXmlPath);
-          ov::CompiledModel compiled_model_;
           std::string deviceStr = "CPU";
           ov::InferRequest infer_request_;
+          auto &compiled_model_ =
+              static_cast<UserData *>(user_data)->compiled_model_;
           compiled_model_ = ov_core_.compile_model(model, deviceStr);
 
           infer_request_ = compiled_model_.create_infer_request();
           return &compiled_model_;
         });
 
-    TfLiteRegistrationExternalSetInvoke(
-        reg_ex,
-        [](TfLiteOpaqueContext *context, TfLiteOpaqueNode *opaque_node)
-            -> TfLiteStatus { return kTfLiteOk; });
+    TfLiteOperatorSetInvoke(reg_ex,
+                            [](TfLiteOpaqueContext *context,
+                               TfLiteOpaqueNode *opaque_node) -> TfLiteStatus {
+                              return kTfLiteOk;
+                            });
 
-    TfLiteRegistrationExternalSetFree(
-        reg_ex, [](TfLiteOpaqueContext *context, void *data) {});
+    TfLiteOperatorSetFree(reg_ex,
+                          [](TfLiteOpaqueContext *context, void *data) {});
 
     TfLiteIntArray *execution_plan;
     TF_LITE_ENSURE_STATUS(
@@ -465,7 +475,7 @@ TEST_F(OpenVINOGraphBuilderTest, UpdateResultNodes_InvalidIndex) {
   TfLiteInterpreter *interpreter = TfLiteInterpreterCreate(model, options);
   ASSERT_NE(interpreter, nullptr);
 
-  EXPECT_TRUE(delegate_prepared);
+  EXPECT_TRUE(user_data.delegate_prepared_);
 
   TfLiteInterpreterOptionsDelete(options);
   TfLiteInterpreterDelete(interpreter);
@@ -474,7 +484,7 @@ TEST_F(OpenVINOGraphBuilderTest, UpdateResultNodes_InvalidIndex) {
 }
 
 TEST_F(OpenVINOGraphBuilderTest, CreateOpClass_Valid) {
-  TfLiteRegistrationExternal registration;
+  TfLiteOperator registration;
   registration.version = 1;
   registration.builtin_code = kTfLiteBuiltinAdd;
   registration.node_index = 1;
@@ -498,20 +508,23 @@ TEST_F(OpenVINOGraphBuilderTest, CreateOpClass_InvalidRegistration) {
 
 TEST_F(OpenVINOGraphBuilderTest, CreateNodeFromTfLiteOp_Valid) {
   TfLiteOpaqueDelegateBuilder opaque_delegate_builder{};
-  bool delegate_prepared = false;
+  struct UserData {
+    bool delegate_prepared_ = false;
+    ov::CompiledModel compiled_model_;
+  } user_data;
 
-  opaque_delegate_builder.data = &delegate_prepared;
+  opaque_delegate_builder.data = &user_data;
   opaque_delegate_builder.Prepare = [](TfLiteOpaqueContext *opaque_context,
                                        TfLiteOpaqueDelegate *opaque_delegate_,
                                        void *data) -> TfLiteStatus {
-    auto delegate_prepared = static_cast<bool *>(data);
-    *delegate_prepared = true;
-    auto reg_ex = TfLiteRegistrationExternalCreate(
-        kTfLiteBuiltinDelegate, "Test driver Openvino delegate", /*version=*/1);
-    TfLiteRegistrationExternalSetInit(
+    static_cast<UserData *>(data)->delegate_prepared_ = true;
+    auto reg_ex = TfLiteOperatorCreateWithData(kTfLiteBuiltinDelegate,
+                                               "Test driver Openvino delegate",
+                                               /*version=*/1, data);
+    TfLiteOperatorSetInitWithData(
         reg_ex,
-        [](TfLiteOpaqueContext *opaque_context, const char *buffer,
-           size_t length) -> void * {
+        [](void *user_data, TfLiteOpaqueContext *opaque_context,
+           const char *buffer, size_t length) -> void * {
           auto openvino_graph_builder_test =
               std::make_unique<OpenVINOGraphBuilder>(
                   std::make_unique<NodeManager>());
@@ -531,7 +544,7 @@ TEST_F(OpenVINOGraphBuilderTest, CreateNodeFromTfLiteOp_Valid) {
           for (int i = 0; i < params->nodes_to_replace->size; ++i) {
             const int delegate_node_id = params->nodes_to_replace->data[i];
             TfLiteOpaqueNode *node = nullptr;
-            TfLiteRegistrationExternal *registration = nullptr;
+            TfLiteOperator *registration = nullptr;
             TfLiteOpaqueContextGetNodeAndRegistration(
                 opaque_context, delegate_node_id, &node, &registration);
 
@@ -580,22 +593,24 @@ TEST_F(OpenVINOGraphBuilderTest, CreateNodeFromTfLiteOp_Valid) {
               openvino_graph_builder_test->getInputParams());
 
           ov::Core ov_core_(kPluginsXmlPath);
-          ov::CompiledModel compiled_model_;
           std::string deviceStr = "CPU";
           ov::InferRequest infer_request_;
+          auto &compiled_model_ =
+              static_cast<UserData *>(user_data)->compiled_model_;
           compiled_model_ = ov_core_.compile_model(model, deviceStr);
 
           infer_request_ = compiled_model_.create_infer_request();
           return &compiled_model_;
         });
 
-    TfLiteRegistrationExternalSetInvoke(
-        reg_ex,
-        [](TfLiteOpaqueContext *context, TfLiteOpaqueNode *opaque_node)
-            -> TfLiteStatus { return kTfLiteOk; });
+    TfLiteOperatorSetInvoke(reg_ex,
+                            [](TfLiteOpaqueContext *context,
+                               TfLiteOpaqueNode *opaque_node) -> TfLiteStatus {
+                              return kTfLiteOk;
+                            });
 
-    TfLiteRegistrationExternalSetFree(
-        reg_ex, [](TfLiteOpaqueContext *context, void *data) {});
+    TfLiteOperatorSetFree(reg_ex,
+                          [](TfLiteOpaqueContext *context, void *data) {});
 
     TfLiteIntArray *execution_plan;
     TF_LITE_ENSURE_STATUS(
@@ -617,7 +632,7 @@ TEST_F(OpenVINOGraphBuilderTest, CreateNodeFromTfLiteOp_Valid) {
   TfLiteInterpreter *interpreter = TfLiteInterpreterCreate(model, options);
   ASSERT_NE(interpreter, nullptr);
 
-  EXPECT_TRUE(delegate_prepared);
+  EXPECT_TRUE(user_data.delegate_prepared_);
 
   TfLiteInterpreterOptionsDelete(options);
   TfLiteInterpreterDelete(interpreter);
@@ -627,20 +642,23 @@ TEST_F(OpenVINOGraphBuilderTest, CreateNodeFromTfLiteOp_Valid) {
 
 TEST_F(OpenVINOGraphBuilderTest, CreateNodeFromTfLiteOp_InvalidRegistration) {
   TfLiteOpaqueDelegateBuilder opaque_delegate_builder{};
-  bool delegate_prepared = false;
+  struct UserData {
+    bool delegate_prepared_ = false;
+    ov::CompiledModel compiled_model_;
+  } user_data;
 
-  opaque_delegate_builder.data = &delegate_prepared;
+  opaque_delegate_builder.data = &user_data;
   opaque_delegate_builder.Prepare = [](TfLiteOpaqueContext *opaque_context,
                                        TfLiteOpaqueDelegate *opaque_delegate_,
                                        void *data) -> TfLiteStatus {
-    auto delegate_prepared = static_cast<bool *>(data);
-    *delegate_prepared = true;
-    auto reg_ex = TfLiteRegistrationExternalCreate(
-        kTfLiteBuiltinDelegate, "Test driver Openvino delegate", /*version=*/1);
-    TfLiteRegistrationExternalSetInit(
+    static_cast<UserData *>(data)->delegate_prepared_ = true;
+    auto reg_ex = TfLiteOperatorCreateWithData(kTfLiteBuiltinDelegate,
+                                               "Test driver Openvino delegate",
+                                               /*version=*/1, data);
+    TfLiteOperatorSetInitWithData(
         reg_ex,
-        [](TfLiteOpaqueContext *opaque_context, const char *buffer,
-           size_t length) -> void * {
+        [](void *user_data, TfLiteOpaqueContext *opaque_context,
+           const char *buffer, size_t length) -> void * {
           auto openvino_graph_builder_test =
               std::make_unique<OpenVINOGraphBuilder>(
                   std::make_unique<NodeManager>());
@@ -660,7 +678,7 @@ TEST_F(OpenVINOGraphBuilderTest, CreateNodeFromTfLiteOp_InvalidRegistration) {
           for (int i = 0; i < params->nodes_to_replace->size; ++i) {
             const int delegate_node_id = params->nodes_to_replace->data[i];
             TfLiteOpaqueNode *node = nullptr;
-            TfLiteRegistrationExternal *registration = nullptr;
+            TfLiteOperator *registration = nullptr;
             TfLiteOpaqueContextGetNodeAndRegistration(
                 opaque_context, delegate_node_id, &node, &registration);
 
@@ -710,22 +728,24 @@ TEST_F(OpenVINOGraphBuilderTest, CreateNodeFromTfLiteOp_InvalidRegistration) {
               openvino_graph_builder_test->getInputParams());
 
           ov::Core ov_core_(kPluginsXmlPath);
-          ov::CompiledModel compiled_model_;
           std::string deviceStr = "CPU";
           ov::InferRequest infer_request_;
+          auto &compiled_model_ =
+              static_cast<UserData *>(user_data)->compiled_model_;
           compiled_model_ = ov_core_.compile_model(model, deviceStr);
 
           infer_request_ = compiled_model_.create_infer_request();
           return &compiled_model_;
         });
 
-    TfLiteRegistrationExternalSetInvoke(
-        reg_ex,
-        [](TfLiteOpaqueContext *context, TfLiteOpaqueNode *opaque_node)
-            -> TfLiteStatus { return kTfLiteOk; });
+    TfLiteOperatorSetInvoke(reg_ex,
+                            [](TfLiteOpaqueContext *context,
+                               TfLiteOpaqueNode *opaque_node) -> TfLiteStatus {
+                              return kTfLiteOk;
+                            });
 
-    TfLiteRegistrationExternalSetFree(
-        reg_ex, [](TfLiteOpaqueContext *context, void *data) {});
+    TfLiteOperatorSetFree(reg_ex,
+                          [](TfLiteOpaqueContext *context, void *data) {});
 
     TfLiteIntArray *execution_plan;
     TF_LITE_ENSURE_STATUS(
@@ -747,7 +767,7 @@ TEST_F(OpenVINOGraphBuilderTest, CreateNodeFromTfLiteOp_InvalidRegistration) {
   TfLiteInterpreter *interpreter = TfLiteInterpreterCreate(model, options);
   ASSERT_NE(interpreter, nullptr);
 
-  EXPECT_TRUE(delegate_prepared);
+  EXPECT_TRUE(user_data.delegate_prepared_);
 
   TfLiteInterpreterOptionsDelete(options);
   TfLiteInterpreterDelete(interpreter);
@@ -757,20 +777,23 @@ TEST_F(OpenVINOGraphBuilderTest, CreateNodeFromTfLiteOp_InvalidRegistration) {
 
 TEST_F(OpenVINOGraphBuilderTest, CreateNodeFromTfLiteOp_InvalidNode) {
   TfLiteOpaqueDelegateBuilder opaque_delegate_builder{};
-  bool delegate_prepared = false;
+  struct UserData {
+    bool delegate_prepared_ = false;
+    ov::CompiledModel compiled_model_;
+  } user_data;
 
-  opaque_delegate_builder.data = &delegate_prepared;
+  opaque_delegate_builder.data = &user_data;
   opaque_delegate_builder.Prepare = [](TfLiteOpaqueContext *opaque_context,
                                        TfLiteOpaqueDelegate *opaque_delegate_,
                                        void *data) -> TfLiteStatus {
-    auto delegate_prepared = static_cast<bool *>(data);
-    *delegate_prepared = true;
-    auto reg_ex = TfLiteRegistrationExternalCreate(
-        kTfLiteBuiltinDelegate, "Test driver Openvino delegate", /*version=*/1);
-    TfLiteRegistrationExternalSetInit(
+    static_cast<UserData *>(data)->delegate_prepared_ = true;
+    auto reg_ex = TfLiteOperatorCreateWithData(kTfLiteBuiltinDelegate,
+                                               "Test driver Openvino delegate",
+                                               /*version=*/1, data);
+    TfLiteOperatorSetInitWithData(
         reg_ex,
-        [](TfLiteOpaqueContext *opaque_context, const char *buffer,
-           size_t length) -> void * {
+        [](void *user_data, TfLiteOpaqueContext *opaque_context,
+           const char *buffer, size_t length) -> void * {
           auto openvino_graph_builder_test =
               std::make_unique<OpenVINOGraphBuilder>(
                   std::make_unique<NodeManager>());
@@ -790,7 +813,7 @@ TEST_F(OpenVINOGraphBuilderTest, CreateNodeFromTfLiteOp_InvalidNode) {
           for (int i = 0; i < params->nodes_to_replace->size; ++i) {
             const int delegate_node_id = params->nodes_to_replace->data[i];
             TfLiteOpaqueNode *node = nullptr;
-            TfLiteRegistrationExternal *registration = nullptr;
+            TfLiteOperator *registration = nullptr;
             TfLiteOpaqueContextGetNodeAndRegistration(
                 opaque_context, delegate_node_id, &node, &registration);
 
@@ -840,22 +863,24 @@ TEST_F(OpenVINOGraphBuilderTest, CreateNodeFromTfLiteOp_InvalidNode) {
               openvino_graph_builder_test->getInputParams());
 
           ov::Core ov_core_(kPluginsXmlPath);
-          ov::CompiledModel compiled_model_;
           std::string deviceStr = "CPU";
           ov::InferRequest infer_request_;
+          auto &compiled_model_ =
+              static_cast<UserData *>(user_data)->compiled_model_;
           compiled_model_ = ov_core_.compile_model(model, deviceStr);
 
           infer_request_ = compiled_model_.create_infer_request();
           return &compiled_model_;
         });
 
-    TfLiteRegistrationExternalSetInvoke(
-        reg_ex,
-        [](TfLiteOpaqueContext *context, TfLiteOpaqueNode *opaque_node)
-            -> TfLiteStatus { return kTfLiteOk; });
+    TfLiteOperatorSetInvoke(reg_ex,
+                            [](TfLiteOpaqueContext *context,
+                               TfLiteOpaqueNode *opaque_node) -> TfLiteStatus {
+                              return kTfLiteOk;
+                            });
 
-    TfLiteRegistrationExternalSetFree(
-        reg_ex, [](TfLiteOpaqueContext *context, void *data) {});
+    TfLiteOperatorSetFree(reg_ex,
+                          [](TfLiteOpaqueContext *context, void *data) {});
 
     TfLiteIntArray *execution_plan;
     TF_LITE_ENSURE_STATUS(
@@ -877,7 +902,7 @@ TEST_F(OpenVINOGraphBuilderTest, CreateNodeFromTfLiteOp_InvalidNode) {
   TfLiteInterpreter *interpreter = TfLiteInterpreterCreate(model, options);
   ASSERT_NE(interpreter, nullptr);
 
-  EXPECT_TRUE(delegate_prepared);
+  EXPECT_TRUE(user_data.delegate_prepared_);
 
   TfLiteInterpreterOptionsDelete(options);
   TfLiteInterpreterDelete(interpreter);
@@ -887,20 +912,23 @@ TEST_F(OpenVINOGraphBuilderTest, CreateNodeFromTfLiteOp_InvalidNode) {
 
 TEST_F(OpenVINOGraphBuilderTest, CreateNodeFromTfLiteOp_InvalidContext) {
   TfLiteOpaqueDelegateBuilder opaque_delegate_builder{};
-  bool delegate_prepared = false;
+  struct UserData {
+    bool delegate_prepared_ = false;
+    ov::CompiledModel compiled_model_;
+  } user_data;
 
-  opaque_delegate_builder.data = &delegate_prepared;
+  opaque_delegate_builder.data = &user_data;
   opaque_delegate_builder.Prepare = [](TfLiteOpaqueContext *opaque_context,
                                        TfLiteOpaqueDelegate *opaque_delegate_,
                                        void *data) -> TfLiteStatus {
-    auto delegate_prepared = static_cast<bool *>(data);
-    *delegate_prepared = true;
-    auto reg_ex = TfLiteRegistrationExternalCreate(
-        kTfLiteBuiltinDelegate, "Test driver Openvino delegate", /*version=*/1);
-    TfLiteRegistrationExternalSetInit(
+    static_cast<UserData *>(data)->delegate_prepared_ = true;
+    auto reg_ex = TfLiteOperatorCreateWithData(kTfLiteBuiltinDelegate,
+                                               "Test driver Openvino delegate",
+                                               /*version=*/1, data);
+    TfLiteOperatorSetInitWithData(
         reg_ex,
-        [](TfLiteOpaqueContext *opaque_context, const char *buffer,
-           size_t length) -> void * {
+        [](void *user_data, TfLiteOpaqueContext *opaque_context,
+           const char *buffer, size_t length) -> void * {
           auto openvino_graph_builder_test =
               std::make_unique<OpenVINOGraphBuilder>(
                   std::make_unique<NodeManager>());
@@ -920,7 +948,7 @@ TEST_F(OpenVINOGraphBuilderTest, CreateNodeFromTfLiteOp_InvalidContext) {
           for (int i = 0; i < params->nodes_to_replace->size; ++i) {
             const int delegate_node_id = params->nodes_to_replace->data[i];
             TfLiteOpaqueNode *node = nullptr;
-            TfLiteRegistrationExternal *registration = nullptr;
+            TfLiteOperator *registration = nullptr;
             TfLiteOpaqueContextGetNodeAndRegistration(
                 opaque_context, delegate_node_id, &node, &registration);
 
@@ -970,22 +998,24 @@ TEST_F(OpenVINOGraphBuilderTest, CreateNodeFromTfLiteOp_InvalidContext) {
               openvino_graph_builder_test->getInputParams());
 
           ov::Core ov_core_(kPluginsXmlPath);
-          ov::CompiledModel compiled_model_;
           std::string deviceStr = "CPU";
           ov::InferRequest infer_request_;
+          auto &compiled_model_ =
+              static_cast<UserData *>(user_data)->compiled_model_;
           compiled_model_ = ov_core_.compile_model(model, deviceStr);
 
           infer_request_ = compiled_model_.create_infer_request();
           return &compiled_model_;
         });
 
-    TfLiteRegistrationExternalSetInvoke(
-        reg_ex,
-        [](TfLiteOpaqueContext *context, TfLiteOpaqueNode *opaque_node)
-            -> TfLiteStatus { return kTfLiteOk; });
+    TfLiteOperatorSetInvoke(reg_ex,
+                            [](TfLiteOpaqueContext *context,
+                               TfLiteOpaqueNode *opaque_node) -> TfLiteStatus {
+                              return kTfLiteOk;
+                            });
 
-    TfLiteRegistrationExternalSetFree(
-        reg_ex, [](TfLiteOpaqueContext *context, void *data) {});
+    TfLiteOperatorSetFree(reg_ex,
+                          [](TfLiteOpaqueContext *context, void *data) {});
 
     TfLiteIntArray *execution_plan;
     TF_LITE_ENSURE_STATUS(
@@ -1007,7 +1037,7 @@ TEST_F(OpenVINOGraphBuilderTest, CreateNodeFromTfLiteOp_InvalidContext) {
   TfLiteInterpreter *interpreter = TfLiteInterpreterCreate(model, options);
   ASSERT_NE(interpreter, nullptr);
 
-  EXPECT_TRUE(delegate_prepared);
+  EXPECT_TRUE(user_data.delegate_prepared_);
 
   TfLiteInterpreterOptionsDelete(options);
   TfLiteInterpreterDelete(interpreter);
