@@ -1,4 +1,4 @@
-From e8c07c006869046296f8fc0372547afb7db2a049 Mon Sep 17 00:00:00 2001
+From 1b4fa27e7b958b58446d29037eedacd7aa1f303c Mon Sep 17 00:00:00 2001
 From: TFLite Patcher <tflite@localhost>
 Date: Fri, 18 Oct 2024 18:08:07 +0800
 Subject: [PATCH] Fix cpuinfo on some AMD model

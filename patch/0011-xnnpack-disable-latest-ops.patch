@@ -1,4 +1,4 @@
-From 495cf72922f638c75430a91f5ca800b73166bfde Mon Sep 17 00:00:00 2001
+From 7009c0696ac5b1ac208156b956d71eaedf2114b5 Mon Sep 17 00:00:00 2001
 From: TFLite Patcher <tflite@localhost>
 Date: Fri, 18 Oct 2024 18:14:26 +0800
 Subject: [PATCH] Disable latest ops in xnnpack for b/352513578

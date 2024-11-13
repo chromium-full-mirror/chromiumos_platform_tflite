@@ -1,4 +1,4 @@
-From 16cf01380c78fd469d0912e99ea10cdfd8ee84e8 Mon Sep 17 00:00:00 2001
+From e4f999b5bf50f9fbbf83ea35da7dd91653adc134 Mon Sep 17 00:00:00 2001
 From: TFLite Patcher <tflite@localhost>
 Date: Fri, 18 Oct 2024 17:59:37 +0800
 Subject: [PATCH] Enable Gpu Delegate for ChromeOS.
@@ -15,10 +15,10 @@ PATCH_NAME=gpu-delegate
  7 files changed, 14 insertions(+), 18 deletions(-)
 
 diff --git a/tensorflow/lite/BUILD b/tensorflow/lite/BUILD
-index d4993082..a603bb69 100644
+index 07d4435c..b98a9060 100644
 --- a/tensorflow/lite/BUILD
 +++ b/tensorflow/lite/BUILD
-@@ -1435,6 +1435,7 @@ tflite_cc_shared_object(
+@@ -1433,6 +1433,7 @@ tflite_cc_shared_object(
          ":tflite_exported_symbols.lds",
          ":tflite_version_script.lds",
          "//tensorflow/lite/kernels:builtin_ops_all_linked",
@@ -123,7 +123,7 @@ index cc593ef4..3291e3a9 100644
              "-lGLESv3",
          ],
 diff --git a/tensorflow/lite/tools/evaluation/utils.h b/tensorflow/lite/tools/evaluation/utils.h
-index 201564cd..46fa87c1 100644
+index ed89f609..16744cf8 100644
 --- a/tensorflow/lite/tools/evaluation/utils.h
 +++ b/tensorflow/lite/tools/evaluation/utils.h
 @@ -23,7 +23,7 @@ limitations under the License.

@@ -1,4 +1,4 @@
-From b66cdeb2fa5fbf6e5db546fd58168429ff682ca6 Mon Sep 17 00:00:00 2001
+From 3a3bdc6fab03983ec5c57f4ec5d9acc56ba501d6 Mon Sep 17 00:00:00 2001
 From: Tommy Chiang <ototot@google.com>
 Date: Wed, 9 Oct 2024 07:34:39 -0700
 Subject: [PATCH] Use ArrayFloatNear to check values in StridedSliceOpTests

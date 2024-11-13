@@ -1,4 +1,4 @@
-From 5bcf271508b2293af3fd2de27aca38183f9d75d4 Mon Sep 17 00:00:00 2001
+From c243719ee2c42fd088009b18ce543fd13e7d6504 Mon Sep 17 00:00:00 2001
 From: TFLite Patcher <tflite@localhost>
 Date: Fri, 18 Oct 2024 18:04:20 +0800
 Subject: [PATCH] Support Convolution2DTransposeBias custom op

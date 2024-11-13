@@ -1,4 +1,4 @@
-From 7615ff51880aaa12da78fa491bd17e2a1e72384d Mon Sep 17 00:00:00 2001
+From 38b695d62de783f08d9a6cec53f8705847c0a5b8 Mon Sep 17 00:00:00 2001
 From: "A. Unique TensorFlower" <gardener@tensorflow.org>
 Date: Wed, 23 Oct 2024 21:44:50 -0700
 Subject: [PATCH] Construct RE2 in ConfigurationEntry constructor rather than

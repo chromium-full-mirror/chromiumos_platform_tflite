@@ -1,4 +1,4 @@
-From b8b5301dc98d90333682a4d26d69a2a601793177 Mon Sep 17 00:00:00 2001
+From ff7894cabc808e2b48cde278a9faa6d4a03f3eef Mon Sep 17 00:00:00 2001
 From: TFLite Patcher <tflite@localhost>
 Date: Fri, 18 Oct 2024 18:13:53 +0800
 Subject: [PATCH] Use cl_khr_command_buffer extension with clvk
