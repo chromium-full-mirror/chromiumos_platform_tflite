@@ -40,7 +40,8 @@ TEST_F(OpenVINODelegateCoreTest, InitializeBuilder) {
                                        TfLiteOpaqueDelegate* opaque_delegate_,
                                        void* data) -> TfLiteStatus {
     auto reg_ex = TfLiteRegistrationExternalCreate(
-        kTfLiteBuiltinDelegate, "Test driver Openvino delegate", /*version=*/1);
+        kTfLiteBuiltinDelegate, "Test driver Openvino delegate", /*version=*/1,
+        /*data=*/nullptr);
     TfLiteRegistrationExternalSetInit(
         reg_ex,
         [](TfLiteOpaqueContext* opaque_context, const char* buffer,
@@ -98,7 +99,8 @@ TEST_F(OpenVINODelegateCoreTest, CreateModel_InvalidContext) {
                                        TfLiteOpaqueDelegate* opaque_delegate_,
                                        void* data) -> TfLiteStatus {
     auto reg_ex = TfLiteRegistrationExternalCreate(
-        kTfLiteBuiltinDelegate, "Test driver Openvino delegate", /*version=*/1);
+        kTfLiteBuiltinDelegate, "Test driver Openvino delegate", /*version=*/1,
+        /*data=*/nullptr);
     TfLiteRegistrationExternalSetInit(
         reg_ex,
         [](TfLiteOpaqueContext* opaque_context, const char* buffer,
@@ -161,7 +163,8 @@ TEST_F(OpenVINODelegateCoreTest, InitializeBuilder_InvalidParams) {
                                        TfLiteOpaqueDelegate* opaque_delegate_,
                                        void* data) -> TfLiteStatus {
     auto reg_ex = TfLiteRegistrationExternalCreate(
-        kTfLiteBuiltinDelegate, "Test driver Openvino delegate", /*version=*/1);
+        kTfLiteBuiltinDelegate, "Test driver Openvino delegate", /*version=*/1,
+        /*data=*/nullptr);
     TfLiteRegistrationExternalSetInit(
         reg_ex,
         [](TfLiteOpaqueContext* opaque_context, const char* buffer,
@@ -218,7 +221,8 @@ TEST_F(OpenVINODelegateCoreTest, CreateModelAndCache) {
                                        TfLiteOpaqueDelegate* opaque_delegate_,
                                        void* data) -> TfLiteStatus {
     auto reg_ex = TfLiteRegistrationExternalCreate(
-        kTfLiteBuiltinDelegate, "Test driver Openvino delegate", /*version=*/1);
+        kTfLiteBuiltinDelegate, "Test driver Openvino delegate", /*version=*/1,
+        /*data=*/nullptr);
     TfLiteRegistrationExternalSetInit(
         reg_ex,
         [](TfLiteOpaqueContext* opaque_context, const char* buffer,
