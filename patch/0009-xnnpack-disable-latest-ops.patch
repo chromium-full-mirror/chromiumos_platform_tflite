@@ -1,4 +1,4 @@
-From 7009c0696ac5b1ac208156b956d71eaedf2114b5 Mon Sep 17 00:00:00 2001
+From 4eb940e8ae0e2c4f64c051e2179ebca7267d4abc Mon Sep 17 00:00:00 2001
 From: TFLite Patcher <tflite@localhost>
 Date: Fri, 18 Oct 2024 18:14:26 +0800
 Subject: [PATCH] Disable latest ops in xnnpack for b/352513578
@@ -9,7 +9,7 @@ PATCH_NAME=xnnpack-disable-latest-ops
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/tensorflow/lite/delegates/xnnpack/BUILD b/tensorflow/lite/delegates/xnnpack/BUILD
-index d83fd816..5733cfff 100644
+index ad4fc172..f42c8c3f 100644
 --- a/tensorflow/lite/delegates/xnnpack/BUILD
 +++ b/tensorflow/lite/delegates/xnnpack/BUILD
 @@ -230,7 +230,7 @@ cc_library(

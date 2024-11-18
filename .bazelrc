@@ -46,6 +46,7 @@ build:cros --auto_output_filter=packages
 
 build:cros --copt=-DEGL_NO_X11
 build:cros --copt=-DFORCE_ENABLE_GPU_DELEGATE
+build:cros --copt=-DGOOGLE_UNSUPPORTED_OS_LOONIX
 
 build:cros --define=tensorflow_mkldnn_contraction_kernel=0
 build:cros --define=tflite_keep_symbols=true

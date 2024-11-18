@@ -1,4 +1,4 @@
-From 216fd95a2ba4b8ca4e049248db1b303ee5fea033 Mon Sep 17 00:00:00 2001
+From 24587b3a5a65d84eb7dcfe52dc34b2ade770099f Mon Sep 17 00:00:00 2001
 From: Tommy Chiang <ototot@google.com>
 Date: Wed, 16 Oct 2024 22:37:09 -0700
 Subject: [PATCH] rsqrt should report error when the input contains negative
@@ -16,10 +16,10 @@ PATCH_NAME=dts-rsqrt-nan
  2 files changed, 9 insertions(+), 19 deletions(-)
 
 diff --git a/tensorflow/lite/kernels/elementwise.cc b/tensorflow/lite/kernels/elementwise.cc
-index 1ac5680d..71645fde 100644
+index 5552f125..c71fe04d 100644
 --- a/tensorflow/lite/kernels/elementwise.cc
 +++ b/tensorflow/lite/kernels/elementwise.cc
-@@ -415,6 +415,12 @@ TfLiteStatus RsqrtEvalQuantizedInt16(TfLiteContext* context, TfLiteNode* node,
+@@ -384,6 +384,12 @@ TfLiteStatus RsqrtEvalQuantizedInt16(TfLiteContext* context, TfLiteNode* node,
    TF_LITE_ENSURE_OK(context, GetInputSafe(context, node, 0, &input));
    TfLiteTensor* output;
    TF_LITE_ENSURE_OK(context, GetOutputSafe(context, node, 0, &output));
