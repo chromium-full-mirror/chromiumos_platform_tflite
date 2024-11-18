@@ -1,0 +1,21 @@
+From b8488fc42569300f479c5ea60f50762c8457ed27 Mon Sep 17 00:00:00 2001
+From: TFLite Patcher <tflite@localhost>
+Date: Wed, 13 Nov 2024 08:33:32 +0000
+Subject: [PATCH] Add missing absl/strings:string_view target.
+
+---
+ third_party/absl/system.absl.strings.BUILD | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/third_party/absl/system.absl.strings.BUILD b/third_party/absl/system.absl.strings.BUILD
+index fa9a7a84..fbc03d6f 100644
+--- a/third_party/absl/system.absl.strings.BUILD
++++ b/third_party/absl/system.absl.strings.BUILD
+@@ -47,3 +47,7 @@ cc_library(
+         "//absl/types:span",
+     ],
+ )
++
++cc_library(
++    name = "string_view",
++)

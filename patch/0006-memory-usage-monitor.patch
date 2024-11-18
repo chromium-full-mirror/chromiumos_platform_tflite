@@ -1,4 +1,4 @@
-From bd81fa4cbec52390041e40151fcd5ff531f1644a Mon Sep 17 00:00:00 2001
+From d7c24640e09ff6937f7874e78bfa25725a892959 Mon Sep 17 00:00:00 2001
 From: TFLite Patcher <tflite@localhost>
 Date: Fri, 18 Oct 2024 18:10:14 +0800
 Subject: [PATCH] Include memory usage monitor
@@ -9,10 +9,10 @@ PATCH_NAME=memory-usage-monitor
  1 file changed, 1 insertion(+)
 
 diff --git a/tensorflow/lite/BUILD b/tensorflow/lite/BUILD
-index b98a9060..de0e14de 100644
+index 1d702413..97b1ebe1 100644
 --- a/tensorflow/lite/BUILD
 +++ b/tensorflow/lite/BUILD
-@@ -613,6 +613,7 @@ cc_library_with_tflite(
+@@ -608,6 +608,7 @@ cc_library_with_tflite(
          "//tensorflow/lite/core/c:common",
          "//tensorflow/lite/experimental/resource",
          "//tensorflow/lite/internal:signature_def",

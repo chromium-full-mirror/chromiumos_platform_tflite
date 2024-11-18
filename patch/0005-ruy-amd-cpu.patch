@@ -1,41 +1,44 @@
-From 1b4fa27e7b958b58446d29037eedacd7aa1f303c Mon Sep 17 00:00:00 2001
+From 6009dffe8c8c58cfb4109aaf82267e4211e1d3fe Mon Sep 17 00:00:00 2001
 From: TFLite Patcher <tflite@localhost>
-Date: Fri, 18 Oct 2024 18:08:07 +0800
+Date: Wed, 13 Nov 2024 06:35:01 +0000
 Subject: [PATCH] Fix cpuinfo on some AMD model
 
 PATCH_NAME=ruy-amd-cpu
 ---
  tensorflow/workspace2.bzl |  1 +
- third_party/cpuinfo.patch | 16 ++++++++++++++++
- 2 files changed, 17 insertions(+)
+ third_party/cpuinfo.patch | 19 +++++++++++++++++++
+ 2 files changed, 20 insertions(+)
  create mode 100644 third_party/cpuinfo.patch
 
 diff --git a/tensorflow/workspace2.bzl b/tensorflow/workspace2.bzl
-index 23b438ec..1e099870 100644
+index be83c971..4dda4020 100644
 --- a/tensorflow/workspace2.bzl
 +++ b/tensorflow/workspace2.bzl
-@@ -172,6 +172,7 @@ def _tf_repositories():
+@@ -181,6 +181,7 @@ def _tf_repositories():
      tf_http_archive(
          name = "cpuinfo",
-         strip_prefix = "cpuinfo-ef634603954d88d2643d5809011288b890ac126e",
+         sha256 = "2bf2b62eb86e2d2eaf862d0b9683a6c467a4d69fb2f7f1dc47c799809148608f",
 +        patch_file = ["//third_party:cpuinfo.patch"],
-         sha256 = "e07512a11e1c71687359a133f49d60583d7465b737fe5dbe11f461c9aaa72a2b",
-         urls = tf_mirror_urls("https://github.com/pytorch/cpuinfo/archive/ef634603954d88d2643d5809011288b890ac126e.zip"),
+         strip_prefix = "cpuinfo-fa1c679da8d19e1d87f20175ae1ec10995cd3dd3",
+         urls = tf_mirror_urls("https://github.com/pytorch/cpuinfo/archive/fa1c679da8d19e1d87f20175ae1ec10995cd3dd3.zip"),
      )
 diff --git a/third_party/cpuinfo.patch b/third_party/cpuinfo.patch
 new file mode 100644
-index 00000000..290947ed
+index 00000000..c75e05d7
 --- /dev/null
 +++ b/third_party/cpuinfo.patch
-@@ -0,0 +1,16 @@
+@@ -0,0 +1,19 @@
 +diff --git a/src/x86/init.c b/src/x86/init.c
-+index 244359c..653f1ee 100644
++index adc5d36..a71ba43 100644
 +--- a/src/x86/init.c
 ++++ b/src/x86/init.c
-+@@ -38,8 +38,10 @@ void cpuinfo_x86_init_processor(struct cpuinfo_x86_processor* processor) {
++@@ -35,10 +35,11 @@ void cpuinfo_x86_init_processor(struct cpuinfo_x86_processor* processor) {
++ 
 + 		/*
 + 		 * Topology extensions support:
-+ 		 * - AMD: ecx[bit 22] in extended info (reserved bit on Intel CPUs).
++-		 * - AMD: ecx[bit 22] in extended info (reserved bit on Intel
++-		 * CPUs).
+++		 * - AMD: ecx[bit 22] in extended info (reserved bit on Intel CPUs).
 ++		 * Relax the condition a bit for Excavator, see b/305999585#comment11 for more details.
 + 		 */
 +-		const bool amd_topology_extensions = !!(leaf0x80000001.ecx & UINT32_C(0x00400000));
@@ -43,4 +46,4 @@ index 00000000..290947ed
 ++			!!(leaf0x80000001.ecx & UINT32_C(0x00400000)) || uarch == cpuinfo_uarch_excavator;
 + 
 + 		cpuinfo_x86_detect_cache(
-+ 			max_base_index, max_extended_index, amd_topology_extensions, vendor, &model_info,
++ 			max_base_index,
