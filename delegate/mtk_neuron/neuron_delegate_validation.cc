@@ -940,6 +940,7 @@ bool Validate(const TfLiteRegistrationExternal* registration,
                                              neuronapi, options, &val_ctx);
         break;
       }
+      [[fallthrough]];
     }  // no break, pass to default
 #endif
     default:

@@ -1157,6 +1157,7 @@ TfLiteStatus NeuronStableDelegateKernel::Map(
         mapping_args.builder->AddPreCompileExtensionOperand(nn_op_type);
         break;  // needed
       }
+      [[fallthrough]];
     }  // no break, pass to default
     default:
       // All other operators are not mapped.
