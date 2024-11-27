@@ -86,6 +86,15 @@ cc_library(
 )
 
 cc_library(
+    name = "scoped_ahwb",
+    srcs = ["scoped_ahwb.cc"],
+    hdrs = ["scoped_ahwb.h"],
+    deps = [
+        "//android:hardware_buffer",
+    ],
+)
+
+cc_library(
     name = "simple_model_builder",
     srcs = ["simple_model_builder.cc"],
     hdrs = ["simple_model_builder.h"],
@@ -137,6 +146,7 @@ cc_library(
     hdrs = ["async_driver.h"],
     deps = [
         "//android:hardware_buffer",
+        "//common:scoped_ahwb",
         "@com_google_absl//absl/cleanup",
         "@org_tensorflow//tensorflow/lite:framework",
         "@org_tensorflow//tensorflow/lite/core/async/c:task",

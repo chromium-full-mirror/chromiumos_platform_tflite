@@ -18,6 +18,7 @@
 
 #include "absl/cleanup/cleanup.h"
 #include "android/hardware_buffer.h"
+#include "common/scoped_ahwb.h"
 #include "tensorflow/lite/core/async/c/task.h"
 #include "tensorflow/lite/core/async/interop/c/constants.h"
 #include "tensorflow/lite/delegates/utils/async_type_helpers.h"
@@ -72,12 +73,6 @@ std::unique_ptr<AsyncDriver> AsyncDriver::Create(
       std::move(delegate), std::move(model), std::move(interpreter), runner));
 }
 
-AsyncDriver::~AsyncDriver() {
-  for (const auto& [_, buffer] : tensor_buffer_ahwb_map_) {
-    AHardwareBuffer_release(buffer);
-  }
-}
-
 TfLiteStatus AsyncDriver::Prepare() {
   if (ReconcileBufferAttributes() != kTfLiteOk) {
     return kTfLiteError;
@@ -101,16 +96,16 @@ TfLiteStatus AsyncDriver::SetInputTensor(const std::string& name,
     return kTfLiteError;
   }
 
-  auto buffer = it->second;
+  auto& buffer = it->second;
   void* addr = nullptr;
-  if (AHardwareBuffer_lock(buffer,
+  if (AHardwareBuffer_lock(buffer.get(),
                            AHARDWAREBUFFER_USAGE_CPU_READ_OFTEN |
                                AHARDWAREBUFFER_USAGE_CPU_WRITE_OFTEN,
                            /*fence=*/-1, /*rect=*/nullptr, &addr) != 0) {
     return kTfLiteError;
   }
   memcpy(addr, data.data(), data.size());
-  if (AHardwareBuffer_unlock(buffer, /*fence=*/nullptr) != 0) {
+  if (AHardwareBuffer_unlock(buffer.get(), /*fence=*/nullptr) != 0) {
     return kTfLiteError;
   }
 
@@ -132,7 +127,7 @@ TfLiteStatus AsyncDriver::Invoke() {
     const auto& [io_type, name] = key;
 
     auto buffer = CreateScopedTfLiteBackendBuffer();
-    TfLiteBackendBufferSetPtr(buffer.get(), ahwb);
+    TfLiteBackendBufferSetPtr(buffer.get(), ahwb.get());
 
     const auto attrs = WriteBufferAttrs({
         .buffer_type = BufferType::kAHardwareBufferBlob,
@@ -175,9 +170,9 @@ std::vector<uint8_t> AsyncDriver::GetOutputTensor(const std::string& name) {
     return {};
   }
 
-  auto buffer = it->second;
+  auto& buffer = it->second;
   void* addr = nullptr;
-  if (AHardwareBuffer_lock(buffer,
+  if (AHardwareBuffer_lock(buffer.get(),
                            AHARDWAREBUFFER_USAGE_CPU_READ_OFTEN |
                                AHARDWAREBUFFER_USAGE_CPU_WRITE_OFTEN,
                            /*fence=*/-1, /*rect=*/nullptr, &addr) != 0) {
@@ -188,7 +183,7 @@ std::vector<uint8_t> AsyncDriver::GetOutputTensor(const std::string& name) {
   std::vector<uint8_t> data(size);
   memcpy(data.data(), addr, data.size());
 
-  if (AHardwareBuffer_unlock(buffer, /*fence=*/nullptr) != 0) {
+  if (AHardwareBuffer_unlock(buffer.get(), /*fence=*/nullptr) != 0) {
     return {};
   }
 
@@ -271,24 +266,22 @@ TfLiteStatus AsyncDriver::ReconcileSyncAttributes() {
 
   return kTfLiteOk;
 }
+
 TfLiteStatus AsyncDriver::AllocateBuffers() {
-  for (const auto& [key, value] : tensor_buffer_size_map_) {
-    const uint32_t size =
-        static_cast<uint32_t>(tensor_buffer_size_map_.at(key));
-    const AHardwareBuffer_Desc desc = {
+  for (const auto& [key, size] : tensor_buffer_size_map_) {
+    ScopedAHardwareBuffer buffer(AHardwareBuffer_Desc{
         .width = static_cast<uint32_t>(size),
         .height = 1,
         .layers = 1,
         .format = AHARDWAREBUFFER_FORMAT_BLOB,
         .usage = AHARDWAREBUFFER_USAGE_CPU_READ_OFTEN |
                  AHARDWAREBUFFER_USAGE_CPU_WRITE_OFTEN,
-        .stride = size,
-    };
-    AHardwareBuffer* buffer = nullptr;
-    if (AHardwareBuffer_allocate(&desc, &buffer) != 0) {
+        .stride = static_cast<uint32_t>(size),
+    });
+    if (!buffer) {
       return kTfLiteError;
     }
-    tensor_buffer_ahwb_map_.emplace(key, buffer);
+    tensor_buffer_ahwb_map_.emplace(key, std::move(buffer));
   }
   return kTfLiteOk;
 }

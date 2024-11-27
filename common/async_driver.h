@@ -16,6 +16,7 @@
 #include <vector>
 
 #include "android/hardware_buffer.h"
+#include "common/scoped_ahwb.h"
 #include "tensorflow/lite/core/interpreter.h"
 #include "tensorflow/lite/core/model_builder.h"
 
@@ -46,8 +47,6 @@ class AsyncDriver {
   static std::unique_ptr<AsyncDriver> Create(
       TfLiteDelegatePtr delegate,
       std::unique_ptr<FlatBufferModel> model);
-
-  ~AsyncDriver();
 
   // Move-only.
   AsyncDriver(AsyncDriver&& other) = default;
@@ -109,11 +108,9 @@ class AsyncDriver {
   // ReconcileBufferAttributes().
   IoTensorMap<size_t> tensor_buffer_size_map_;
 
-  // TODO(shik): Create a ScopedAHardwareBuffer type to simplify buffer
-  // management.
   // The AHardwareBuffer for every input/output tensors. The reference is
   // released in the destructor.
-  IoTensorMap<AHardwareBuffer*> tensor_buffer_ahwb_map_;
+  IoTensorMap<ScopedAHardwareBuffer> tensor_buffer_ahwb_map_;
 };
 
 };  // namespace tflite::cros
