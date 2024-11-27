@@ -72,6 +72,8 @@ TEST_P(AsyncDelegateTest, Inference) {
 
   ASSERT_EQ(driver->Prepare(), kTfLiteOk);
 
+  ASSERT_EQ(driver->AllocateBuffers(), kTfLiteOk);
+
   int n = 1;
   for (int dim : base_args.shape) {
     n *= dim;
@@ -90,13 +92,13 @@ TEST_P(AsyncDelegateTest, Inference) {
       c_data[i] = absl::Uniform(gen, 0.0, 1.0);
       d_data[i] = a_data[i] + b_data[i] - c_data[i];
     }
-    EXPECT_EQ(driver->SetInputTensor("a", a_data), kTfLiteOk);
-    EXPECT_EQ(driver->SetInputTensor("b", b_data), kTfLiteOk);
-    EXPECT_EQ(driver->SetInputTensor("c", c_data), kTfLiteOk);
+    EXPECT_EQ(driver->SetInputTensorData("a", a_data), kTfLiteOk);
+    EXPECT_EQ(driver->SetInputTensorData("b", b_data), kTfLiteOk);
+    EXPECT_EQ(driver->SetInputTensorData("c", c_data), kTfLiteOk);
 
     ASSERT_EQ(driver->Invoke(), kTfLiteOk);
 
-    auto output = driver->GetOutputTensor<float>("d");
+    auto output = driver->GetOutputTensorData<float>("d");
     for (int i = 0; i < n; ++i) {
       EXPECT_NEAR(output[i], d_data[i], kEps);
     }

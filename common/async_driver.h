@@ -15,13 +15,16 @@
 #include <utility>
 #include <vector>
 
+#include "absl/status/statusor.h"
 #include "android/hardware_buffer.h"
 #include "common/scoped_ahwb.h"
 #include "tensorflow/lite/core/interpreter.h"
 #include "tensorflow/lite/core/model_builder.h"
+#include "tensorflow/lite/delegates/utils/async_type_helpers.h"
 
 namespace tflite::cros {
 
+using BufferAttributes = delegates::utils::BufferAttributes;
 using TfLiteDelegatePtr = Interpreter::TfLiteDelegatePtr;
 
 // A helper generic map type where the key is an input/output tensor name.
@@ -32,13 +35,19 @@ using IoTensorMap = std::map<std::pair<TfLiteIoType, std::string>, T>;
 // synchronous way. The typical flow would be:
 // 1. Create an AsyncDriver with the factory function Create().
 // 2. Prepare the hardware buffers with Prepare().
-// 3. Set the data for input tensors with SetInputTensor().
-// 4. Run the model inference with Invoke().
-// 5. Retrive the model output with GetOutputTensor().
+// 3. Provide Input/Output buffers via Set{Input,Output}TensorBuffer().
+// 4. Allocate buffers that are not provided through AllocateBuffers().
+// 5. Set the data for input tensors with SetInputTensorData() if the input data
+//    is not already in the buffer.
+// 6. Run the model inference with Invoke().
+// 7. Retrive the model output with GetOutputTensorData().
 //
-// The step 3~5 can be performed multiple times. It's ok to skip
-// SetInputTensor() if the input data is same as the previous run, or to skip
-// GetOutputTensor() if you don't care about the output.
+// The step 3~7 can be performed multiple times. After the first run,
+// AllocateBuffers() is no longer required as every buffers are provided (by the
+// caller or by the driver itself). It's also ok to skip AllocateBuffers() if
+// the caller have provided every input and output buffer. Furthermore, it's ok
+// to skip SetInputTensorData() if the input data is the same as the previous
+// run, or to skip GetOutputTensorData() if you don't care about the output.
 //
 // This class is thread-compatible.
 class AsyncDriver {
@@ -58,18 +67,41 @@ class AsyncDriver {
   // allocates the buffers accordingly.
   TfLiteStatus Prepare();
 
+  // Allocate buffers that are not specified via Set{Input,Output}TensorBuffer.
+  TfLiteStatus AllocateBuffers();
+
   // Copies the provided data to the input tensor buffer.
-  // TODO(shik): Add an API to allow providing AHardwareBuffer directly.
-  TfLiteStatus SetInputTensor(const std::string& name,
-                              std::span<const uint8_t> data);
+  TfLiteStatus SetInputTensorData(const std::string& name,
+                                  std::span<const uint8_t> data);
 
   template <typename T>
-  TfLiteStatus SetInputTensor(const std::string& name,
-                              const std::vector<T>& data) {
+  TfLiteStatus SetInputTensorData(const std::string& name,
+                                  const std::vector<T>& data) {
     auto begin = reinterpret_cast<const uint8_t*>(data.data());
     auto end = reinterpret_cast<const uint8_t*>(data.data() + data.size());
-    return SetInputTensor(name, std::span(begin, end));
+    return SetInputTensorData(name, std::span(begin, end));
   }
+
+  // Set the input tensor buffer. This will free the existing buffer. The caller
+  // of this function should ensure the descirption of the buffer is correct.
+  void SetInputTensorBuffer(const std::string& name,
+                            ScopedAHardwareBuffer&& buffer);
+
+  // Set the output tensor buffer. This will free the existing buffer. The
+  // caller of this function should ensure the descirption of the buffer is
+  // correct.
+  void SetOutputTensorBuffer(const std::string& name,
+                             ScopedAHardwareBuffer&& buffer);
+
+  // Get the reconciled input buffer attribute. The buffer provider can
+  // configure the buffer accordingly.
+  absl::StatusOr<BufferAttributes> GetInputBufferAttributes(
+      const std::string& name);
+
+  // Get the reconciled Output buffer attribute. The buffer provider can
+  // configure the buffer accordingly.
+  absl::StatusOr<BufferAttributes> GetOutputBufferAttributes(
+      const std::string& name);
 
   // Runs model inference and wait until it's finished.
   TfLiteStatus Invoke();
@@ -78,11 +110,11 @@ class AsyncDriver {
   // there is any error.
   // TODO(shik): Consider using absl::StatusOr to signal error in a less
   // error-prone way.
-  std::vector<uint8_t> GetOutputTensor(const std::string& name);
+  std::vector<uint8_t> GetOutputTensorData(const std::string& name);
 
   template <typename T>
-  std::vector<T> GetOutputTensor(const std::string& name) {
-    auto raw_data = GetOutputTensor(name);
+  std::vector<T> GetOutputTensorData(const std::string& name) {
+    auto raw_data = GetOutputTensorData(name);
     std::vector<T> data(raw_data.size() / sizeof(T));
     memcpy(data.data(), raw_data.data(), raw_data.size());
     return data;
@@ -97,7 +129,6 @@ class AsyncDriver {
 
   TfLiteStatus ReconcileBufferAttributes();
   TfLiteStatus ReconcileSyncAttributes();
-  TfLiteStatus AllocateBuffers();
 
   TfLiteDelegatePtr delegate_;
   std::unique_ptr<FlatBufferModel> model_;
@@ -106,7 +137,7 @@ class AsyncDriver {
 
   // The sizes fro every input/output tensors. Populated in Prepare() ->
   // ReconcileBufferAttributes().
-  IoTensorMap<size_t> tensor_buffer_size_map_;
+  IoTensorMap<BufferAttributes> tensor_buffer_attrs_map_;
 
   // The AHardwareBuffer for every input/output tensors. The reference is
   // released in the destructor.

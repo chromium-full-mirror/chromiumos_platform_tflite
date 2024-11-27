@@ -148,6 +148,8 @@ cc_library(
         "//android:hardware_buffer",
         "//common:scoped_ahwb",
         "@com_google_absl//absl/cleanup",
+        "@com_google_absl//absl/status:statusor",
+        "@com_google_absl//absl/strings:str_format",
         "@org_tensorflow//tensorflow/lite:framework",
         "@org_tensorflow//tensorflow/lite/core/async/c:task",
         "@org_tensorflow//tensorflow/lite/delegates/utils:async_type_helpers",

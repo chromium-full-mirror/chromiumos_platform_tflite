@@ -17,6 +17,7 @@
 #include <vector>
 
 #include "absl/cleanup/cleanup.h"
+#include "absl/strings/str_format.h"
 #include "android/hardware_buffer.h"
 #include "common/scoped_ahwb.h"
 #include "tensorflow/lite/core/async/c/task.h"
@@ -32,7 +33,6 @@ namespace {
 
 constexpr char kSignatureKey[] = "serving_default";
 
-using delegates::utils::BufferAttributes;
 using delegates::utils::BufferType;
 using delegates::utils::CreateScopedTfLiteAttrMap;
 using delegates::utils::CreateScopedTfLiteBackendBuffer;
@@ -83,14 +83,11 @@ TfLiteStatus AsyncDriver::Prepare() {
   if (runner_->PrepareBackends() != kTfLiteOk) {
     return kTfLiteError;
   }
-  if (AllocateBuffers() != kTfLiteOk) {
-    return kTfLiteError;
-  }
   return kTfLiteOk;
 }
 
-TfLiteStatus AsyncDriver::SetInputTensor(const std::string& name,
-                                         std::span<const uint8_t> data) {
+TfLiteStatus AsyncDriver::SetInputTensorData(const std::string& name,
+                                             std::span<const uint8_t> data) {
   auto it = tensor_buffer_ahwb_map_.find({kTfLiteIoTypeInput, name});
   if (it == tensor_buffer_ahwb_map_.end()) {
     return kTfLiteError;
@@ -112,6 +109,18 @@ TfLiteStatus AsyncDriver::SetInputTensor(const std::string& name,
   return kTfLiteOk;
 }
 
+void AsyncDriver::SetInputTensorBuffer(const std::string& name,
+                                       ScopedAHardwareBuffer&& buffer) {
+  tensor_buffer_ahwb_map_.insert_or_assign({kTfLiteIoTypeInput, name},
+                                           std::move(buffer));
+}
+
+void AsyncDriver::SetOutputTensorBuffer(const std::string& name,
+                                        ScopedAHardwareBuffer&& buffer) {
+  tensor_buffer_ahwb_map_.insert_or_assign({kTfLiteIoTypeOutput, name},
+                                           std::move(buffer));
+}
+
 TfLiteStatus AsyncDriver::Invoke() {
   TfLiteExecutionTask* task = runner_->CreateTask();
   absl::Cleanup finish_task = [&] { runner_->Finish(task); };
@@ -131,7 +140,7 @@ TfLiteStatus AsyncDriver::Invoke() {
 
     const auto attrs = WriteBufferAttrs({
         .buffer_type = BufferType::kAHardwareBufferBlob,
-        .size = tensor_buffer_size_map_.at(key),
+        .size = *tensor_buffer_attrs_map_.at(key).size,
     });
     TfLiteBufferHandle handle = kTfLiteNullBufferHandle;
     if (runner_->RegisterBuffer(io_type, buffer.get(), attrs.get(), &handle) !=
@@ -164,7 +173,7 @@ TfLiteStatus AsyncDriver::Invoke() {
   return kTfLiteOk;
 }
 
-std::vector<uint8_t> AsyncDriver::GetOutputTensor(const std::string& name) {
+std::vector<uint8_t> AsyncDriver::GetOutputTensorData(const std::string& name) {
   auto it = tensor_buffer_ahwb_map_.find({kTfLiteIoTypeOutput, name});
   if (it == tensor_buffer_ahwb_map_.end()) {
     return {};
@@ -179,7 +188,7 @@ std::vector<uint8_t> AsyncDriver::GetOutputTensor(const std::string& name) {
     return {};
   }
 
-  size_t size = tensor_buffer_size_map_.at({kTfLiteIoTypeOutput, name});
+  size_t size = *tensor_buffer_attrs_map_.at({kTfLiteIoTypeOutput, name}).size;
   std::vector<uint8_t> data(size);
   memcpy(data.data(), addr, data.size());
 
@@ -228,8 +237,8 @@ TfLiteStatus AsyncDriver::ReconcileBufferAttributes() {
           *attributes.size > std::numeric_limits<uint32_t>::max()) {
         return kTfLiteError;
       }
-      tensor_buffer_size_map_.emplace(
-          std::make_pair(io_type, std::string(name)), *attributes.size);
+      tensor_buffer_attrs_map_.emplace(
+          std::make_pair(io_type, std::string(name)), attributes);
       // TODO(shik): Support other attributes such as alignment.
     }
   }
@@ -267,16 +276,40 @@ TfLiteStatus AsyncDriver::ReconcileSyncAttributes() {
   return kTfLiteOk;
 }
 
+absl::StatusOr<BufferAttributes> AsyncDriver::GetInputBufferAttributes(
+    const std::string& name) {
+  auto it = tensor_buffer_attrs_map_.find({kTfLiteIoTypeInput, name});
+  if (it == tensor_buffer_attrs_map_.end()) {
+    return absl::NotFoundError(
+        absl::StrFormat("Cannot find input tensor with name = %s", name));
+  }
+  return it->second;
+}
+
+absl::StatusOr<BufferAttributes> AsyncDriver::GetOutputBufferAttributes(
+    const std::string& name) {
+  auto it = tensor_buffer_attrs_map_.find({kTfLiteIoTypeOutput, name});
+  if (it == tensor_buffer_attrs_map_.end()) {
+    return absl::NotFoundError(
+        absl::StrFormat("Cannot find output tensor with name = %s", name));
+  }
+  return it->second;
+}
+
 TfLiteStatus AsyncDriver::AllocateBuffers() {
-  for (const auto& [key, size] : tensor_buffer_size_map_) {
+  for (const auto& [key, attrs] : tensor_buffer_attrs_map_) {
+    if (tensor_buffer_ahwb_map_.contains(key)) {
+      continue;
+    }
+    const uint32_t size = *attrs.size;
     ScopedAHardwareBuffer buffer(AHardwareBuffer_Desc{
-        .width = static_cast<uint32_t>(size),
+        .width = size,
         .height = 1,
         .layers = 1,
         .format = AHARDWAREBUFFER_FORMAT_BLOB,
         .usage = AHARDWAREBUFFER_USAGE_CPU_READ_OFTEN |
                  AHARDWAREBUFFER_USAGE_CPU_WRITE_OFTEN,
-        .stride = static_cast<uint32_t>(size),
+        .stride = size,
     });
     if (!buffer) {
       return kTfLiteError;
