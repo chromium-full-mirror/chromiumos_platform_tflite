@@ -28,7 +28,9 @@ StableDelegateEnvironment* g_env = nullptr;
 // EXPECT_FLOAT_EQ, to provide a more precise comparison.
 constexpr float kEps = 1e-2;
 
-TEST(AsyncDelegate, Inference) {
+class AsyncDelegateTest : public testing::TestWithParam<int> {};
+
+TEST_P(AsyncDelegateTest, Inference) {
   using TensorArgs = SimpleModelBuilder::TensorArgs;
   const TensorArgs base_args = {
       .type = kTfLiteFloat32,
@@ -74,28 +76,36 @@ TEST(AsyncDelegate, Inference) {
   for (int dim : base_args.shape) {
     n *= dim;
   }
-  absl::BitGen gen;
-  std::vector<float> a_data(n);
-  std::vector<float> b_data(n);
-  std::vector<float> c_data(n);
-  std::vector<float> d_data(n);
-  for (int i = 0; i < n; ++i) {
-    a_data[i] = absl::Uniform(gen, 0.0, 1.0);
-    b_data[i] = absl::Uniform(gen, 0.0, 1.0);
-    c_data[i] = absl::Uniform(gen, 0.0, 1.0);
-    d_data[i] = a_data[i] + b_data[i] - c_data[i];
-  }
-  EXPECT_EQ(driver->SetInputTensor("a", a_data), kTfLiteOk);
-  EXPECT_EQ(driver->SetInputTensor("b", b_data), kTfLiteOk);
-  EXPECT_EQ(driver->SetInputTensor("c", c_data), kTfLiteOk);
 
-  ASSERT_EQ(driver->Invoke(), kTfLiteOk);
+  const int num_iterations = GetParam();
+  for (int iteration = 0; iteration < num_iterations; ++iteration) {
+    absl::BitGen gen;
+    std::vector<float> a_data(n);
+    std::vector<float> b_data(n);
+    std::vector<float> c_data(n);
+    std::vector<float> d_data(n);
+    for (int i = 0; i < n; ++i) {
+      a_data[i] = absl::Uniform(gen, 0.0, 1.0);
+      b_data[i] = absl::Uniform(gen, 0.0, 1.0);
+      c_data[i] = absl::Uniform(gen, 0.0, 1.0);
+      d_data[i] = a_data[i] + b_data[i] - c_data[i];
+    }
+    EXPECT_EQ(driver->SetInputTensor("a", a_data), kTfLiteOk);
+    EXPECT_EQ(driver->SetInputTensor("b", b_data), kTfLiteOk);
+    EXPECT_EQ(driver->SetInputTensor("c", c_data), kTfLiteOk);
 
-  auto output = driver->GetOutputTensor<float>("d");
-  for (int i = 0; i < n; ++i) {
-    EXPECT_NEAR(output[i], d_data[i], kEps);
+    ASSERT_EQ(driver->Invoke(), kTfLiteOk);
+
+    auto output = driver->GetOutputTensor<float>("d");
+    for (int i = 0; i < n; ++i) {
+      EXPECT_NEAR(output[i], d_data[i], kEps);
+    }
   }
 }
+
+INSTANTIATE_TEST_SUITE_P(DifferentIterations,
+                         AsyncDelegateTest,
+                         testing::Values(1, 10));
 
 }  // namespace tflite::cros::tests
 
