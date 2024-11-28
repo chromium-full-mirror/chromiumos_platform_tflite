@@ -79,6 +79,24 @@ TEST_F(LogTest, DUMP) {
 TEST_F(LogTest, CHECK) {
   CHECK(2 > 1) << "2 should be larger than 1";
   EXPECT_DEATH({ CHECK(1 > 2) << "oops"; }, "Check failed: 1 > 2 oops");
+
+  CHECK_EQ(1, 1);
+  CHECK_NE(1, 2);
+  CHECK_LT(1, 2);
+  CHECK_LE(1, 1);
+  CHECK_GT(2, 1);
+  CHECK_GE(2, 2);
+}
+
+TEST_F(LogTest, PCHECK) {
+  errno = EINVAL;
+  EXPECT_DEATH(
+      { PCHECK(1 > 2) << "oops"; },
+      "Check failed: 1 > 2 oops: Invalid argument");
+  int after_errno = errno;
+  errno = 0;
+
+  EXPECT_EQ(after_errno, EINVAL);
 }
 
 }  // namespace

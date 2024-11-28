@@ -48,6 +48,16 @@
 // Note that DCHECK() is intentionally not added here as per the style guide.
 // https://chromium.googlesource.com/chromium/src/+/HEAD/styleguide/c++/checks.md
 #define CHECK(condition) LOG_IMPL_ABSL(CHECK, condition)
+#define CHECK_EQ(val1, val2) LOG_IMPL_ABSL(CHECK_EQ, val1, val2)
+#define CHECK_NE(val1, val2) LOG_IMPL_ABSL(CHECK_NE, val1, val2)
+#define CHECK_LT(val1, val2) LOG_IMPL_ABSL(CHECK_LT, val1, val2)
+#define CHECK_LE(val1, val2) LOG_IMPL_ABSL(CHECK_LE, val1, val2)
+#define CHECK_GT(val1, val2) LOG_IMPL_ABSL(CHECK_GT, val1, val2)
+#define CHECK_GE(val1, val2) LOG_IMPL_ABSL(CHECK_GE, val1, val2)
+
+// `PCHECK` behaves like `CHECK` but appends a description of the current state
+// of `errno` to the failure message.
+#define PCHECK(condition) LOG_IMPL_ABSL(PCHECK, condition)
 
 namespace tflite::cros {
 
