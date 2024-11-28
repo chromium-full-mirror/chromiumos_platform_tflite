@@ -82,8 +82,9 @@ bool IsScalarInputSupported(int builtin_code) {
 }
 
 // Check if the operation requires explict conversion from int8 to uint8 values.
-bool NeedInt8Conversion(const TfLiteOpaqueContext* context, int builtin_code,
-                        const TfLiteOpaqueNode* node) {
+[[maybe_unused]] bool NeedInt8Conversion(const TfLiteOpaqueContext* context,
+                                         int builtin_code,
+                                         const TfLiteOpaqueNode* node) {
   const TfLiteType input_type =
       TfLiteOpaqueTensorType(TfLiteOpaqueNodeGetInput(context, node, 0));
   switch (builtin_code) {
@@ -266,8 +267,8 @@ uint64_t GetHash(const int* int_array, int num_of_array,
   return result;
 }
 
-uint64_t GetInOutPutHash(TfLiteOpaqueContext* context,
-                         const TfLiteIntArray* int_array) {
+[[maybe_unused]] uint64_t GetInOutPutHash(TfLiteOpaqueContext* context,
+                                          const TfLiteIntArray* int_array) {
   constexpr auto kHashConst = 0x9e3779b97f4a7800ULL;
   uint64_t result = 0;
   for (auto i : TfLiteIntArrayView(int_array)) {
@@ -1583,7 +1584,7 @@ TfLiteStatus NeuronStableDelegateKernel::Eval(TfLiteOpaqueContext* context,
     relative_output_index++;
   }
 
-  uint32_t boost_duration_default = 1000;
+  [[maybe_unused]] uint32_t boost_duration_default = 1000;
 #ifndef MTK_INTERNAL_USE
   if (options_.execution_preference == ExecutionPreference::kFastSingleAnswer ||
       options_.execution_preference == ExecutionPreference::kTurboBoost) {

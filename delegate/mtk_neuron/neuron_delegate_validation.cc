@@ -108,8 +108,9 @@ bool ExpectTypeIn(TfLiteType actual_type,
                 failure_type, msg, val_ctx);
 }
 
-bool ExpectMinAndroidSdkVersion(int curr_version, int min_version,
-                                OpValidationContext* val_ctx) {
+[[maybe_unused]] bool ExpectMinAndroidSdkVersion(int curr_version,
+                                                 int min_version,
+                                                 OpValidationContext* val_ctx) {
   return ExpectFmt(curr_version >= min_version, val_ctx,
                    NeuronValidationFailureType::kUnsupportedAndroidVersion,
                    "Android sdk version less than %d", min_version);
@@ -129,9 +130,9 @@ bool ExpectOpVersion(int curr_version, int max_version,
                    "OP Version different from %d", max_version);
 }
 
-bool ExpectIsFloatOperator(const TfLiteOpaqueContext* context,
-                           const TfLiteOpaqueNode* node,
-                           OpValidationContext* val_ctx) {
+[[maybe_unused]] bool ExpectIsFloatOperator(const TfLiteOpaqueContext* context,
+                                            const TfLiteOpaqueNode* node,
+                                            OpValidationContext* val_ctx) {
   const auto input_type =
       TfLiteOpaqueTensorType(TfLiteOpaqueNodeGetInput(context, node, 0));
   return Expect(IsFloat(input_type),
@@ -139,9 +140,9 @@ bool ExpectIsFloatOperator(const TfLiteOpaqueContext* context,
                 "Input should be Float", val_ctx);
 }
 
-bool ExpectIsFloatOrUint8Operator(const TfLiteOpaqueContext* context,
-                                  const TfLiteOpaqueNode* node,
-                                  OpValidationContext* val_ctx) {
+[[maybe_unused]] bool ExpectIsFloatOrUint8Operator(
+    const TfLiteOpaqueContext* context, const TfLiteOpaqueNode* node,
+    OpValidationContext* val_ctx) {
   const auto input_type =
       TfLiteOpaqueTensorType(TfLiteOpaqueNodeGetInput(context, node, 0));
   return Expect(IsFloatOrUInt8(input_type),
