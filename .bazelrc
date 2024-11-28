@@ -5,13 +5,8 @@ common --noexperimental_enable_bzlmod
 # Ignore warnings from dependencies.
 build --per_file_copt=external/.*@-Wno-everything
 
-# Treat warnings as errors except unused functions and variables
-# because partners might want to leave some code into our codebase first
-# and use it later.
+# Treat warnings as errors.
 build --copt=-Werror
-build --copt=-Wno-error=unused-variable
-build --copt=-Wno-error=unused-but-set-variable
-build --copt=-Wno-error=unused-function
 
 # Use C++20.
 build --cxxopt=-std=gnu++20
