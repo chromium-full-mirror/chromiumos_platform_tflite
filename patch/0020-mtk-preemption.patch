@@ -1,4 +1,4 @@
-From de5cb64170e85a7317e64ef04da46ad6a038548b Mon Sep 17 00:00:00 2001
+From f5f4590d9ea32e6e50a605e25a3f4fa5d4f7c3f4 Mon Sep 17 00:00:00 2001
 From: Tommy Chiang <ototot@google.com>
 Date: Tue, 22 Oct 2024 01:47:18 +0000
 Subject: [PATCH] Add QoS/Preemption options to MtkNeuronSettings
@@ -15,10 +15,10 @@ PATCH_NAME=mtk-preemption
  6 files changed, 69 insertions(+), 7 deletions(-)
 
 diff --git a/tensorflow/lite/acceleration/configuration/configuration.proto b/tensorflow/lite/acceleration/configuration/configuration.proto
-index 657ae5e1..33bc6d95 100644
+index cf82771c..3e315e7b 100644
 --- a/tensorflow/lite/acceleration/configuration/configuration.proto
 +++ b/tensorflow/lite/acceleration/configuration/configuration.proto
-@@ -787,6 +787,17 @@ message MtkNeuronSettings {
+@@ -773,6 +773,17 @@ message MtkNeuronSettings {
    // Optional path to the platform-dependent Neuron configuration file.
    // See docs at https://neuropilot.mediatek.com/ for more details.
    optional string neuron_config_path = 10;
@@ -37,10 +37,10 @@ index 657ae5e1..33bc6d95 100644
  
  // How to configure TFLite.
 diff --git a/tensorflow/lite/acceleration/configuration/configuration_generated.h b/tensorflow/lite/acceleration/configuration/configuration_generated.h
-index 2820f7c4..ef43aa6f 100644
+index 5fd634ac..f4968f9d 100644
 --- a/tensorflow/lite/acceleration/configuration/configuration_generated.h
 +++ b/tensorflow/lite/acceleration/configuration/configuration_generated.h
-@@ -2835,6 +2835,8 @@ struct MtkNeuronSettingsT : public ::flatbuffers::NativeTable {
+@@ -2820,6 +2820,8 @@ struct MtkNeuronSettingsT : public ::flatbuffers::NativeTable {
    std::vector<std::string> compile_options{};
    std::vector<std::string> accelerator_names{};
    std::string neuron_config_path{};
@@ -49,7 +49,7 @@ index 2820f7c4..ef43aa6f 100644
  };
  
  struct MtkNeuronSettings FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table {
-@@ -2850,7 +2852,9 @@ struct MtkNeuronSettings FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table
+@@ -2835,7 +2837,9 @@ struct MtkNeuronSettings FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table
      VT_USE_CACHEABLE_BUFFER = 16,
      VT_COMPILE_OPTIONS = 18,
      VT_ACCELERATOR_NAMES = 20,
@@ -60,7 +60,7 @@ index 2820f7c4..ef43aa6f 100644
    };
    tflite::MtkNeuronSettings_::ExecutionPreference execution_preference() const {
      return static_cast<tflite::MtkNeuronSettings_::ExecutionPreference>(GetField<int32_t>(VT_EXECUTION_PREFERENCE, 0));
-@@ -2882,6 +2886,12 @@ struct MtkNeuronSettings FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table
+@@ -2867,6 +2871,12 @@ struct MtkNeuronSettings FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table
    const ::flatbuffers::String *neuron_config_path() const {
      return GetPointer<const ::flatbuffers::String *>(VT_NEURON_CONFIG_PATH);
    }
@@ -73,7 +73,7 @@ index 2820f7c4..ef43aa6f 100644
    bool Verify(::flatbuffers::Verifier &verifier) const {
      return VerifyTableStart(verifier) &&
             VerifyField<int32_t>(verifier, VT_EXECUTION_PREFERENCE, 4) &&
-@@ -2900,6 +2910,8 @@ struct MtkNeuronSettings FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table
+@@ -2885,6 +2895,8 @@ struct MtkNeuronSettings FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table
             verifier.VerifyVectorOfStrings(accelerator_names()) &&
             VerifyOffset(verifier, VT_NEURON_CONFIG_PATH) &&
             verifier.VerifyString(neuron_config_path()) &&
@@ -82,7 +82,7 @@ index 2820f7c4..ef43aa6f 100644
             verifier.EndTable();
    }
    MtkNeuronSettingsT *UnPack(const ::flatbuffers::resolver_function_t *_resolver = nullptr) const;
-@@ -2941,6 +2953,12 @@ struct MtkNeuronSettingsBuilder {
+@@ -2926,6 +2938,12 @@ struct MtkNeuronSettingsBuilder {
    void add_neuron_config_path(::flatbuffers::Offset<::flatbuffers::String> neuron_config_path) {
      fbb_.AddOffset(MtkNeuronSettings::VT_NEURON_CONFIG_PATH, neuron_config_path);
    }
@@ -95,7 +95,7 @@ index 2820f7c4..ef43aa6f 100644
    explicit MtkNeuronSettingsBuilder(::flatbuffers::FlatBufferBuilder &_fbb)
          : fbb_(_fbb) {
      start_ = fbb_.StartTable();
-@@ -2963,8 +2981,12 @@ inline ::flatbuffers::Offset<MtkNeuronSettings> CreateMtkNeuronSettings(
+@@ -2948,8 +2966,12 @@ inline ::flatbuffers::Offset<MtkNeuronSettings> CreateMtkNeuronSettings(
      bool use_cacheable_buffer = true,
      ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<::flatbuffers::String>>> compile_options = 0,
      ::flatbuffers::Offset<::flatbuffers::Vector<::flatbuffers::Offset<::flatbuffers::String>>> accelerator_names = 0,
@@ -109,7 +109,7 @@ index 2820f7c4..ef43aa6f 100644
    builder_.add_neuron_config_path(neuron_config_path);
    builder_.add_accelerator_names(accelerator_names);
    builder_.add_compile_options(compile_options);
-@@ -2989,7 +3011,9 @@ inline ::flatbuffers::Offset<MtkNeuronSettings> CreateMtkNeuronSettingsDirect(
+@@ -2974,7 +2996,9 @@ inline ::flatbuffers::Offset<MtkNeuronSettings> CreateMtkNeuronSettingsDirect(
      bool use_cacheable_buffer = true,
      const std::vector<::flatbuffers::Offset<::flatbuffers::String>> *compile_options = nullptr,
      const std::vector<::flatbuffers::Offset<::flatbuffers::String>> *accelerator_names = nullptr,
@@ -120,7 +120,7 @@ index 2820f7c4..ef43aa6f 100644
    auto optimization_hints__ = optimization_hints ? _fbb.CreateVector<int32_t>(*optimization_hints) : 0;
    auto compile_options__ = compile_options ? _fbb.CreateVector<::flatbuffers::Offset<::flatbuffers::String>>(*compile_options) : 0;
    auto accelerator_names__ = accelerator_names ? _fbb.CreateVector<::flatbuffers::Offset<::flatbuffers::String>>(*accelerator_names) : 0;
-@@ -3005,7 +3029,9 @@ inline ::flatbuffers::Offset<MtkNeuronSettings> CreateMtkNeuronSettingsDirect(
+@@ -2990,7 +3014,9 @@ inline ::flatbuffers::Offset<MtkNeuronSettings> CreateMtkNeuronSettingsDirect(
        use_cacheable_buffer,
        compile_options__,
        accelerator_names__,
@@ -131,7 +131,7 @@ index 2820f7c4..ef43aa6f 100644
  }
  
  ::flatbuffers::Offset<MtkNeuronSettings> CreateMtkNeuronSettings(::flatbuffers::FlatBufferBuilder &_fbb, const MtkNeuronSettingsT *_o, const ::flatbuffers::rehasher_function_t *_rehasher = nullptr);
-@@ -5534,7 +5560,9 @@ inline bool operator==(const MtkNeuronSettingsT &lhs, const MtkNeuronSettingsT &
+@@ -5519,7 +5545,9 @@ inline bool operator==(const MtkNeuronSettingsT &lhs, const MtkNeuronSettingsT &
        (lhs.use_cacheable_buffer == rhs.use_cacheable_buffer) &&
        (lhs.compile_options == rhs.compile_options) &&
        (lhs.accelerator_names == rhs.accelerator_names) &&
@@ -142,7 +142,7 @@ index 2820f7c4..ef43aa6f 100644
  }
  
  inline bool operator!=(const MtkNeuronSettingsT &lhs, const MtkNeuronSettingsT &rhs) {
-@@ -5561,6 +5589,8 @@ inline void MtkNeuronSettings::UnPackTo(MtkNeuronSettingsT *_o, const ::flatbuff
+@@ -5546,6 +5574,8 @@ inline void MtkNeuronSettings::UnPackTo(MtkNeuronSettingsT *_o, const ::flatbuff
    { auto _e = compile_options(); if (_e) { _o->compile_options.resize(_e->size()); for (::flatbuffers::uoffset_t _i = 0; _i < _e->size(); _i++) { _o->compile_options[_i] = _e->Get(_i)->str(); } } else { _o->compile_options.resize(0); } }
    { auto _e = accelerator_names(); if (_e) { _o->accelerator_names.resize(_e->size()); for (::flatbuffers::uoffset_t _i = 0; _i < _e->size(); _i++) { _o->accelerator_names[_i] = _e->Get(_i)->str(); } } else { _o->accelerator_names.resize(0); } }
    { auto _e = neuron_config_path(); if (_e) _o->neuron_config_path = _e->str(); }
@@ -151,7 +151,7 @@ index 2820f7c4..ef43aa6f 100644
  }
  
  inline ::flatbuffers::Offset<MtkNeuronSettings> MtkNeuronSettings::Pack(::flatbuffers::FlatBufferBuilder &_fbb, const MtkNeuronSettingsT* _o, const ::flatbuffers::rehasher_function_t *_rehasher) {
-@@ -5581,6 +5611,8 @@ inline ::flatbuffers::Offset<MtkNeuronSettings> CreateMtkNeuronSettings(::flatbu
+@@ -5566,6 +5596,8 @@ inline ::flatbuffers::Offset<MtkNeuronSettings> CreateMtkNeuronSettings(::flatbu
    auto _compile_options = _o->compile_options.size() ? _fbb.CreateVectorOfStrings(_o->compile_options) : 0;
    auto _accelerator_names = _o->accelerator_names.size() ? _fbb.CreateVectorOfStrings(_o->accelerator_names) : 0;
    auto _neuron_config_path = _o->neuron_config_path.empty() ? 0 : _fbb.CreateString(_o->neuron_config_path);
@@ -160,7 +160,7 @@ index 2820f7c4..ef43aa6f 100644
    return tflite::CreateMtkNeuronSettings(
        _fbb,
        _execution_preference,
-@@ -5592,7 +5624,9 @@ inline ::flatbuffers::Offset<MtkNeuronSettings> CreateMtkNeuronSettings(::flatbu
+@@ -5577,7 +5609,9 @@ inline ::flatbuffers::Offset<MtkNeuronSettings> CreateMtkNeuronSettings(::flatbu
        _use_cacheable_buffer,
        _compile_options,
        _accelerator_names,

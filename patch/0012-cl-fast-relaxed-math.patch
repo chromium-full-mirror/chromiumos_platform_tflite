@@ -1,0 +1,47 @@
+From 9a22acdd01a7d0ceac0b10910bc79811af92bee0 Mon Sep 17 00:00:00 2001
+From: TFLite Patcher <tflite@localhost>
+Date: Fri, 18 Oct 2024 18:15:12 +0800
+Subject: [PATCH] Use fast relaxed math on CLVK
+
+PATCH_NAME=cl-fast-relaxed-math
+---
+ tensorflow/lite/delegates/gpu/cl/BUILD           | 1 +
+ tensorflow/lite/delegates/gpu/cl/cl_operation.cc | 6 ++++++
+ 2 files changed, 7 insertions(+)
+
+diff --git a/tensorflow/lite/delegates/gpu/cl/BUILD b/tensorflow/lite/delegates/gpu/cl/BUILD
+index 3291e3a9..28ff6f30 100644
+--- a/tensorflow/lite/delegates/gpu/cl/BUILD
++++ b/tensorflow/lite/delegates/gpu/cl/BUILD
+@@ -273,6 +273,7 @@ cc_library(
+         ":cl_kernel",
+         ":program_cache",
+         ":tensor",
++        "//tensorflow/lite/delegates/gpu/common/task:compiler_options",
+         "//tensorflow/lite/delegates/gpu/common/task:gpu_operation",
+         "@com_google_absl//absl/strings",
+     ],
+diff --git a/tensorflow/lite/delegates/gpu/cl/cl_operation.cc b/tensorflow/lite/delegates/gpu/cl/cl_operation.cc
+index 1cc1738d..8fd94938 100644
+--- a/tensorflow/lite/delegates/gpu/cl/cl_operation.cc
++++ b/tensorflow/lite/delegates/gpu/cl/cl_operation.cc
+@@ -17,6 +17,8 @@ limitations under the License.
+ 
+ #include <string>
+ 
++#include "tensorflow/lite/delegates/gpu/common/task/compiler_options.h"
++
+ namespace tflite {
+ namespace gpu {
+ namespace cl {
+@@ -165,6 +167,10 @@ absl::Status ClOperation::Compile(const CreationContext& creation_context) {
+                                 creation_context.context, &operation_->args_,
+                                 &operation_->code_));
+   operation_->args_.ReleaseCPURepresentation();
++  if (creation_context.device->info_.opencl_info.IsCLVK()) {
++    operation_->compiler_options_.push_back(
++        CompilerOptions::kClFastRelaxedMath);
++  }
+   RETURN_IF_ERROR(creation_context.cache->GetOrCreateCLKernel(
+       operation_->code_, "main_function", operation_->compiler_options_,
+       *creation_context.context, *creation_context.device, &kernel_,

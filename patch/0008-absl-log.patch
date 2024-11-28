@@ -1,4 +1,4 @@
-From cfecdb53470d3d48449c170fa55188ed0b4bb055 Mon Sep 17 00:00:00 2001
+From f9daa72fcff33d96ec510e8f62fb46d7201aa541 Mon Sep 17 00:00:00 2001
 From: TFLite Patcher <tflite@localhost>
 Date: Fri, 18 Oct 2024 18:11:43 +0800
 Subject: [PATCH] Add system lib BUILD rules for absl/log
@@ -72,7 +72,7 @@ index 00000000..d14be553
 +    "log",
 +]]
 diff --git a/third_party/absl/workspace.bzl b/third_party/absl/workspace.bzl
-index 9565a82c..addb2410 100644
+index 06f75166..c54df3cf 100644
 --- a/third_party/absl/workspace.bzl
 +++ b/third_party/absl/workspace.bzl
 @@ -20,6 +20,7 @@ def repo():

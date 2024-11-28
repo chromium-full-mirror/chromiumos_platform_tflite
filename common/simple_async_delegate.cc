@@ -26,8 +26,8 @@ constexpr char kCrosMtkPreCompile[] = "cros-mtk-pre-compile";
 TfLiteRegistrationExternal* CreateDelegateKernelRegistration(
     SimpleAsyncDelegateInterface* delegate) {
   TfLiteRegistrationExternal* kernel_registration =
-      TfLiteOperatorCreate(kTfLiteBuiltinDelegate, delegate->Name(),
-                           /*version=*/1, /*user_data=*/nullptr);
+      TfLiteOperatorCreateWithData(kTfLiteBuiltinDelegate, delegate->Name(),
+                                   /*version=*/1, /*user_data=*/nullptr);
 
   TfLiteOperatorSetFreeWithData(
       kernel_registration,

@@ -1,4 +1,4 @@
-From 618ac0c111b571297e3bb353cf267bd3c389427f Mon Sep 17 00:00:00 2001
+From e84f5a519df0a5baba71ae722529d56908cc5a93 Mon Sep 17 00:00:00 2001
 From: TFLite Patcher <tflite@localhost>
 Date: Fri, 18 Oct 2024 17:55:33 +0800
 Subject: [PATCH] Fix ASharedMemory_create in nnapi

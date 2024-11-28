@@ -9,7 +9,7 @@ load("@bazel_tools//tools/build_defs/repo:utils.bzl", "maybe")
 
 # Update `bazel_external_uris` in ebuild as well when upgrading TensorFlow, and
 # all the required dependencies need to be upload to our mirror first.
-TENSORFLOW_VERSION = "2.18.0"
+TENSORFLOW_VERSION = "2.17.0"
 
 # Use the provided tensorflow repo if it exists. Currently the ebuild will
 # download and unpack tensorflow for us.
@@ -24,23 +24,26 @@ maybe(
         "//patch:0001-bazel-toolchains.patch",
         "//patch:0002-ashmem-create.patch",
         "//patch:0003-gpu-delegate.patch",
-        "//patch:0004-Convolution2DTransposeBias.patch",
-        "//patch:0005-ruy-amd-cpu.patch",
-        "//patch:0006-memory-usage-monitor.patch",
-        "//patch:0007-absl-log.patch",
-        "//patch:0008-absl-base-prefetch.patch",
-        "//patch:0009-xnnpack-disable-latest-ops.patch",
-        "//patch:0010-Add-cros-mtk-pre-compile-custom-op.patch",
-        "//patch:0011-stop-dts-validation-early.patch",
-        "//patch:0012-dts-powopmodel-broadcastfloattest.patch",
-        "//patch:0013-dts-rsqrtint16.patch",
-        "//patch:0014-dts-stridedsliceoptests.patch",
-        "//patch:0015-dts-rsqrt-nan.patch",
-        "//patch:0016-mtk-preemption.patch",
-        "//patch:0017-accel-config-optimization.patch",
-        "//patch:0018-Add-missing-absl-strings-string_view-target.patch",
+        "//patch:0004-remove-llvm-repo.patch",
+        "//patch:0005-Convolution2DTransposeBias.patch",
+        "//patch:0006-ruy-amd-cpu.patch",
+        "//patch:0007-memory-usage-monitor.patch",
+        "//patch:0008-absl-log.patch",
+        "//patch:0009-absl-base-prefetch.patch",
+        "//patch:0010-cl-khr-command-buffer.patch",
+        "//patch:0011-xnnpack-disable-latest-ops.patch",
+        "//patch:0012-cl-fast-relaxed-math.patch",
+        "//patch:0013-dts-fp16-mode.patch",
+        "//patch:0014-Add-cros-mtk-pre-compile-custom-op.patch",
+        "//patch:0015-stop-dts-validation-early.patch",
+        "//patch:0016-dts-powopmodel-broadcastfloattest.patch",
+        "//patch:0017-dts-rsqrtint16.patch",
+        "//patch:0018-dts-stridedsliceoptests.patch",
+        "//patch:0019-dts-rsqrt-nan.patch",
+        "//patch:0020-mtk-preemption.patch",
+        "//patch:0021-accel-config-optimization.patch",
     ],
-    sha256 = "d7876f4bb0235cac60eb6316392a7c48676729860da1ab659fb440379ad5186d",
+    sha256 = "9cc4d5773b8ee910079baaecb4086d0c28939f024dd74b33fc5e64779b6533dc",
     strip_prefix = "tensorflow-{}".format(TENSORFLOW_VERSION),
     url = "https://github.com/tensorflow/tensorflow/archive/v{}.tar.gz".format(TENSORFLOW_VERSION),
 )
@@ -93,14 +96,6 @@ tf_workspace1()
 load("@org_tensorflow//tensorflow:workspace0.bzl", "tf_workspace0")
 
 tf_workspace0()
-
-# Introduce hermetic CUDA in Google ML projects.
-load(
-    "@local_tsl//third_party/gpus/cuda/hermetic:cuda_configure.bzl",
-    "cuda_configure",
-)
-
-cuda_configure(name = "local_config_cuda")
 
 # Intel OpenVINO Delegate dependencies
 load("@cros_tflite//delegate/intel_openvino:openvino.bzl", "openvino_repository")

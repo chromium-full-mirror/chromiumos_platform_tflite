@@ -1,0 +1,50 @@
+From b9eb2a7fb995351cc00073a0361b7c672c18e8cf Mon Sep 17 00:00:00 2001
+From: TFLite Patcher <tflite@localhost>
+Date: Fri, 18 Oct 2024 18:01:42 +0800
+Subject: [PATCH] Remove LLVM from workspace
+
+llvm is over 150MB which takes a long time to download but it's not
+needed for our building the TFLite. So we remove it to speed up the
+build.
+
+PATCH_NAME=remove-llvm-repo
+---
+ tensorflow/workspace2.bzl | 2 --
+ tensorflow/workspace3.bzl | 4 ----
+ 2 files changed, 6 deletions(-)
+
+diff --git a/tensorflow/workspace2.bzl b/tensorflow/workspace2.bzl
+index fd29dff0..23b438ec 100644
+--- a/tensorflow/workspace2.bzl
++++ b/tensorflow/workspace2.bzl
+@@ -39,7 +39,6 @@ load("//third_party/implib_so:workspace.bzl", implib_so = "repo")
+ load("//third_party/jpeg:workspace.bzl", jpeg = "repo")
+ load("//third_party/kissfft:workspace.bzl", kissfft = "repo")
+ load("//third_party/libprotobuf_mutator:workspace.bzl", libprotobuf_mutator = "repo")
+-load("//third_party/llvm:setup.bzl", "llvm_setup")
+ load("//third_party/nasm:workspace.bzl", nasm = "repo")
+ load("//third_party/nccl:nccl_configure.bzl", "nccl_configure")
+ load("//third_party/opencl_headers:workspace.bzl", opencl_headers = "repo")
+@@ -455,7 +454,6 @@ def _tf_repositories():
+         urls = tf_mirror_urls("https://github.com/antirez/linenoise/archive/4ce393a66b10903a0ef52edf9775ed526a17395f.tar.gz"),
+     )
+ 
+-    llvm_setup(name = "llvm-project")
+ 
+     # Intel openMP that is part of LLVM sources.
+     tf_http_archive(
+diff --git a/tensorflow/workspace3.bzl b/tensorflow/workspace3.bzl
+index d7b32f01..a326ff55 100644
+--- a/tensorflow/workspace3.bzl
++++ b/tensorflow/workspace3.bzl
+@@ -58,10 +58,6 @@ def workspace():
+         url = "https://github.com/bazelbuild/rules_jvm_external/archive/%s.zip" % RULES_JVM_EXTERNAL_TAG,
+     )
+ 
+-    # Load the raw llvm-project.  llvm does not have build rules set up by default,
+-    # but provides a script for setting up build rules via overlays.
+-    llvm("llvm-raw")
+-
+ # Alias so it can be loaded without assigning to a different symbol to prevent
+ # shadowing previous loads and trigger a buildifier warning.
+ tf_workspace3 = workspace

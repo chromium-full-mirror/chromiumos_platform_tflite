@@ -1,4 +1,4 @@
-From fb9e8aa8692593746f8c67e35ffaa6f48c7766d4 Mon Sep 17 00:00:00 2001
+From 921ffb6a6ccab712b30fd5a523a0cb71376fc7ae Mon Sep 17 00:00:00 2001
 From: Tommy Chiang <ototot@google.com>
 Date: Mon, 7 Oct 2024 02:04:45 -0700
 Subject: [PATCH] Stop validation if no delegates have been applied
