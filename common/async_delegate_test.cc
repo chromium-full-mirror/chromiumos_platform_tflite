@@ -9,7 +9,9 @@
 #include <vector>
 
 #include "absl/random/random.h"
+#include "android/hardware_buffer.h"
 #include "common/async_driver.h"
+#include "common/scoped_ahwb.h"
 #include "common/simple_model_builder.h"
 #include "common/test_util/stable_delegate_env.h"
 #include "tensorflow/lite/core/c/builtin_op_data.h"
@@ -31,6 +33,18 @@ constexpr float kEps = 1e-2;
 class AsyncDelegateTest : public testing::TestWithParam<int> {};
 
 TEST_P(AsyncDelegateTest, Inference) {
+  auto ahwb_desc_with_size = [](uint32_t size) {
+    return AHardwareBuffer_Desc{
+        .width = size,
+        .height = 1,
+        .layers = 1,
+        .format = AHARDWAREBUFFER_FORMAT_BLOB,
+        .usage = AHARDWAREBUFFER_USAGE_CPU_READ_OFTEN |
+                 AHARDWAREBUFFER_USAGE_CPU_WRITE_OFTEN,
+        .stride = size,
+    };
+  };
+
   using TensorArgs = SimpleModelBuilder::TensorArgs;
   const TensorArgs base_args = {
       .type = kTfLiteFloat32,
@@ -72,8 +86,6 @@ TEST_P(AsyncDelegateTest, Inference) {
 
   ASSERT_EQ(driver->Prepare(), kTfLiteOk);
 
-  ASSERT_EQ(driver->AllocateBuffers(), kTfLiteOk);
-
   int n = 1;
   for (int dim : base_args.shape) {
     n *= dim;
@@ -81,6 +93,28 @@ TEST_P(AsyncDelegateTest, Inference) {
 
   const int num_iterations = GetParam();
   for (int iteration = 0; iteration < num_iterations; ++iteration) {
+    auto a_attrs = driver->GetInputBufferAttributes("a");
+    auto b_attrs = driver->GetInputBufferAttributes("b");
+    auto c_attrs = driver->GetInputBufferAttributes("c");
+    auto d_attrs = driver->GetOutputBufferAttributes("d");
+    EXPECT_TRUE(a_attrs.ok());
+    EXPECT_TRUE(b_attrs.ok());
+    EXPECT_TRUE(c_attrs.ok());
+    EXPECT_TRUE(d_attrs.ok());
+    EXPECT_EQ(*a_attrs->size, n * sizeof(float));
+    EXPECT_EQ(*b_attrs->size, n * sizeof(float));
+    EXPECT_EQ(*c_attrs->size, n * sizeof(float));
+    EXPECT_EQ(*d_attrs->size, n * sizeof(float));
+
+    ScopedAHardwareBuffer a_buffer(ahwb_desc_with_size(n));
+    ScopedAHardwareBuffer b_buffer(ahwb_desc_with_size(n));
+    ScopedAHardwareBuffer c_buffer(ahwb_desc_with_size(n));
+    ScopedAHardwareBuffer d_buffer(ahwb_desc_with_size(n));
+    driver->SetInputTensorBuffer("a", std::move(a_buffer));
+    driver->SetInputTensorBuffer("b", std::move(b_buffer));
+    driver->SetInputTensorBuffer("c", std::move(c_buffer));
+    driver->SetOutputTensorBuffer("d", std::move(d_buffer));
+
     absl::BitGen gen;
     std::vector<float> a_data(n);
     std::vector<float> b_data(n);
@@ -96,6 +130,7 @@ TEST_P(AsyncDelegateTest, Inference) {
     EXPECT_EQ(driver->SetInputTensorData("b", b_data), kTfLiteOk);
     EXPECT_EQ(driver->SetInputTensorData("c", c_data), kTfLiteOk);
 
+    ASSERT_EQ(driver->AllocateBuffers(), kTfLiteOk);
     ASSERT_EQ(driver->Invoke(), kTfLiteOk);
 
     auto output = driver->GetOutputTensorData<float>("d");

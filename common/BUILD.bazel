@@ -167,6 +167,7 @@ cc_binary(
     deps = [
         ":async_driver",
         ":simple_model_builder",
+        "//android:hardware_buffer",
         "//common/test_util:stable_delegate_env",
         "@com_google_absl//absl/random",
         "@com_google_googletest//:gtest",
