@@ -140,8 +140,7 @@ TEST_F(OpenVINOGraphBuilderTest, CreateConstNode_Invalid) {
     TfLiteOperator *registration_external =
         TfLiteOperatorCreate(kTfLiteBuiltinDelegate,
                              /*name*/ nullptr,
-                             /*version=*/1,
-                             /*user_data=*/nullptr);
+                             /*version=*/1);
     return TfLiteOpaqueContextReplaceNodeSubsetsWithDelegateKernels(
         opaque_context, registration_external, execution_plan,
         opaque_delegate_);
@@ -193,8 +192,7 @@ TEST_F(OpenVINOGraphBuilderTest, CreateConstNode_InvalidIndex) {
     TfLiteOperator *registration_external =
         TfLiteOperatorCreate(kTfLiteBuiltinDelegate,
                              /*name*/ nullptr,
-                             /*version=*/1,
-                             /*user_data=*/nullptr);
+                             /*version=*/1);
     return TfLiteOpaqueContextReplaceNodeSubsetsWithDelegateKernels(
         opaque_context, registration_external, execution_plan,
         opaque_delegate_);
@@ -222,9 +220,9 @@ TEST_F(OpenVINOGraphBuilderTest, UpdateResultNodes_Valid) {
                                        TfLiteOpaqueDelegate *opaque_delegate_,
                                        void *data) -> TfLiteStatus {
     static_cast<UserData *>(data)->delegate_prepared_ = true;
-    auto reg_ex = TfLiteOperatorCreate(kTfLiteBuiltinDelegate,
-                                       "Test driver Openvino delegate",
-                                       /*version=*/1, data);
+    auto reg_ex = TfLiteOperatorCreateWithData(kTfLiteBuiltinDelegate,
+                                               "Test driver Openvino delegate",
+                                               /*version=*/1, data);
     TfLiteOperatorSetInitWithData(
         reg_ex,
         [](void *user_data, TfLiteOpaqueContext *opaque_context,
@@ -361,9 +359,9 @@ TEST_F(OpenVINOGraphBuilderTest, UpdateResultNodes_InvalidIndex) {
                                        TfLiteOpaqueDelegate *opaque_delegate_,
                                        void *data) -> TfLiteStatus {
     static_cast<UserData *>(data)->delegate_prepared_ = true;
-    auto reg_ex = TfLiteOperatorCreate(kTfLiteBuiltinDelegate,
-                                       "Test driver Openvino delegate",
-                                       /*version=*/1, data);
+    auto reg_ex = TfLiteOperatorCreateWithData(kTfLiteBuiltinDelegate,
+                                               "Test driver Openvino delegate",
+                                               /*version=*/1, data);
     TfLiteOperatorSetInitWithData(
         reg_ex,
         [](void *user_data, TfLiteOpaqueContext *opaque_context,
@@ -520,9 +518,9 @@ TEST_F(OpenVINOGraphBuilderTest, CreateNodeFromTfLiteOp_Valid) {
                                        TfLiteOpaqueDelegate *opaque_delegate_,
                                        void *data) -> TfLiteStatus {
     static_cast<UserData *>(data)->delegate_prepared_ = true;
-    auto reg_ex = TfLiteOperatorCreate(kTfLiteBuiltinDelegate,
-                                       "Test driver Openvino delegate",
-                                       /*version=*/1, data);
+    auto reg_ex = TfLiteOperatorCreateWithData(kTfLiteBuiltinDelegate,
+                                               "Test driver Openvino delegate",
+                                               /*version=*/1, data);
     TfLiteOperatorSetInitWithData(
         reg_ex,
         [](void *user_data, TfLiteOpaqueContext *opaque_context,
@@ -654,9 +652,9 @@ TEST_F(OpenVINOGraphBuilderTest, CreateNodeFromTfLiteOp_InvalidRegistration) {
                                        TfLiteOpaqueDelegate *opaque_delegate_,
                                        void *data) -> TfLiteStatus {
     static_cast<UserData *>(data)->delegate_prepared_ = true;
-    auto reg_ex = TfLiteOperatorCreate(kTfLiteBuiltinDelegate,
-                                       "Test driver Openvino delegate",
-                                       /*version=*/1, data);
+    auto reg_ex = TfLiteOperatorCreateWithData(kTfLiteBuiltinDelegate,
+                                               "Test driver Openvino delegate",
+                                               /*version=*/1, data);
     TfLiteOperatorSetInitWithData(
         reg_ex,
         [](void *user_data, TfLiteOpaqueContext *opaque_context,
@@ -789,9 +787,9 @@ TEST_F(OpenVINOGraphBuilderTest, CreateNodeFromTfLiteOp_InvalidNode) {
                                        TfLiteOpaqueDelegate *opaque_delegate_,
                                        void *data) -> TfLiteStatus {
     static_cast<UserData *>(data)->delegate_prepared_ = true;
-    auto reg_ex = TfLiteOperatorCreate(kTfLiteBuiltinDelegate,
-                                       "Test driver Openvino delegate",
-                                       /*version=*/1, data);
+    auto reg_ex = TfLiteOperatorCreateWithData(kTfLiteBuiltinDelegate,
+                                               "Test driver Openvino delegate",
+                                               /*version=*/1, data);
     TfLiteOperatorSetInitWithData(
         reg_ex,
         [](void *user_data, TfLiteOpaqueContext *opaque_context,
@@ -924,9 +922,9 @@ TEST_F(OpenVINOGraphBuilderTest, CreateNodeFromTfLiteOp_InvalidContext) {
                                        TfLiteOpaqueDelegate *opaque_delegate_,
                                        void *data) -> TfLiteStatus {
     static_cast<UserData *>(data)->delegate_prepared_ = true;
-    auto reg_ex = TfLiteOperatorCreate(kTfLiteBuiltinDelegate,
-                                       "Test driver Openvino delegate",
-                                       /*version=*/1, data);
+    auto reg_ex = TfLiteOperatorCreateWithData(kTfLiteBuiltinDelegate,
+                                               "Test driver Openvino delegate",
+                                               /*version=*/1, data);
     TfLiteOperatorSetInitWithData(
         reg_ex,
         [](void *user_data, TfLiteOpaqueContext *opaque_context,

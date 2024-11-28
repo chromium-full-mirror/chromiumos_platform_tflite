@@ -67,17 +67,16 @@ class OpenVINODelegateTest : public testing::Test {
           TfLiteOpaqueContextGetExecutionPlan(opaque_context, &execution_plan));
       for (int i = 0; i < execution_plan->size; ++i) {
         TfLiteOpaqueNode *node = nullptr;
-        TfLiteOperator *registration = nullptr;
+        TfLiteRegistrationExternal *registration = nullptr;
         TfLiteOpaqueContextGetNodeAndRegistration(opaque_context, i, &node,
                                                   &registration);
         test_function_(opaque_context, node);
       }
 
-      TfLiteOperator *registration_external =
-          TfLiteOperatorCreate(kTfLiteBuiltinDelegate,
-                               /*name=*/nullptr,
-                               /*version=*/1,
-                               /*data=*/nullptr);
+      TfLiteRegistrationExternal *registration_external =
+          TfLiteRegistrationExternalCreate(kTfLiteBuiltinDelegate,
+                                           /*name=*/nullptr,
+                                           /*version=*/1);
       return TfLiteOpaqueContextReplaceNodeSubsetsWithDelegateKernels(
           opaque_context, registration_external, execution_plan,
           opaque_delegate_);
