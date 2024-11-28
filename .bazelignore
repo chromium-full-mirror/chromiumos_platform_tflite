@@ -1,0 +1,4 @@
+# Excludes the tensorflow/ directory ejected by the patcher from the Bazel
+# build system to prevent it from being misinterpreted as a sub-package of the
+# root workspace.
+tensorflow/
