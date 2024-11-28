@@ -1398,15 +1398,13 @@ TfLiteStatus NeuronStableDelegateKernel::Eval(TfLiteOpaqueContext* context,
       if (buffer_handle != kTfLiteNullBufferHandle &&
           tensor_memory_map_kernel_.find(buffer_handle) !=
               tensor_memory_map_kernel_.end()) {
-        if (need_set_memory_) {
-          RETURN_TFLITE_ERROR_IF_NEURON_ERROR(
-              context,
-              neuronapi_->NeuronExecution_setInputFromMemory(
-                  execution, relative_input_index, input_nn_operand_type_ptr,
-                  tensor_memory_map_kernel_.at(buffer_handle), 0,
-                  TfLiteOpaqueTensorByteSize(tensor)),
-              "associating Neuron execution input with a memory object");
-        }
+        RETURN_TFLITE_ERROR_IF_NEURON_ERROR(
+            context,
+            neuronapi_->NeuronExecution_setInputFromMemory(
+                execution, relative_input_index, input_nn_operand_type_ptr,
+                tensor_memory_map_kernel_.at(buffer_handle), 0,
+                TfLiteOpaqueTensorByteSize(tensor)),
+            "associating Neuron execution input with a memory object");
         relative_input_index++;
         continue;
       }
@@ -1416,9 +1414,10 @@ TfLiteStatus NeuronStableDelegateKernel::Eval(TfLiteOpaqueContext* context,
         uint8_t* input_ptr = nn_input_memory_->get_data_ptr() + input_offset;
         if (TfLiteOpaqueTensorType(tensor) == kTfLiteUInt8 &&
             nn_type_equivalent == kTfLiteInt32) {
+          uint8_t* uint8_tensor_data = static_cast<uint8_t*>(TfLiteOpaqueTensorData(tensor));
           for (int i = 0; i < num_elements; ++i) {
             reinterpret_cast<int32_t*>(input_ptr)[i] =
-                static_cast<const int32_t*>(TfLiteOpaqueTensorData(tensor))[i];
+                static_cast<const int32_t>(uint8_tensor_data[i]);
           }
         } else if (TfLiteOpaqueTensorType(tensor) == kTfLiteInt8 &&
                    nn_type_equivalent == kTfLiteUInt8) {
@@ -1520,15 +1519,13 @@ TfLiteStatus NeuronStableDelegateKernel::Eval(TfLiteOpaqueContext* context,
     if (buffer_handle != kTfLiteNullBufferHandle &&
         tensor_memory_map_kernel_.find(buffer_handle) !=
             tensor_memory_map_kernel_.end()) {
-      if (need_set_memory_) {
-        RETURN_TFLITE_ERROR_IF_NEURON_ERROR(
-            context,
-            neuronapi_->NeuronExecution_setOutputFromMemory(
-                execution, relative_output_index, output_nn_operand_type_ptr,
-                tensor_memory_map_kernel_.at(buffer_handle), 0,
-                TfLiteOpaqueTensorByteSize(tensor)),
-            "associating NNAPI execution output to a memory object");
-      }
+      RETURN_TFLITE_ERROR_IF_NEURON_ERROR(
+          context,
+          neuronapi_->NeuronExecution_setOutputFromMemory(
+              execution, relative_output_index, output_nn_operand_type_ptr,
+              tensor_memory_map_kernel_.at(buffer_handle), 0,
+              TfLiteOpaqueTensorByteSize(tensor)),
+          "associating NNAPI execution output to a memory object");
     } else {
       if (options_.use_ahwb) {
         if (need_set_memory_) {
