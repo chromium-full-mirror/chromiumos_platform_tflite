@@ -419,6 +419,7 @@ TEST_F(OpTest, Concatenation) {
                                                   .axis = axis,
                                                   .activation = kTfLiteActNone,
                                               });
+    TestModel(mb);
   }
 }
 
