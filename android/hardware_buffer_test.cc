@@ -9,7 +9,16 @@
 #include <gtest/gtest.h>
 
 #include <algorithm>
+#include <fstream>
 #include <memory>
+#include <string>
+#include <vector>
+
+#include "absl/strings/numbers.h"
+#include "absl/strings/str_split.h"
+#include "common/log.h"
+
+namespace {}  // namespace
 
 constexpr int kSize = 4096;
 constexpr uint64_t kUsage = AHARDWAREBUFFER_USAGE_CPU_READ_OFTEN |
@@ -279,6 +288,61 @@ TEST(AHardwareBuffer, LockUsage) {
                                  /*fence=*/-1, /*rect=*/nullptr, &addr),
             0);
   ASSERT_EQ(addr, nullptr);
+}
+
+TEST(AHardwareBuffer, ManyBuffers) {
+  auto get_vm_size = [] {
+    constexpr char kProcSelfStatmPath[] = "/proc/self/statm";
+
+    std::ifstream file(kProcSelfStatmPath);
+    CHECK(file.is_open());
+
+    // The content of `/proc/self/statm` is
+    //
+    // <size> <resident> <shared> <text> <lib> <data> <dt>
+    //
+    // The numbers represent the memory usage, measured in pages. For more
+    // details, refer to `man 5 proc`.
+    std::string line;
+    CHECK(std::getline(file, line));
+
+    std::vector<std::string_view> cols =
+        absl::StrSplit(line, absl::ByChar(' '), absl::SkipWhitespace());
+    CHECK_EQ(cols.size(), 7);
+
+    uint64_t vm_size;
+    CHECK(absl::SimpleAtoi(cols[0], &vm_size));
+    return vm_size;
+  };
+
+  constexpr int kNumBuffers = 1024;
+
+  // Each buffer is 4KiB (or 1 page in most cases)
+  const AHardwareBuffer_Desc desc = {
+      .width = kSize,
+      .height = 1,
+      .layers = 1,
+      .format = AHARDWAREBUFFER_FORMAT_BLOB,
+      .usage = kUsage,
+      .stride = kSize,
+  };
+
+  // Allocate kNumBuffers buffers and check the memory usage does not increase.
+  uint64_t memory_usage = 0;
+  for (int i = 0; i < kNumBuffers; ++i) {
+    AHardwareBuffer* buffer = nullptr;
+    ASSERT_EQ(AHardwareBuffer_allocate(&desc, &buffer), 0);
+    ASSERT_NE(buffer, nullptr);
+
+    AHardwareBuffer_release(buffer);
+    if (i == 0) {
+      memory_usage = get_vm_size();
+    } else {
+      // Add a 1 page tolerance to accomodate ahwb allocator's internal memory
+      // overhead.
+      EXPECT_LE(get_vm_size(), memory_usage + 1);
+    }
+  }
 }
 
 int main(int argc, char** argv) {
