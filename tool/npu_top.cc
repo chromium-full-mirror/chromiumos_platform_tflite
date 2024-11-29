@@ -7,10 +7,12 @@
 #include <fcntl.h>
 #include <unistd.h>
 
+#include <fstream>
 #include <string>
 
 #include "absl/strings/numbers.h"
 #include "absl/strings/str_format.h"
+#include "absl/strings/str_split.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
 #include "common/log.h"
@@ -31,7 +33,127 @@ int64_t ReadInt64FromFile(const char* path) {
   return value;
 }
 
-class IntelNPULoad {
+std::string ReadFirstLineFromFile(const char* path) {
+  std::ifstream file(path);
+  CHECK(file.is_open());
+
+  std::string line;
+  CHECK(std::getline(file, line));
+
+  return line;
+}
+
+template <typename T>
+std::string FormatUtilization(T busy, T total) {
+  CHECK_GT(total, 0);
+  CHECK_GE(busy, 0);
+  double util = static_cast<double>(busy) / static_cast<double>(total);
+  return absl::StrFormat("%.1f%%", util * 100);
+}
+
+// Abstract base class representing a data source.
+class Source {
+ public:
+  Source() {}
+  virtual ~Source() = default;
+
+  virtual bool Init() = 0;
+  virtual std::string GetValue() = 0;
+};
+
+class CPULoad : public Source {
+ public:
+  bool Init() override {
+    if (access(kProcStatPath, R_OK) != 0) {
+      LOG(ERROR) << "Failed to read " << kProcStatPath;
+      return false;
+    }
+    Update();
+    return true;
+  }
+
+  std::string GetValue() override {
+    Update();
+    return FormatUtilization(curr_data_.busy - prev_data_.busy,
+                             curr_data_.total - prev_data_.total);
+  }
+
+ private:
+  static constexpr char kProcStatPath[] = "/proc/stat";
+
+  struct Data {
+    int64_t busy = 0;
+    int64_t total = 0;
+  };
+
+  enum class ProcStatIndex {
+    kUser,
+    kNice,
+    kSystem,
+    kIdle,
+    kIowait,
+    kIrq,
+    KSoftirq,
+    kSteal,
+    kGuest,
+    kGuestNice,
+  };
+
+  void Update() {
+    Data data = ParseProcStat();
+    if (data.total == curr_data_.total) {
+      return;
+    }
+    prev_data_ = curr_data_;
+    curr_data_ = data;
+  }
+
+  Data ParseProcStat() {
+    // The content of the /proc/stat file begins like this:
+    // ```
+    // # head -n 1 /proc/stat
+    // cpu  247132 21 94411 31505941 13513 0 895 0 0 0
+    // ```
+    //
+    // The numbers represent the time, measured in USER_HZ units, that the
+    // system has spent in various states. For more details, refer to `man 5
+    // proc`.
+    std::string line = ReadFirstLineFromFile(kProcStatPath);
+    std::vector<std::string_view> cols =
+        absl::StrSplit(line, absl::ByChar(' '), absl::SkipWhitespace());
+
+    // The header ("cpu") and the first four numbers (user, nice, system, idle)
+    // are guaranteed to be present in the file.
+    CHECK_GE(cols.size(), 5);
+    CHECK_EQ(cols[0], "cpu");
+
+    std::vector<int64_t> times;
+    for (size_t i = 1; i < cols.size(); ++i) {
+      int64_t time = 0;
+      CHECK(absl::SimpleAtoi(cols[i], &time));
+      times.push_back(time);
+    }
+
+    auto get = [&](ProcStatIndex idx) -> int64_t {
+      size_t i = static_cast<size_t>(idx);
+      return i < times.size() ? times[i] : 0;
+    };
+
+    // Follow the same calculation logic used by the `procps` package,
+    // which provides tools like `top` and `ps`. For reference:
+    // https://gitlab.com/procps-ng/procps/-/blob/5ce26ac301d6133e3e86aa9da89035bd8cd89886/library/stat.c#L556-585
+    using enum ProcStatIndex;
+    int64_t idle = get(kIdle) + get(kIowait);
+    int64_t busy = get(kUser) + get(kNice) + get(kSystem) + get(kIrq) +
+                   get(KSoftirq) + get(kSteal);
+    return Data{.busy = busy, .total = idle + busy};
+  }
+
+  Data prev_data_;
+  Data curr_data_;
+};
+
+class IntelNPULoad : public Source {
  public:
   bool Init() {
     if (access(kBusyTimePath, R_OK) != 0) {
@@ -44,11 +166,9 @@ class IntelNPULoad {
 
   std::string GetValue() {
     Update();
-    CHECK_NE(curr_timestamp_, prev_timestamp_);
-    double dt = absl::ToDoubleNanoseconds(curr_timestamp_ - prev_timestamp_);
     double db = absl::ToDoubleNanoseconds(curr_busy_time_ - prev_busy_time_);
-    double util = std::min(db / dt, 1.0);
-    return absl::StrFormat("%.1f%%", util * 100);
+    double dt = absl::ToDoubleNanoseconds(curr_timestamp_ - prev_timestamp_);
+    return FormatUtilization(db, dt);
   }
 
  private:
@@ -85,14 +205,15 @@ constexpr absl::Duration kSampleInterval = absl::Seconds(1);
 // TODO: b:380808338 - Support output in JSONL.
 // TODO: b:380808338 - Support output in CSV.
 void RunSyslogLoop() {
-  // TODO: b:380808338 - Support CPU load.
   // TODO: b:380808338 - Support GPU load.
   // TODO: b:380808338 - Support MTK NPU load.
+  CPULoad cpu;
   IntelNPULoad npu;
+  CHECK(cpu.Init());
   CHECK(npu.Init());
   while (true) {
     absl::SleepFor(kSampleInterval);
-    LOG(INFO) << "npu: " << npu.GetValue();
+    LOG(INFO) << "cpu: " << cpu.GetValue() << " npu: " << npu.GetValue();
   }
 }
 
