@@ -69,6 +69,7 @@ cc_binary(
         "//common:log",
         "//common:scoped_fd",
         "@com_google_absl//absl/flags:parse",
+        "@com_google_absl//absl/status",
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/time",
     ],

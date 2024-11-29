@@ -10,8 +10,11 @@
 #include <fstream>
 #include <string>
 
+#include "absl/status/status.h"
 #include "absl/strings/numbers.h"
+#include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
+#include "absl/strings/str_join.h"
 #include "absl/strings/str_split.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
@@ -51,26 +54,31 @@ std::string FormatUtilization(T busy, T total) {
   return absl::StrFormat("%.1f%%", util * 100);
 }
 
+absl::Status CheckFileReadable(const char* path) {
+  if (access(path, R_OK) != 0) {
+    return absl::NotFoundError(absl::StrCat("Failed to read ", path));
+  }
+  return absl::OkStatus();
+}
+
 // Abstract base class representing a data source.
 class Source {
  public:
   Source() {}
   virtual ~Source() = default;
 
-  virtual bool Init() = 0;
+  virtual absl::Status CheckAvailability() = 0;
+  virtual void Init() = 0;
   virtual std::string GetValue() = 0;
 };
 
 class CPULoad : public Source {
  public:
-  bool Init() override {
-    if (access(kProcStatPath, R_OK) != 0) {
-      LOG(ERROR) << "Failed to read " << kProcStatPath;
-      return false;
-    }
-    Update();
-    return true;
+  absl::Status CheckAvailability() override {
+    return CheckFileReadable(kProcStatPath);
   }
+
+  void Init() override { Update(); }
 
   std::string GetValue() override {
     Update();
@@ -108,7 +116,7 @@ class CPULoad : public Source {
     curr_data_ = data;
   }
 
-  Data ParseProcStat() {
+  static Data ParseProcStat() {
     // The content of the /proc/stat file begins like this:
     // ```
     // # head -n 1 /proc/stat
@@ -155,16 +163,13 @@ class CPULoad : public Source {
 
 class IntelNPULoad : public Source {
  public:
-  bool Init() {
-    if (access(kBusyTimePath, R_OK) != 0) {
-      LOG(ERROR) << "Failed to read " << kBusyTimePath;
-      return false;
-    }
-    Update();
-    return true;
+  absl::Status CheckAvailability() override {
+    return CheckFileReadable(kBusyTimePath);
   }
 
-  std::string GetValue() {
+  void Init() override { Update(); }
+
+  std::string GetValue() override {
     Update();
     double db = absl::ToDoubleNanoseconds(curr_busy_time_ - prev_busy_time_);
     double dt = absl::ToDoubleNanoseconds(curr_timestamp_ - prev_timestamp_);
@@ -199,27 +204,58 @@ class IntelNPULoad : public Source {
   absl::Duration curr_busy_time_;
 };
 
-// TODO: b:380808338 - Make this configurable with command line flags.
-constexpr absl::Duration kSampleInterval = absl::Seconds(1);
-
-// TODO: b:380808338 - Support output in JSONL.
-// TODO: b:380808338 - Support output in CSV.
-void RunSyslogLoop() {
-  // TODO: b:380808338 - Support GPU load.
-  // TODO: b:380808338 - Support MTK NPU load.
-  CPULoad cpu;
-  IntelNPULoad npu;
-  CHECK(cpu.Init());
-  CHECK(npu.Init());
-  while (true) {
-    absl::SleepFor(kSampleInterval);
-    LOG(INFO) << "cpu: " << cpu.GetValue() << " npu: " << npu.GetValue();
+class Top {
+ public:
+  Top() {
+    // TODO: b:380808338 - Support GPU load.
+    // TODO: b:380808338 - Support MTK NPU load.
+    TryAddSource<CPULoad>("cpu");
+    TryAddSource<IntelNPULoad>("npu");
   }
-}
+
+  // TODO: b:380808338 - Support output in JSONL.
+  // TODO: b:380808338 - Support output in CSV.
+  void RunSyslogLoop() {
+    for (auto& entry : source_entries) {
+      entry.source->Init();
+    }
+    while (true) {
+      absl::SleepFor(kSampleInterval);
+      std::vector<std::string> pieces;
+      for (auto& entry : source_entries) {
+        pieces.push_back(
+            absl::StrFormat("%s: %s", entry.name, entry.source->GetValue()));
+      }
+      LOG(INFO) << absl::StrJoin(pieces, " ");
+    }
+  }
+
+ private:
+  // TODO: b:380808338 - Make this configurable with command line flags.
+  static constexpr absl::Duration kSampleInterval = absl::Seconds(1);
+
+  struct SourceEntry {
+    std::string name;
+    std::unique_ptr<Source> source;
+  };
+
+  template <std::derived_from<Source> T>
+  void TryAddSource(const std::string& name) {
+    auto source = std::make_unique<T>();
+    absl::Status avail = source->CheckAvailability();
+    if (avail.ok()) {
+      source_entries.push_back({.name = name, .source = std::move(source)});
+    } else {
+      VLOG(1) << name << " is not available: " << avail.message();
+    }
+  }
+
+  std::vector<SourceEntry> source_entries;
+};
 
 }  // namespace tflite::cros
 
 int main() {
-  tflite::cros::RunSyslogLoop();
+  tflite::cros::Top().RunSyslogLoop();
   return 0;
 }
