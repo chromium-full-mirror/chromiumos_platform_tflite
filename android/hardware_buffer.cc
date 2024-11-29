@@ -167,6 +167,9 @@ class Allocator {
       return;
     }
     if (--it->second.ref_count == 0) {
+      if (munmap(it->second.data, it->second.size) != 0) {
+        PLOGF(ERROR) << "munmap() failed";
+      }
       buffers_.erase(it);
     }
   }
