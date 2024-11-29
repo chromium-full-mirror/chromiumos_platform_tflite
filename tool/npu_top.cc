@@ -7,10 +7,12 @@
 #include <fcntl.h>
 #include <unistd.h>
 
+#include <cinttypes>
 #include <fstream>
 #include <string>
 
 #include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/numbers.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
@@ -207,12 +209,102 @@ class IntelNPULoad : public Source {
   absl::Duration curr_busy_time_;
 };
 
+class IntelGPULoad : public Source {
+ public:
+  absl::Status CheckAvailability() override {
+    auto status = CheckFileReadable(kI915EngineInfoPath);
+    if (!status.ok()) {
+      return status;
+    }
+
+    return ParseGpuBusyTime().status();
+  }
+
+  void Init() override { Update(); }
+
+  std::string GetValue() override {
+    Update();
+    double db = absl::ToDoubleNanoseconds(curr_busy_time_ - prev_busy_time_);
+    double dt = absl::ToDoubleNanoseconds(curr_timestamp_ - prev_timestamp_);
+    return FormatUtilization(db, dt);
+  }
+
+ private:
+  static constexpr char kI915EngineInfoPath[] =
+      "/run/debugfs_gpu/i915_engine_info";
+
+  void Update() {
+    auto now = absl::Now();
+    if (now == curr_timestamp_) {
+      return;
+    }
+
+    absl::StatusOr<absl::Duration> busy_time = ParseGpuBusyTime();
+    CHECK(busy_time.ok());
+
+    prev_timestamp_ = curr_timestamp_;
+    prev_busy_time_ = curr_busy_time_;
+
+    curr_timestamp_ = now;
+    curr_busy_time_ = *busy_time;
+  }
+
+  static absl::StatusOr<absl::Duration> ParseGpuBusyTime() {
+    // Cumulative runtime information has been available on ChromeOS since
+    // Kernel v5.10. In earlier versions, the engine info file may exist, but it
+    // will not include the "Runtime:" stat.
+    //
+    // The implementation can be found in intel_engine_dump() at
+    // drivers/gpu/drm/i915/gt/intel_engine_cs.c.
+    std::ifstream file(kI915EngineInfoPath);
+    if (!file.is_open()) {
+      return absl::NotFoundError(
+          absl::StrCat("Failed to open ", kI915EngineInfoPath));
+    }
+
+    std::string line;
+    absl::Duration busy_time;
+    bool found_runtime = false;
+    while (std::getline(file, line)) {
+      if (!absl::StartsWith(line, "\tRuntime: ")) {
+        continue;
+      }
+
+      // Multiple engines can run concurrently, causing the busy time to
+      // increase faster than wall-clock time. For simplicity, we aggregate them
+      // and clamp the usage percentage to 100% in the frontend. If needed, we
+      // can consider exposing the per-engine breakdown.
+      int64_t engine_runtime_ms = 0;
+      if (sscanf(line.c_str(), "\tRuntime: %" PRId64 "ms",
+                 &engine_runtime_ms) != 1) {
+        continue;
+      }
+      busy_time += absl::Milliseconds(engine_runtime_ms);
+      found_runtime = true;
+    }
+
+    if (!found_runtime) {
+      return absl::NotFoundError(
+          absl::StrCat("No runtime information in ", kI915EngineInfoPath));
+    }
+
+    return busy_time;
+  }
+
+  absl::Time prev_timestamp_;
+  absl::Duration prev_busy_time_;
+
+  absl::Time curr_timestamp_;
+  absl::Duration curr_busy_time_;
+};
+
 class Top {
  public:
   Top() {
-    // TODO: b:380808338 - Support GPU load.
+    // TODO: b:380808338 - Support ARM GPU load.
     // TODO: b:380808338 - Support MTK NPU load.
     TryAddSource<CPULoad>("cpu");
+    TryAddSource<IntelGPULoad>("gpu");
     TryAddSource<IntelNPULoad>("npu");
   }
 
