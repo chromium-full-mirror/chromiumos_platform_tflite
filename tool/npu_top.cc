@@ -84,7 +84,7 @@ class Source {
   virtual std::string GetValue() = 0;
 };
 
-class CPULoad : public Source {
+class CpuLoad : public Source {
  public:
   absl::Status CheckAvailability() override {
     return CheckFileReadable(kProcStatPath);
@@ -173,7 +173,7 @@ class CPULoad : public Source {
   Data curr_data_;
 };
 
-class IntelNPULoad : public Source {
+class IntelNpuLoad : public Source {
  public:
   absl::Status CheckAvailability() override {
     return CheckFileReadable(kBusyTimePath);
@@ -216,7 +216,7 @@ class IntelNPULoad : public Source {
   absl::Duration curr_busy_time_;
 };
 
-class IntelGPULoad : public Source {
+class IntelGpuLoad : public Source {
  public:
   absl::Status CheckAvailability() override {
     auto status = CheckFileReadable(kI915EngineInfoPath);
@@ -310,9 +310,9 @@ class Top {
   Top() {
     // TODO: b:380808338 - Support ARM GPU load.
     // TODO: b:380808338 - Support MTK NPU load.
-    TryAddSource<CPULoad>("cpu");
-    TryAddSource<IntelGPULoad>("gpu");
-    TryAddSource<IntelNPULoad>("npu");
+    TryAddSource<CpuLoad>("cpu");
+    TryAddSource<IntelGpuLoad>("gpu");
+    TryAddSource<IntelNpuLoad>("npu");
   }
 
   // TODO: b:380808338 - Support output in JSONL.
