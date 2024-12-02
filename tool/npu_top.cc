@@ -48,8 +48,11 @@ std::string ReadFirstLineFromFile(const char* path) {
 
 template <typename T>
 std::string FormatUtilization(T busy, T total) {
+  if (busy < 0) {
+    LOG(WARNING) << "busy < 0, the counter might be wrapped";
+    busy = 0;
+  }
   CHECK_GT(total, 0);
-  CHECK_GE(busy, 0);
   double util = static_cast<double>(busy) / static_cast<double>(total);
   return absl::StrFormat("%.1f%%", util * 100);
 }
