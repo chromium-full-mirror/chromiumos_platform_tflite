@@ -48,6 +48,13 @@ std::string ReadFirstLineFromFile(const char* path) {
   return line;
 }
 
+// Returns the duration elapsed since the first call with a monotonically
+// non-decreasing clock. Ideal for measuring elapsed time.
+absl::Duration SteadyClockTicks() {
+  static const auto origin = std::chrono::steady_clock::now();
+  return absl::FromChrono(std::chrono::steady_clock::now() - origin);
+}
+
 template <typename T>
 std::string FormatUtilization(T busy, T total) {
   if (busy < 0) {
@@ -177,7 +184,7 @@ class IntelNPULoad : public Source {
   std::string GetValue() override {
     Update();
     double db = absl::ToDoubleNanoseconds(curr_busy_time_ - prev_busy_time_);
-    double dt = absl::ToDoubleNanoseconds(curr_timestamp_ - prev_timestamp_);
+    double dt = absl::ToDoubleNanoseconds(curr_ticks_ - prev_ticks_);
     return FormatUtilization(db, dt);
   }
 
@@ -190,22 +197,22 @@ class IntelNPULoad : public Source {
       "/sys/devices/pci0000:00/0000:00:0b.0/npu_busy_time_us";
 
   void Update() {
-    auto now = absl::Now();
-    if (now == curr_timestamp_) {
+    auto ticks = SteadyClockTicks();
+    if (ticks == curr_ticks_) {
       return;
     }
 
-    prev_timestamp_ = curr_timestamp_;
+    prev_ticks_ = curr_ticks_;
     prev_busy_time_ = curr_busy_time_;
 
-    curr_timestamp_ = now;
+    curr_ticks_ = ticks;
     curr_busy_time_ = absl::Microseconds(ReadInt64FromFile(kBusyTimePath));
   }
 
-  absl::Time prev_timestamp_;
+  absl::Duration prev_ticks_;
   absl::Duration prev_busy_time_;
 
-  absl::Time curr_timestamp_;
+  absl::Duration curr_ticks_;
   absl::Duration curr_busy_time_;
 };
 
@@ -225,7 +232,7 @@ class IntelGPULoad : public Source {
   std::string GetValue() override {
     Update();
     double db = absl::ToDoubleNanoseconds(curr_busy_time_ - prev_busy_time_);
-    double dt = absl::ToDoubleNanoseconds(curr_timestamp_ - prev_timestamp_);
+    double dt = absl::ToDoubleNanoseconds(curr_ticks_ - prev_ticks_);
     return FormatUtilization(db, dt);
   }
 
@@ -234,18 +241,18 @@ class IntelGPULoad : public Source {
       "/run/debugfs_gpu/i915_engine_info";
 
   void Update() {
-    auto now = absl::Now();
-    if (now == curr_timestamp_) {
+    auto ticks = SteadyClockTicks();
+    if (ticks == curr_ticks_) {
       return;
     }
 
     absl::StatusOr<absl::Duration> busy_time = ParseGpuBusyTime();
     CHECK(busy_time.ok());
 
-    prev_timestamp_ = curr_timestamp_;
+    prev_ticks_ = curr_ticks_;
     prev_busy_time_ = curr_busy_time_;
 
-    curr_timestamp_ = now;
+    curr_ticks_ = ticks;
     curr_busy_time_ = *busy_time;
   }
 
@@ -291,10 +298,10 @@ class IntelGPULoad : public Source {
     return busy_time;
   }
 
-  absl::Time prev_timestamp_;
+  absl::Duration prev_ticks_;
   absl::Duration prev_busy_time_;
 
-  absl::Time curr_timestamp_;
+  absl::Duration curr_ticks_;
   absl::Duration curr_busy_time_;
 };
 
