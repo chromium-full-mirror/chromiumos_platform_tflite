@@ -305,14 +305,82 @@ class IntelGpuLoad : public Source {
   absl::Duration curr_busy_time_;
 };
 
+class ArmMaliGpuLoad : public Source {
+ public:
+  absl::Status CheckAvailability() override {
+    // TODO: b:380275060 - The dvfs utilization is available but wrong on rauru
+    // board now.
+    return CheckFileReadable(kDvfsUtilizationPath);
+  }
+
+  void Init() override { Update(); }
+
+  std::string GetValue() override {
+    Update();
+    return FormatUtilization(curr_data_.busy - prev_data_.busy,
+                             curr_data_.total - prev_data_.total);
+  }
+
+ private:
+  static constexpr char kDvfsUtilizationPath[] =
+      "/sys/kernel/debug/mali0/dvfs_utilization";
+
+  struct Data {
+    uint32_t busy = 0;
+    uint32_t total = 0;
+  };
+
+  void Update() {
+    Data data = ParseDvfsUtilization();
+    if (data.total == curr_data_.total) {
+      return;
+    }
+
+    prev_data_ = curr_data_;
+    curr_data_ = data;
+  }
+
+  static Data ParseDvfsUtilization() {
+    std::string content = ReadFirstLineFromFile(kDvfsUtilizationPath);
+
+    // Example output:
+    // ```
+    // # cat /sys/kernel/debug/mali0/dvfs_utilization
+    // busy_time: 114016010 idle_time: 590833816
+    // ```
+    //
+    // The time value is in units of 256ns and is of uint32_t, so the wraparound
+    // may happend and will be handled implicitly when taking difference.
+    //
+    // Reference: Mali DDK base_get_gpu_utilization_info() in
+    // https://source.corp.google.com/h/chrome-internal/chromeos/superproject/+/main:src/partner_private/mali-ddk-avalon/base/tests/common/mali_base_helpers_power.h
+    uint32_t busy = 0;
+    uint32_t idle = 0;
+    int scanned =
+        sscanf(content.c_str(), "busy_time: %" PRIu32 " idle_time: %" PRIu32,
+               &busy, &idle);
+    CHECK_EQ(scanned, 2) << "Failed to parse DVFS utilization data: "
+                         << content;
+
+    return Data{.busy = busy, .total = busy + idle};
+  }
+
+  Data prev_data_;
+  Data curr_data_;
+};
+
 class Top {
  public:
   Top() {
-    // TODO: b:380808338 - Support ARM GPU load.
-    // TODO: b:380808338 - Support MTK NPU load.
     TryAddSource<CpuLoad>("cpu");
+
+    // TODO: b:380808338 - Create a generic GpuLoad that wraps platform specific
+    // sources.
     TryAddSource<IntelGpuLoad>("gpu");
+    TryAddSource<ArmMaliGpuLoad>("gpu");
+
     TryAddSource<IntelNpuLoad>("npu");
+    // TODO: b:380808338 - Support MTK NPU load.
   }
 
   // TODO: b:380808338 - Support output in JSONL.
