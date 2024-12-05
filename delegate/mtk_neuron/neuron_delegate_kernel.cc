@@ -1417,7 +1417,8 @@ TfLiteStatus NeuronStableDelegateKernel::Eval(TfLiteOpaqueContext* context,
         uint8_t* input_ptr = nn_input_memory_->get_data_ptr() + input_offset;
         if (TfLiteOpaqueTensorType(tensor) == kTfLiteUInt8 &&
             nn_type_equivalent == kTfLiteInt32) {
-          uint8_t* uint8_tensor_data = static_cast<uint8_t*>(TfLiteOpaqueTensorData(tensor));
+          uint8_t* uint8_tensor_data =
+              static_cast<uint8_t*>(TfLiteOpaqueTensorData(tensor));
           for (int i = 0; i < num_elements; ++i) {
             reinterpret_cast<int32_t*>(input_ptr)[i] =
                 static_cast<const int32_t>(uint8_tensor_data[i]);

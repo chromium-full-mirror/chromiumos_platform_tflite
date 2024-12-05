@@ -68,13 +68,10 @@ class NeuronStableDelegate : public cros::SimpleAsyncDelegateInterface {
   CreateDelegateKernelInterface() override;
 
  private:
-  TfLiteStatus GenModelToken(TfLiteOpaqueContext* context);
   void GetPreOpCheckResult(TfLiteOpaqueContext* context);
-  std::string TokenToHashString(std::vector<uint8_t> cache_token);
 
   const NeuronApi* neuron_ = NeuronApiImplementation();
   NeuronDelegateOptions options_;
-  std::vector<uint8_t> neuron_cache_token_;
   std::vector<int> node_is_supported_;
   mutable int node_id_ = -1;
 };

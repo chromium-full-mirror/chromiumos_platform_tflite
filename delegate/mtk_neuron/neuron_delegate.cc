@@ -94,15 +94,6 @@ bool NeuronStableDelegate::IsNodeSupportedByDelegate(
   return supported;
 }
 
-std::string NeuronStableDelegate::TokenToHashString(
-    std::vector<uint8_t> cache_token) {
-  std::string cache_token_item;
-  for (uint8_t i : cache_token) {
-    cache_token_item += std::to_string(i) + ",";
-  }
-  return cache_token_item;
-}
-
 TfLiteStatus NeuronStableDelegate::Initialize(TfLiteOpaqueContext* context) {
 #ifdef MTK_INTERNAL_USE
   TFLITE_LOG_PROD(tflite::TFLITE_LOG_INFO,
@@ -113,12 +104,6 @@ TfLiteStatus NeuronStableDelegate::Initialize(TfLiteOpaqueContext* context) {
                        "Neuron stable delegate version: %s",
                        NEURON_DELEGATE_VERSION_STRING);
 #endif
-  if (GenModelToken(context) != kTfLiteOk) {
-    TFLITE_LOG_PROD(tflite::TFLITE_LOG_ERROR,
-                    "Fail to gen neuron cache token.");
-    return kTfLiteError;
-  }
-  options_.model_token = TokenToHashString(neuron_cache_token_);
 
   if (options_.operation_check_mode == kPreOperationCheck) {
     GetPreOpCheckResult(context);
@@ -134,84 +119,6 @@ const char* NeuronStableDelegate::Name() const {
 std::unique_ptr<cros::SimpleAsyncDelegateKernelInterface>
 NeuronStableDelegate::CreateDelegateKernelInterface() {
   return std::make_unique<NeuronStableDelegateKernel>(neuron_, options_);
-}
-
-// Compute the hash of a TfLiteIntArray.
-uint64_t GetHash(const TfLiteIntArray* int_array, uint64_t combine_with = 0) {
-  constexpr auto kHashConst = 0x9e3779b97f4a7800ULL;
-  uint64_t result = combine_with;
-  for (auto i : TfLiteIntArrayView(int_array)) {
-    result = result ^ (i + kHashConst + (result << 10) + (result >> 4));
-  }
-  return result;
-}
-
-uint64_t GetHash(const int* int_array, int num_of_array,
-                 uint64_t combine_with = 0) {
-  constexpr auto kHashConst = 0x9e3779b97f4a7800ULL;
-  uint64_t result = combine_with;
-  for (int i = 0; i < num_of_array; i++) {
-    result =
-        result ^ (int_array[i] + kHashConst + (result << 10) + (result >> 4));
-  }
-  return result;
-}
-
-TfLiteStatus NeuronStableDelegate::GenModelToken(TfLiteOpaqueContext* context) {
-  // gen model token
-  TfLiteIntArray* execution_plan = nullptr;
-  if (TfLiteOpaqueContextGetExecutionPlan(context, &execution_plan) !=
-      kTfLiteOk) {
-    TFLITE_LOG_PROD(tflite::TFLITE_LOG_ERROR, "Fail to get exexution plan");
-    return kTfLiteError;
-  }
-
-  const int *inputs = nullptr, *outputs = nullptr;
-  int num_inputs = 0, num_outputs = 0;
-  if (execution_plan->size > 0) {
-    TfLiteOpaqueNode *input_node, *output_node;
-    TfLiteRegistrationExternal* registration;
-    if (TfLiteOpaqueContextGetNodeAndRegistration(context, 0, &input_node,
-                                                  &registration) != kTfLiteOk ||
-        TfLiteOpaqueContextGetNodeAndRegistration(
-            context, execution_plan->size - 1, &output_node, &registration) !=
-            kTfLiteOk) {
-      TFLITE_LOG_PROD(tflite::TFLITE_LOG_ERROR,
-                      "Fail to get Node and Registration.");
-      return kTfLiteError;
-    }
-    TF_LITE_OPAQUE_ENSURE_STATUS(
-        TfLiteOpaqueNodeInputs(input_node, &inputs, &num_inputs));
-    TF_LITE_OPAQUE_ENSURE_STATUS(
-        TfLiteOpaqueNodeOutputs(output_node, &outputs, &num_outputs));
-  }
-
-  std::string bytes_count_str =
-      std::to_string(TfLiteOpaqueContextGetNumTensors(context));
-  const char* model_token = bytes_count_str.c_str();
-  uint64_t token_parts[4];
-  token_parts[0] = ::util::Fingerprint64(model_token, std::strlen(model_token));
-  token_parts[1] = GetHash(execution_plan);
-
-  token_parts[2] = GetHash(inputs, num_inputs);
-  token_parts[3] = GetHash(outputs, num_outputs);
-  std::vector<uint8_t> nnapi_cache_token(32, 0);
-  uint8_t* p = reinterpret_cast<uint8_t*>(token_parts);
-  for (int i = 0; i < 4 * sizeof(uint64_t); i++) {
-    nnapi_cache_token[i] = p[i];
-  }
-
-  std::string test = "{";
-  for (auto i : nnapi_cache_token) {
-    test += std::to_string(i);
-    test += ",";
-  }
-  test += "};";
-
-  TFLITE_MTK_LOG_VERBOSE("Original cache_token: %s", test.c_str());
-
-  neuron_cache_token_ = nnapi_cache_token;
-  return kTfLiteOk;
 }
 
 void NeuronStableDelegate::GetPreOpCheckResult(TfLiteOpaqueContext* context) {
