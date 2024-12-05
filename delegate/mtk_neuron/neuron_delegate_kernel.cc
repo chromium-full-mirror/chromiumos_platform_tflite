@@ -2175,11 +2175,12 @@ TfLiteStatus NeuronStableDelegateKernel::BuildGraph(
   }
   // gen model token
   nn_compilation_cache_token_.clear();
-  std::string bytes_count_str =
+  std::string model_token_str =
+      options_.model_token + "/" +
       std::to_string(TfLiteOpaqueContextGetNumTensors(context));
-  const char* model_token = bytes_count_str.c_str();
   uint64_t token_parts[4];
-  token_parts[0] = ::util::Fingerprint64(model_token, std::strlen(model_token));
+  token_parts[0] =
+      ::util::Fingerprint64(model_token_str.c_str(), model_token_str.size());
   if (params != nullptr) {
     token_parts[1] = GetHash(params->nodes_to_replace);
     token_parts[2] = GetHash(params->input_tensors);
