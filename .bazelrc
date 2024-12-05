@@ -47,10 +47,6 @@ build:cros --define=tensorflow_mkldnn_contraction_kernel=0
 build:cros --define=tflite_keep_symbols=true
 build:cros --define=with_xla_support=false
 
-# TODO(b/352513578): Dynamically quantized fully connected op with qint8 filter
-# is broken. We have to temporarily disable latest xnnpack ops until it's fixed.
-build:cros --define=xnnpack_use_latest_ops=false
-
 build:cros --repo_env=TF_PYTHON_VERSION=3.9
 
 # Currently tensorflow is confused by the flatbuffers v23 in SDK and v24 in

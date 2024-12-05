@@ -1,4 +1,4 @@
-From 24587b3a5a65d84eb7dcfe52dc34b2ade770099f Mon Sep 17 00:00:00 2001
+From 9effaf54c572f7151396ff376168209c00b56b62 Mon Sep 17 00:00:00 2001
 From: Tommy Chiang <ototot@google.com>
 Date: Wed, 16 Oct 2024 22:37:09 -0700
 Subject: [PATCH] rsqrt should report error when the input contains negative

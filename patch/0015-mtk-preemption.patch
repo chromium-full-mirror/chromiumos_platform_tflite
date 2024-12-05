@@ -1,4 +1,4 @@
-From de5cb64170e85a7317e64ef04da46ad6a038548b Mon Sep 17 00:00:00 2001
+From 1c747fd6365504125688579d75e74f58ff3b4ec0 Mon Sep 17 00:00:00 2001
 From: Tommy Chiang <ototot@google.com>
 Date: Tue, 22 Oct 2024 01:47:18 +0000
 Subject: [PATCH] Add QoS/Preemption options to MtkNeuronSettings

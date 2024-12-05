@@ -1,4 +1,4 @@
-From b8488fc42569300f479c5ea60f50762c8457ed27 Mon Sep 17 00:00:00 2001
+From 5792adc3f3dfc92a4253d58747ab3976b214d1f6 Mon Sep 17 00:00:00 2001
 From: TFLite Patcher <tflite@localhost>
 Date: Wed, 13 Nov 2024 08:33:32 +0000
 Subject: [PATCH] Add missing absl/strings:string_view target.
