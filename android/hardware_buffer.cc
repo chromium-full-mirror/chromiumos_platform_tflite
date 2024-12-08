@@ -13,6 +13,7 @@
 #include <sys/mman.h>
 #include <unistd.h>
 
+#include <atomic>
 #include <cerrno>
 #include <cstdint>
 #include <map>
@@ -147,6 +148,7 @@ class Allocator {
         .desc = *desc,
         .handle = std::move(handle),
         .locked_usage = 0,
+        .id = GetUniqueId(),
     };
     *out_buffer = reinterpret_cast<AHardwareBuffer*>(data);
     buffers_.emplace(*out_buffer, std::move(buffer));
@@ -322,9 +324,24 @@ class Allocator {
         .desc = *desc,
         .handle = std::move(owned_handle),
         .locked_usage = 0,
+        .id = GetUniqueId(),
     };
     *out_buffer = reinterpret_cast<AHardwareBuffer*>(data);
     buffers_.emplace(*out_buffer, std::move(buffer));
+    return 0;
+  }
+
+  int GetId(const AHardwareBuffer* _Nonnull buffer, uint64_t* _Nonnull outId) {
+    if (buffer == nullptr || outId == nullptr) {
+      return -EINVAL;
+    }
+
+    auto it = buffers_.find(buffer);
+    if (it == buffers_.end()) {
+      return -EINVAL;
+    }
+
+    *outId = it->second.id;
     return 0;
   }
 
@@ -345,9 +362,23 @@ class Allocator {
     // The usage mask applied when the buffer is locked. The value would be 0
     // when the buffer is not locked.
     uint64_t locked_usage;
+
+    // The system wide unique id of the buffer.
+    uint64_t id;
   };
 
   std::map<const AHardwareBuffer*, Buffer> buffers_;
+
+  static uint64_t GetUniqueId() {
+    // TODO(ototot): This function is supposed to generate a system wide unique
+    // ID. The current ID generation mechanism is prone to sandboxing and PID
+    // namespaces, but it is compatible with our use cases right now. We still
+    // need to find a way to generate real system wide unique IDs.
+    static std::atomic<uint32_t> next_id = 0;
+    uint64_t id = static_cast<uint64_t>(getpid()) << 32;
+    id |= next_id++;
+    return id;
+  }
 };
 
 }  // namespace
@@ -403,4 +434,9 @@ int AHardwareBuffer_createFromHandle(
     AHardwareBuffer* _Nullable* _Nonnull outBuffer) {
   return Allocator::GetInstance()->CreateFromHandle(desc, handle, method,
                                                     outBuffer);
+}
+
+int AHardwareBuffer_getId(const AHardwareBuffer* _Nonnull buffer,
+                          uint64_t* _Nonnull outId) {
+  return Allocator::GetInstance()->GetId(buffer, outId);
 }

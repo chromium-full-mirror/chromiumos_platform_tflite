@@ -345,6 +345,44 @@ TEST(AHardwareBuffer, ManyBuffers) {
   }
 }
 
+TEST(AHardwareBuffer, GetId) {
+  const AHardwareBuffer_Desc desc = {
+      .width = kSize,
+      .height = 1,
+      .layers = 1,
+      .format = AHARDWAREBUFFER_FORMAT_BLOB,
+      .usage = kUsage,
+      .stride = kSize,
+  };
+
+  AHardwareBuffer* buffer1 = nullptr;
+  ASSERT_EQ(AHardwareBuffer_allocate(&desc, &buffer1), 0);
+  ASSERT_NE(buffer1, nullptr);
+
+  // Id should not change.
+  uint64_t id1 = 0;
+  ASSERT_EQ(AHardwareBuffer_getId(buffer1, &id1), 0);
+  uint64_t id1_second_try = 0;
+  ASSERT_EQ(AHardwareBuffer_getId(buffer1, &id1_second_try), 0);
+  EXPECT_EQ(id1, id1_second_try);
+
+  AHardwareBuffer* buffer2 = nullptr;
+  ASSERT_EQ(AHardwareBuffer_allocate(&desc, &buffer2), 0);
+  ASSERT_NE(buffer2, nullptr);
+
+  // Id should not collide.
+  uint64_t id2 = 0;
+  ASSERT_EQ(AHardwareBuffer_getId(buffer2, &id2), 0);
+  EXPECT_NE(id2, id1);
+
+  AHardwareBuffer_release(buffer1);
+  AHardwareBuffer_release(buffer2);
+
+  // We should not be able to get the id from a released buffer.
+  uint64_t id2_second_try = 0;
+  ASSERT_NE(AHardwareBuffer_getId(buffer2, &id2_second_try), 0);
+}
+
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

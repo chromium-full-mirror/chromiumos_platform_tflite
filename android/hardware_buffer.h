@@ -295,6 +295,14 @@ int AHardwareBuffer_createFromHandle(
     int32_t method,
     AHardwareBuffer* _Nullable* _Nonnull outBuffer);
 
+/**
+ * Get the system wide unique id for an AHardwareBuffer.
+ *
+ * Return 0 on success, -EINVAL if buffer or outId is NULL, or an error number
+ * if the operation fails for any reason.
+ */
+int AHardwareBuffer_getId(const AHardwareBuffer* _Nonnull buffer,
+                          uint64_t* _Nonnull outId);
 __END_DECLS
 
 #endif  // ANDROID_HARDWARE_BUFFER_H_
