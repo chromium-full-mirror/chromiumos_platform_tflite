@@ -391,7 +391,7 @@ int AHardwareBuffer_isSupported(const AHardwareBuffer_Desc* _Nonnull desc) {
   return Allocator::GetInstance()->IsSupported(desc);
 }
 
-const native_handle_t* AHardwareBuffer_getNativeHandle(
+const native_handle_t* _Nullable AHardwareBuffer_getNativeHandle(
     const AHardwareBuffer* _Nonnull buffer) {
   return Allocator::GetInstance()->GetNativeHandle(buffer);
 }
