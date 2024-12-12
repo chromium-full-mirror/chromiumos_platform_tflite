@@ -625,13 +625,7 @@ bool Validate(const TfLiteRegistrationExternal* registration,
     } break;
     case kTfLiteBuiltinTransposeConv: {
       ExpectMaxOpVersion(version, 3, &val_ctx);
-      Expect((TfLiteOpaqueNodeNumberOfInputs(node) > 1) &&
-                 (TfLiteOpaqueTensorGetAllocationType(TfLiteOpaqueNodeGetInput(
-                      context, node, 0)) == kTfLiteMmapRo) &&
-                 (TfLiteOpaqueTensorGetAllocationType(TfLiteOpaqueNodeGetInput(
-                      context, node, 1)) == kTfLiteMmapRo),
-             NeuronValidationFailureType::kInputTensorShouldHaveConstantShape,
-             "Dynamically-sized tensors not supported.", &val_ctx);
+      // Remove dynamically-sized tensor check
     } break;
     case kTfLiteBuiltinSqrt: {
       ExpectOpVersion(version, 1, &val_ctx);

@@ -779,9 +779,12 @@ TfLiteStatus NeuronStableDelegateKernel::Map(
       // even if the number of channels in quantization parameters is equal to 1
       // (as opposed to conv2d, which uses per-tensor quantization in this
       // case).
+      // TODO(MTK): Remove force per-channel flag here to avoid 1D quantize
+      // param using per-channel quant. Check the reason for using force
+      // per-channel quant here.
       mapping_args.builder->AddTensorInput(
           weight_tensor_id, hybrid_op,
-          input_tensor_flags | NN_TENSOR_FLAG_FORCE_PER_CHANNEL);
+          input_tensor_flags);
 
       const bool is_bias_present =
           TfLiteOpaqueNodeNumberOfInputs(mapping_args.node) == 4 &&
