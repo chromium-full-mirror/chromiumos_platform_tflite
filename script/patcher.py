@@ -179,8 +179,6 @@ def apply_patches(repo: Path, patches: List[str]):
     # By using `git am`, we can apply each patch as a separate commit,
     # preserving the original commit messages and author information. This
     # makes it easier to manage and track changes in the repository.
-    #
-    # TODO(shik): Document the patch management workflow in README.
     for patch in patches:
         patch_path = get_workspace_root() / "patch" / patch
         run(
