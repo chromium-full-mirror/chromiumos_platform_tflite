@@ -323,6 +323,14 @@ bool Validate(const TfLiteRegistrationExternal* registration,
               const TfLiteOpaqueNode* node, TfLiteOpaqueContext* context,
               const NeuronApi* neuronapi, const NeuronDelegateOptions* options,
               std::vector<NeuronValidationFailure>* map_failures) {
+  static const NeuronRuntimeVersion neuron_version = [&] {
+    NeuronRuntimeVersion version = {};
+    if (neuronapi->Neuron_getVersion(&version) != NEURON_NO_ERROR) {
+      TFLITE_LOG_PROD(tflite::TFLITE_LOG_ERROR,
+                      "Failed to get neuron runtime version.");
+    }
+    return version;
+  }();
   OpValidationContext val_ctx{true, map_failures};
 
   const auto builtin_code = TfLiteOperatorGetBuiltInCode(registration);
@@ -678,11 +686,22 @@ bool Validate(const TfLiteRegistrationExternal* registration,
       const TfLiteType output_type =
           TfLiteOpaqueTensorType(TfLiteOpaqueNodeGetOutput(context, node, 0));
       EXPECT_INPUT_TYPE_IN(input_type, kTfLiteInt32, kTfLiteUInt8, kTfLiteInt8);
-      ExpectTypeIn(output_type, {kTfLiteInt32, kTfLiteUInt8, kTfLiteInt8},
-                   NeuronValidationFailureType::kUnsupportedOutputType,
-                   "Output type should be one of kTfLiteInt32, "
-                   "kTfLiteUInt8, kTfLiteInt8.",
-                   &val_ctx);
+      if (neuron_version.major == 8) {
+        // Neuron Pilot 8 is coupled with MT8196, which has MVPU support.
+        // MVPU can handle Int32 -> Float32 conversion.
+        ExpectTypeIn(output_type,
+                     {kTfLiteInt32, kTfLiteUInt8, kTfLiteInt8, kTfLiteFloat32},
+                     NeuronValidationFailureType::kUnsupportedOutputType,
+                     "Output type should be one of kTfLiteInt32, "
+                     "kTfLiteUInt8, kTfLiteInt8, kTfLiteFloat32.",
+                     &val_ctx);
+      } else {
+        ExpectTypeIn(output_type, {kTfLiteInt32, kTfLiteUInt8, kTfLiteInt8},
+                     NeuronValidationFailureType::kUnsupportedOutputType,
+                     "Output type should be one of kTfLiteInt32, "
+                     "kTfLiteUInt8, kTfLiteInt8.",
+                     &val_ctx);
+      }
     } break;
     case kTfLiteBuiltinLeakyRelu:
     case kTfLiteBuiltinPrelu: {
