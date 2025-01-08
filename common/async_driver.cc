@@ -40,6 +40,7 @@ using delegates::utils::CreateScopedTfLiteSynchronization;
 using delegates::utils::kBufferTypeAHardwareBufferBlob;
 using delegates::utils::ReadBufferAttrs;
 using delegates::utils::ScopedTfLiteAttrMap;
+using delegates::utils::ScopedTfLiteSynchronization;
 using delegates::utils::SyncType;
 using delegates::utils::WriteBufferAttrs;
 using delegates::utils::WriteSyncAttrs;
@@ -132,6 +133,8 @@ TfLiteStatus AsyncDriver::Invoke() {
     }
   };
 
+  std::vector<ScopedTfLiteSynchronization> syncs;
+  syncs.reserve(tensor_buffer_ahwb_map_.size());
   for (const auto& [key, ahwb] : tensor_buffer_ahwb_map_) {
     const auto& [io_type, name] = key;
 
@@ -154,7 +157,8 @@ TfLiteStatus AsyncDriver::Invoke() {
       return kTfLiteError;
     }
 
-    auto sync = CreateScopedTfLiteSynchronization();
+    syncs.emplace_back(CreateScopedTfLiteSynchronization());
+    auto& sync = syncs.back();
     TfLiteSynchronizationSetPtr(sync.get(), nullptr);
     if (TfLiteExecutionTaskSetSync(task, io_type, name.c_str(), sync.get()) !=
         kTfLiteOk) {
