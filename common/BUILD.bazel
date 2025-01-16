@@ -177,6 +177,33 @@ cc_binary(
     ],
 )
 
+cc_library(
+    name = "sync_driver",
+    srcs = ["sync_driver.cc"],
+    hdrs = ["sync_driver.h"],
+    deps = [
+        "@org_tensorflow//tensorflow/lite:framework",
+        "@org_tensorflow//tensorflow/lite/kernels:builtin_ops",
+    ],
+)
+
+cc_binary(
+    name = "sync_driver_test",
+    testonly = True,
+    srcs = [
+        "sync_driver_test.cc",
+    ],
+    deps = [
+        ":simple_model_builder",
+        ":sync_driver",
+        "//common/test_util:stable_delegate_env",
+        "@com_google_absl//absl/random",
+        "@com_google_googletest//:gtest",
+        "@org_tensorflow//tensorflow/lite:framework",
+        "@org_tensorflow//tensorflow/lite/kernels:builtin_ops",
+    ],
+)
+
 cc_library_with_tflite(
     name = "simple_async_delegate",
     srcs = ["simple_async_delegate.cc"],
