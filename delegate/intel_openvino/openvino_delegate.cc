@@ -202,6 +202,11 @@ bool OpenVINODelegate::CheckNodeSupportByOpenVINO(
                                     {{kTfLiteFloat32}, {kTfLiteFloat32}}) &&
              CheckDims(context, node, {{1, 2, 3, 4}, {1, 2, 3, 4}});
     }
+    case kTfLiteBuiltinPrelu: {
+      return CheckDataTypeSupported(context, node,
+                                    {{kTfLiteFloat32}, {kTfLiteFloat32}}) &&
+             CheckDims(context, node, {{4}, {1, 2, 3}});
+    }
     default:
       return false;
   }

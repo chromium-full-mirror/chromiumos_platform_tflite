@@ -19,6 +19,7 @@
 #include "delegate/intel_openvino/operations/include/mean.h"
 #include "delegate/intel_openvino/operations/include/mul.h"
 #include "delegate/intel_openvino/operations/include/pad.h"
+#include "delegate/intel_openvino/operations/include/prelu.h"
 #include "delegate/intel_openvino/operations/include/relu.h"
 #include "delegate/intel_openvino/operations/include/relu6.h"
 #include "delegate/intel_openvino/operations/include/reshape.h"
@@ -193,6 +194,9 @@ std::shared_ptr<OperationsBase> OpenVINOGraphBuilder::CreateOpForCode(
     }
     case kTfLiteBuiltinPad: {
       return std::make_shared<Pad>();
+    }
+    case kTfLiteBuiltinPrelu: {
+      return std::make_shared<PRelu>();
     }
     default:
       return nullptr;
