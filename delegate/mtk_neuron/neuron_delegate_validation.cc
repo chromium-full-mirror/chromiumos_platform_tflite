@@ -863,6 +863,13 @@ bool Validate(const TfLiteRegistrationExternal* registration,
         Expect(quantization_params.scale > 0.f,
                NeuronValidationFailureType::kUnsupportedQuantizationParameters,
                "Input quantization scale should be > 0.", &val_ctx);
+        // MT8188 MDLA does not support asymi16
+        if (value_type == kTfLiteInt16 && neuron_version.major == 6) {
+          Expect(
+              quantization_params.zero_point == 0,
+              NeuronValidationFailureType::kUnsupportedQuantizationParameters,
+              "Input quantization zero point should be 0.", &val_ctx);
+        }
       }
       const auto output_type =
           TfLiteOpaqueTensorType(TfLiteOpaqueNodeGetOutput(context, node, 0));
