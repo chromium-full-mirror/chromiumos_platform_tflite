@@ -92,8 +92,11 @@ class SimpleModelBuilder {
   }
 
   // Builds the model. This can be called multiple times.
-  // TODO(shik): Support saving to a file directly.
   std::unique_ptr<FlatBufferModel> Build() const;
+
+  // Save the model to the given path. This can be called multiple times and can
+  // be called without first calling Build().
+  void SaveTo(const std::string& path) const;
 
  private:
   int next_tensor_index_ = 0;

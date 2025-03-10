@@ -9,6 +9,8 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include <filesystem>
+
 #include "absl/random/random.h"
 #include "tensorflow/lite/core/c/builtin_op_data.h"
 #include "tensorflow/lite/core/kernels/register.h"
@@ -187,6 +189,46 @@ TEST(Builder, BuildTwice) {
   });
   EXPECT_NE(mb.Build(), nullptr);
   EXPECT_NE(mb.Build(), nullptr);
+}
+
+TEST(Builder, SaveAndInvokeTwice) {
+  // Construct the model.
+  SimpleModelBuilder mb;
+  int x = mb.AddInput({.name = "x", .type = kTfLiteFloat32, .shape = {1}});
+  int y = mb.AddOutput({.name = "y", .type = kTfLiteFloat32, .shape = {1}});
+  mb.AddOperator<TfLiteAddParams>({
+      .op = kTfLiteBuiltinAdd,
+      .inputs = {x, x},
+      .outputs = {y},
+  });
+
+  const std::filesystem::path temp_dir = testing::TempDir();
+  for (const std::string_view filename : {"model1.tflite", "model2.tflite"}) {
+    // Save the model to the temporary directory with the given name.
+    std::filesystem::path temp_file = temp_dir / filename;
+    mb.SaveTo(temp_file);
+
+    // Read back the model.
+    std::unique_ptr<tflite::FlatBufferModel> model =
+        tflite::FlatBufferModel::VerifyAndBuildFromFile(temp_file.c_str());
+    EXPECT_NE(model, nullptr);
+
+    // Load the model into an interpreter.
+    BuiltinOpResolver resolver;
+    std::unique_ptr<tflite::Interpreter> interpreter;
+    tflite::InterpreterBuilder(*model, resolver)(&interpreter);
+    ASSERT_NE(interpreter, nullptr);
+
+    // Allocate tensors and fill inputs with random data.
+    absl::BitGen gen;
+    ASSERT_EQ(interpreter->AllocateTensors(), kTfLiteOk);
+    float a = absl::Uniform(gen, 0.0, 1.0);
+    interpreter->typed_input_tensor<float>(0)[0] = a;
+
+    // Run the inference and check the output to verify the operators in model.
+    ASSERT_EQ(interpreter->Invoke(), kTfLiteOk);
+    EXPECT_FLOAT_EQ(interpreter->typed_output_tensor<float>(0)[0], a + a);
+  }
 }
 
 }  // namespace tflite::cros

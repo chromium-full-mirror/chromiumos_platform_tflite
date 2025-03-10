@@ -7,6 +7,7 @@
 #include "common/simple_model_builder.h"
 
 #include <algorithm>
+#include <fstream>
 #include <memory>
 #include <string>
 #include <utility>
@@ -180,6 +181,15 @@ std::unique_ptr<FlatBufferModel> SimpleModelBuilder::Build() const {
   }
 
   return FixupSignatureDef(std::move(model));
+}
+
+void SimpleModelBuilder::SaveTo(const std::string& path) const {
+  std::unique_ptr<FlatBufferModel> model = Build();
+  const Allocation* allocation = model->allocation();
+
+  std::ofstream output_file(path);
+  output_file.write(reinterpret_cast<const char*>(allocation->base()),
+                    allocation->bytes());
 }
 
 }  // namespace tflite::cros
