@@ -40,7 +40,7 @@ using IoTensorMap = std::map<std::pair<TfLiteIoType, std::string>, T>;
 // 5. Set the data for input tensors with SetInputTensorData() if the input data
 //    is not already in the buffer.
 // 6. Run the model inference with Invoke().
-// 7. Retrive the model output with GetOutputTensorData().
+// 7. Retrieve the model output with GetOutputTensorData().
 //
 // The step 3~7 can be performed multiple times. After the first run,
 // AllocateBuffers() is no longer required as every buffers are provided (by the
@@ -83,12 +83,12 @@ class AsyncDriver {
   }
 
   // Set the input tensor buffer. This will free the existing buffer. The caller
-  // of this function should ensure the descirption of the buffer is correct.
+  // of this function should ensure the description of the buffer is correct.
   void SetInputTensorBuffer(const std::string& name,
                             ScopedAHardwareBuffer&& buffer);
 
   // Set the output tensor buffer. This will free the existing buffer. The
-  // caller of this function should ensure the descirption of the buffer is
+  // caller of this function should ensure the description of the buffer is
   // correct.
   void SetOutputTensorBuffer(const std::string& name,
                              ScopedAHardwareBuffer&& buffer);
