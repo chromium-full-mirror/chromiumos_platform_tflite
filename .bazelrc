@@ -33,6 +33,9 @@ build --define=no_hdfs_support=true
 build --linkopt="-lm"
 build --host_linkopt="-lm"
 
+# Use --config=asan to enable AddressSanitizer.
+build:asan --copt=-fsanitize=address --linkopt=-fsanitize=address
+
 # Use --config=host_clang to build things with clang on host.
 build:host_clang --repo_env=CC=clang
 
