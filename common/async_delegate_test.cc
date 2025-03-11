@@ -106,10 +106,10 @@ TEST_P(AsyncDelegateTest, Inference) {
     EXPECT_EQ(*c_attrs->size, n * sizeof(float));
     EXPECT_EQ(*d_attrs->size, n * sizeof(float));
 
-    ScopedAHardwareBuffer a_buffer(ahwb_desc_with_size(n));
-    ScopedAHardwareBuffer b_buffer(ahwb_desc_with_size(n));
-    ScopedAHardwareBuffer c_buffer(ahwb_desc_with_size(n));
-    ScopedAHardwareBuffer d_buffer(ahwb_desc_with_size(n));
+    ScopedAHardwareBuffer a_buffer(ahwb_desc_with_size(*a_attrs->size));
+    ScopedAHardwareBuffer b_buffer(ahwb_desc_with_size(*b_attrs->size));
+    ScopedAHardwareBuffer c_buffer(ahwb_desc_with_size(*c_attrs->size));
+    ScopedAHardwareBuffer d_buffer(ahwb_desc_with_size(*d_attrs->size));
     driver->SetInputTensorBuffer("a", std::move(a_buffer));
     driver->SetInputTensorBuffer("b", std::move(b_buffer));
     driver->SetInputTensorBuffer("c", std::move(c_buffer));
