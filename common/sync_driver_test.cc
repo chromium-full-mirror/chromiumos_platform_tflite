@@ -4,30 +4,21 @@
  * found in the LICENSE file.
  */
 
+#include <gmock/gmock.h>
 #include <gtest/gtest.h>
-
 #include <vector>
 
 #include "absl/random/random.h"
 #include "common/simple_model_builder.h"
 #include "common/sync_driver.h"
 #include "common/test_util/aligned_tflite_buffer_allocator.h"
+#include "common/test_util/fp16_compare.h"
 #include "common/test_util/stable_delegate_env.h"
 #include "tensorflow/lite/core/c/builtin_op_data.h"
 
 namespace tflite::cros::tests {
 
 StableDelegateEnvironment* g_env = nullptr;
-
-// Use a relaxed tolerance when comparing the computation results, as the
-// primary goal of this test is to verify the asynchronous kernel API flow.
-// Some delegates may internally use fp16 for fp32 arithmetic, making the
-// default EXPECT_FLOAT_EQ too strict for such cases.
-// TODO(ototot): If we need checking fp16 results in more places, consider
-// implementing a generic fp16 GMock matcher that computes the difference in
-// ULPs (Units in the Last Place), similar to the current implementation of
-// EXPECT_FLOAT_EQ, to provide a more precise comparison.
-constexpr float kEps = 1e-2;
 
 class AsyncDelegateTest : public testing::TestWithParam<int> {};
 
@@ -106,9 +97,7 @@ TEST_P(AsyncDelegateTest, Inference) {
     ASSERT_EQ(driver->Invoke(), kTfLiteOk);
 
     auto output = driver->GetOutputTensorData<float>("d");
-    for (int i = 0; i < n; ++i) {
-      EXPECT_NEAR(output[i], d_data[i], kEps);
-    }
+    EXPECT_THAT(output, testing::ElementsAreArray(ArrayFp16Eq(d_data)));
   }
 }
 

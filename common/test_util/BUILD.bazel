@@ -2,7 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-load("@rules_cc//cc:defs.bzl", "cc_library")
+load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library")
 
 package(
     default_visibility = ["//:__subpackages__"],
@@ -38,5 +38,25 @@ cc_library(
     hdrs = ["aligned_tflite_buffer_allocator.h"],
     deps = [
         "@org_tensorflow//tensorflow/lite:util",
+    ],
+)
+
+cc_library(
+    name = "fp16_compare",
+    testonly = True,
+    srcs = ["fp16_compare.cc"],
+    hdrs = ["fp16_compare.h"],
+    deps = [
+        "@com_google_googletest//:gtest",
+    ],
+)
+
+cc_binary(
+    name = "fp16_compare_test",
+    testonly = True,
+    srcs = ["fp16_compare_test.cc"],
+    deps = [
+        ":fp16_compare",
+        "@com_google_googletest//:gtest",
     ],
 )
