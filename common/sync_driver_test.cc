@@ -11,6 +11,7 @@
 #include "absl/random/random.h"
 #include "common/simple_model_builder.h"
 #include "common/sync_driver.h"
+#include "common/test_util/aligned_tflite_buffer_allocator.h"
 #include "common/test_util/stable_delegate_env.h"
 #include "tensorflow/lite/core/c/builtin_op_data.h"
 
@@ -75,28 +76,12 @@ TEST_P(AsyncDelegateTest, Inference) {
     n *= dim;
   }
 
-  auto deallocate_tflite_aligned_tensor_buffer = [](uint8_t* ptr) {
-    operator delete[](ptr, std::align_val_t{tflite::kDefaultTensorAlignment});
-  };
-  auto allocate_tflite_aligned_tensor_buffer = [](int size) {
-    return new (std::align_val_t{tflite::kDefaultTensorAlignment})
-        uint8_t[size];
-  };
-
   const int num_iterations = GetParam();
   for (int iteration = 0; iteration < num_iterations; ++iteration) {
-    auto a_buffer = std::shared_ptr<uint8_t[]>(
-        allocate_tflite_aligned_tensor_buffer(n * sizeof(float)),
-        deallocate_tflite_aligned_tensor_buffer);
-    auto b_buffer = std::shared_ptr<uint8_t[]>(
-        allocate_tflite_aligned_tensor_buffer(n * sizeof(float)),
-        deallocate_tflite_aligned_tensor_buffer);
-    auto c_buffer = std::shared_ptr<uint8_t[]>(
-        allocate_tflite_aligned_tensor_buffer(n * sizeof(float)),
-        deallocate_tflite_aligned_tensor_buffer);
-    auto d_buffer = std::shared_ptr<uint8_t[]>(
-        allocate_tflite_aligned_tensor_buffer(n * sizeof(float)),
-        deallocate_tflite_aligned_tensor_buffer);
+    auto a_buffer = AllocateTfLiteAlignedTensorBuffer(n * sizeof(float));
+    auto b_buffer = AllocateTfLiteAlignedTensorBuffer(n * sizeof(float));
+    auto c_buffer = AllocateTfLiteAlignedTensorBuffer(n * sizeof(float));
+    auto d_buffer = AllocateTfLiteAlignedTensorBuffer(n * sizeof(float));
     driver->SetInputTensorBuffer("a", a_buffer);
     driver->SetInputTensorBuffer("b", b_buffer);
     driver->SetInputTensorBuffer("c", c_buffer);

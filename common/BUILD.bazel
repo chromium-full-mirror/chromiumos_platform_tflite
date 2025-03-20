@@ -196,6 +196,7 @@ cc_binary(
     deps = [
         ":simple_model_builder",
         ":sync_driver",
+        "//common/test_util:aligned_tflite_buffer_allocator",
         "//common/test_util:stable_delegate_env",
         "@com_google_absl//absl/random",
         "@com_google_googletest//:gtest",

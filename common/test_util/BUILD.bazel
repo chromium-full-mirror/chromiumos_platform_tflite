@@ -30,3 +30,13 @@ cc_library(
         "@org_tensorflow//tensorflow/lite/tools/delegates/experimental/stable_delegate:delegate_provider",
     ],
 )
+
+cc_library(
+    name = "aligned_tflite_buffer_allocator",
+    testonly = True,
+    srcs = ["aligned_tflite_buffer_allocator.cc"],
+    hdrs = ["aligned_tflite_buffer_allocator.h"],
+    deps = [
+        "@org_tensorflow//tensorflow/lite:util",
+    ],
+)
