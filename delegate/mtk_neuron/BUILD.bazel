@@ -4,6 +4,7 @@
 
 load("@org_tensorflow//tensorflow/lite:build_def.bzl", "tflite_cc_shared_object")
 load("@org_tensorflow//tensorflow/lite/core/shims:cc_library_with_tflite.bzl", "cc_library_with_tflite")
+load("@rules_cc//cc:defs.bzl", "cc_binary")
 
 exports_files(["settings.json"])
 
@@ -103,5 +104,26 @@ tflite_cc_shared_object(
     deps = [
         ":neuron_delegate_external_opaque_delegate",
         "@org_tensorflow//tensorflow/lite/delegates/utils/experimental/stable_delegate:version_script.lds",
+    ],
+)
+
+cc_binary(
+    name = "neuron_delegate_test",
+    testonly = True,
+    srcs = [
+        "neuron_delegate_test.cc",
+    ],
+    deps = [
+        "//common:simple_model_builder",
+        "//common:sync_driver",
+        "//common/test_util:aligned_tflite_buffer_allocator",
+        "//common/test_util:fp16_compare",
+        "@com_google_absl//absl/random",
+        "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/time",
+        "@com_google_googletest//:gtest",
+        "@org_tensorflow//tensorflow/lite:framework",
+        "@org_tensorflow//tensorflow/lite/delegates/utils/experimental/stable_delegate:delegate_loader",
+        "@org_tensorflow//tensorflow/lite/kernels:builtin_ops",
     ],
 )
