@@ -245,6 +245,18 @@ GetTimeConsumingModelAndBufferSize() {
           kBatch * kSize * kSize * kChannels};
 }
 
+std::pair<std::unique_ptr<FlatBufferModel>, int> GetSmallModelAndBufferSize() {
+  // The model with these parameters runs <5ms on Navi.
+  constexpr int kBatch = 1;
+  constexpr int kSize = 2;
+  constexpr int kChannels = 1;
+  constexpr int kKernel = 1;
+  constexpr int kLayers = 1;
+  constexpr int kWidth = 1;
+  return {GetModel<kBatch, kSize, kChannels, kKernel, kLayers, kWidth>(),
+          kBatch * kSize * kSize * kChannels};
+}
+
 std::vector<float> GetRandomizedFloatData(int size) {
   absl::BitGen gen;
   std::vector<float> buffer(size);
@@ -411,6 +423,56 @@ TEST(NeuronDelegateTest, BlockedByPreviousInference) {
     std::swap(time_used1, time_used2);
   }
   EXPECT_NEAR(FDivDuration(time_used1, time_used2), 2, 0.15);
+}
+
+TEST(NeuronDelegateTest, AbortedWhenWaiting) {
+  // Set optimization hints to OPTIMIZATION_LOW_LATENCY to ensure the model
+  // utilizing every NPU cores.
+  using MtkNeuronSettings_::OptimizationHint;
+  TFLiteSettingsT settings = GetDefaultSettings();
+  settings.mtk_neuron_settings->optimization_hints =
+      std::vector<OptimizationHint>{
+          OptimizationHint::OptimizationHint_OPTIMIZATION_LOW_LATENCY};
+
+  // Create the driver for a time consuming model without inferencing.
+  auto [big_model, big_model_buffer_size] =
+      GetTimeConsumingModelAndBufferSize();
+  auto big_model_driver =
+      PrepareSyncDriver(big_model, GetDelegateFromSettings(&settings),
+                        GetRandomizedFloatData(big_model_buffer_size));
+  ASSERT_NE(big_model_driver, nullptr);
+
+  // Since the small model usually finish in <5ms and the large model finish in
+  // >500ms, pick 50ms should be safe.
+  settings.mtk_neuron_settings->inference_abort_time_ms = 50;
+
+  // Create the driver for a small model without inferencing.
+  auto [small_model, small_model_buffer_size] = GetSmallModelAndBufferSize();
+  auto small_model_driver =
+      PrepareSyncDriver(small_model, GetDelegateFromSettings(&settings),
+                        GetRandomizedFloatData(small_model_buffer_size));
+  ASSERT_NE(small_model_driver, nullptr);
+
+  // Create a child thread to inference the time consuming model.
+  TfLiteStatus big_model_inference_status;
+  std::thread child_thread(
+      [&] { big_model_inference_status = big_model_driver->Invoke(); });
+
+  // Sleep 100ms to ensure the time consuming model is running first.
+  absl::SleepFor(absl::Milliseconds(100));
+  absl::Time before_invoke = absl::Now();
+  EXPECT_NE(small_model_driver->Invoke(), kTfLiteOk);
+  absl::Duration small_model_latency = absl::Now() - before_invoke;
+
+  child_thread.join();
+
+  // Time consuming model should be normally inferenced.
+  EXPECT_EQ(big_model_inference_status, kTfLiteOk);
+  // The time spent for small model should similar to abort_time_ms.
+  // Setting 100ms here to allow some overheads. This should not affect
+  // the effectiveness of the check since the time consuming model
+  // normally spent more than 500ms.
+  EXPECT_LT(small_model_latency, absl::Milliseconds(100));
 }
 
 }  // namespace tflite::cros::tests
