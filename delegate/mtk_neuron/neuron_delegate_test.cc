@@ -8,6 +8,11 @@
 #include <gtest/gtest.h>
 
 #include <string>
+// To keep the codebase simple, we don't want to depend on libchrome or other
+// threading libraries. Thus, std::thread is used here to support multithread
+// behaviors.
+// NOLINTNEXTLINE(build/c++11)
+#include <thread>
 #include <vector>
 
 #include "absl/random/random.h"
@@ -298,6 +303,65 @@ TEST(NeuronDelegateTest, InferenceSelfAborted) {
   EXPECT_THAT(
       aborted_output,
       testing::Not(testing::ElementsAreArray(ArrayFp16Eq(expected_output))));
+}
+
+TEST(NeuronDelegateTest, ParallelInference) {
+  TFLiteSettingsT settings = GetDefaultSettings();
+
+  auto [model, buffer_size] = GetTimeConsumingModelAndBufferSize();
+  ASSERT_NE(model, nullptr);
+  std::vector<float> input = GetRandomizedFloatData(buffer_size);
+
+  // Create the first driver without inferencing.
+  TfLiteDelegatePtr delegate1 = GetDelegateFromSettings(&settings);
+  ASSERT_NE(delegate1, nullptr);
+  auto driver1 = SyncDriver::Create(
+      std::move(delegate1), FlatBufferModel::BuildFromModel(model->GetModel()));
+  ASSERT_NE(driver1, nullptr);
+  driver1->SetInputTensorBuffer(
+      "input", AllocateTfLiteAlignedTensorBuffer(buffer_size * sizeof(float)));
+  ASSERT_EQ(driver1->SetInputTensorData("input", input), kTfLiteOk);
+  ASSERT_EQ(driver1->AllocateBuffers(), kTfLiteOk);
+
+  // Create the second driver without inferencing.
+  TfLiteDelegatePtr delegate2 = GetDelegateFromSettings(&settings);
+  ASSERT_NE(delegate2, nullptr);
+  auto driver2 = SyncDriver::Create(
+      std::move(delegate2), FlatBufferModel::BuildFromModel(model->GetModel()));
+  ASSERT_NE(driver2, nullptr);
+  driver2->SetInputTensorBuffer(
+      "input", AllocateTfLiteAlignedTensorBuffer(buffer_size * sizeof(float)));
+  ASSERT_EQ(driver2->SetInputTensorData("input", input), kTfLiteOk);
+  ASSERT_EQ(driver2->AllocateBuffers(), kTfLiteOk);
+
+  // Create a child thread to inference the first driver.
+  absl::Duration time_used1;
+  std::vector<float> output1;
+  std::thread child_thread([&] {
+    absl::Time before_invoke = absl::Now();
+    // Leave the output vector empty if the invocation fail.
+    if (driver1->Invoke() == kTfLiteOk) {
+      output1 = driver1->GetOutputTensorData<float>("output");
+    }
+    time_used1 = absl::Now() - before_invoke;
+  });
+
+  // Inference the second driver on main thread.
+  absl::Time before_invoke = absl::Now();
+  ASSERT_EQ(driver2->Invoke(), kTfLiteOk);
+  std::vector<float> output2 = driver2->GetOutputTensorData<float>("output");
+  absl::Duration time_used2 = absl::Now() - before_invoke;
+
+  child_thread.join();
+
+  // The result should be the same since they are the same model and the same
+  // input.
+  EXPECT_EQ(output1, output2);
+  // If the time spent is similar, we consider the model to be ran in parallel.
+  // Here we allow a 15% relative error range.
+  EXPECT_LT(FDivDuration(AbsDuration(time_used1 - time_used2),
+                         std::max(time_used1, time_used2)),
+            0.15);
 }
 
 }  // namespace tflite::cros::tests
