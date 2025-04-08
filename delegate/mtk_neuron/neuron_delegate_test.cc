@@ -360,6 +360,59 @@ TEST(NeuronDelegateTest, ParallelInference) {
             0.15);
 }
 
+TEST(NeuronDelegateTest, BlockedByPreviousInference) {
+  // Set optimization hints to OPTIMIZATION_LOW_LATENCY to ensure the model
+  // utilizing every NPU cores.
+  using MtkNeuronSettings_::OptimizationHint;
+  TFLiteSettingsT settings = GetDefaultSettings();
+  settings.mtk_neuron_settings->optimization_hints =
+      std::vector<OptimizationHint>{
+          OptimizationHint::OptimizationHint_OPTIMIZATION_LOW_LATENCY};
+
+  auto [model, buffer_size] = GetTimeConsumingModelAndBufferSize();
+  std::vector<float> input = GetRandomizedFloatData(buffer_size);
+
+  // Create the first driver without inferencing.
+  auto driver1 =
+      PrepareSyncDriver(model, GetDelegateFromSettings(&settings), input);
+  ASSERT_NE(driver1, nullptr);
+
+  // Create the second driver without inferencing.
+  auto driver2 =
+      PrepareSyncDriver(model, GetDelegateFromSettings(&settings), input);
+  ASSERT_NE(driver2, nullptr);
+
+  // Create a child thread to inference the first driver.
+  absl::Duration time_used1;
+  std::vector<float> output1;
+  std::thread child_thread([&] {
+    absl::Time before_invoke = absl::Now();
+    // Leave the output vector empty if the invocation fail.
+    if (driver1->Invoke() == kTfLiteOk) {
+      output1 = driver1->GetOutputTensorData<float>("output");
+    }
+    time_used1 = absl::Now() - before_invoke;
+  });
+
+  // Inference the second driver on main thread.
+  absl::Time before_invoke = absl::Now();
+  ASSERT_EQ(driver2->Invoke(), kTfLiteOk);
+  std::vector<float> output2 = driver2->GetOutputTensorData<float>("output");
+  absl::Duration time_used2 = absl::Now() - before_invoke;
+
+  child_thread.join();
+
+  // The result should be the same since they are the same model and the same
+  // input.
+  EXPECT_EQ(output1, output2);
+  // If the time spent is around 2x, we consider the model to be blocked by the
+  // previous model. Here we allow a 15% absolute error range.
+  if (time_used1 < time_used2) {
+    std::swap(time_used1, time_used2);
+  }
+  EXPECT_NEAR(FDivDuration(time_used1, time_used2), 2, 0.15);
+}
+
 }  // namespace tflite::cros::tests
 
 int main(int argc, char** argv) {
