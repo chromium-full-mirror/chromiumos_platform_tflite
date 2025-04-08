@@ -254,23 +254,39 @@ std::vector<float> GetRandomizedFloatData(int size) {
   return buffer;
 }
 
+std::unique_ptr<SyncDriver> PrepareSyncDriver(
+    const std::unique_ptr<FlatBufferModel>& model, TfLiteDelegatePtr delegate,
+    const std::vector<float>& input_buffer) {
+  if (model == nullptr || delegate == nullptr) {
+    return nullptr;
+  }
+  auto driver = SyncDriver::Create(
+      std::move(delegate), FlatBufferModel::BuildFromModel(model->GetModel()));
+  if (driver == nullptr) {
+    return nullptr;
+  }
+  driver->SetInputTensorBuffer(
+      "input",
+      AllocateTfLiteAlignedTensorBuffer(input_buffer.size() * sizeof(float)));
+  if (driver->SetInputTensorData("input", input_buffer) != kTfLiteOk) {
+    return nullptr;
+  }
+  if (driver->AllocateBuffers() != kTfLiteOk) {
+    return nullptr;
+  }
+  return driver;
+}
+
 TEST(NeuronDelegateTest, InferenceSelfAborted) {
   TFLiteSettingsT settings = GetDefaultSettings();
 
   auto [model, buffer_size] = GetTimeConsumingModelAndBufferSize();
-  ASSERT_NE(model, nullptr);
   std::vector<float> input = GetRandomizedFloatData(buffer_size);
 
   // Get the expected output with the given input.
-  TfLiteDelegatePtr delegate = GetDelegateFromSettings(&settings);
-  ASSERT_NE(delegate, nullptr);
-  auto driver = SyncDriver::Create(
-      std::move(delegate), FlatBufferModel::BuildFromModel(model->GetModel()));
+  auto driver =
+      PrepareSyncDriver(model, GetDelegateFromSettings(&settings), input);
   ASSERT_NE(driver, nullptr);
-  driver->SetInputTensorBuffer(
-      "input", AllocateTfLiteAlignedTensorBuffer(buffer_size * sizeof(float)));
-  ASSERT_EQ(driver->SetInputTensorData("input", input), kTfLiteOk);
-  ASSERT_EQ(driver->AllocateBuffers(), kTfLiteOk);
   ASSERT_EQ(driver->Invoke(), kTfLiteOk);
   std::vector<float> expected_output =
       driver->GetOutputTensorData<float>("output");
@@ -279,15 +295,8 @@ TEST(NeuronDelegateTest, InferenceSelfAborted) {
   settings.mtk_neuron_settings->inference_abort_time_ms = 1;
 
   // Try inference the model with an abort time.
-  delegate = GetDelegateFromSettings(&settings);
-  ASSERT_NE(delegate, nullptr);
-  driver = SyncDriver::Create(
-      std::move(delegate), FlatBufferModel::BuildFromModel(model->GetModel()));
+  driver = PrepareSyncDriver(model, GetDelegateFromSettings(&settings), input);
   ASSERT_NE(driver, nullptr);
-  driver->SetInputTensorBuffer(
-      "input", AllocateTfLiteAlignedTensorBuffer(buffer_size * sizeof(float)));
-  ASSERT_EQ(driver->SetInputTensorData("input", input), kTfLiteOk);
-  ASSERT_EQ(driver->AllocateBuffers(), kTfLiteOk);
 
   // Check the model inference is properly aborted.
   absl::Time before_invoke = absl::Now();
@@ -309,30 +318,17 @@ TEST(NeuronDelegateTest, ParallelInference) {
   TFLiteSettingsT settings = GetDefaultSettings();
 
   auto [model, buffer_size] = GetTimeConsumingModelAndBufferSize();
-  ASSERT_NE(model, nullptr);
   std::vector<float> input = GetRandomizedFloatData(buffer_size);
 
   // Create the first driver without inferencing.
-  TfLiteDelegatePtr delegate1 = GetDelegateFromSettings(&settings);
-  ASSERT_NE(delegate1, nullptr);
-  auto driver1 = SyncDriver::Create(
-      std::move(delegate1), FlatBufferModel::BuildFromModel(model->GetModel()));
+  auto driver1 =
+      PrepareSyncDriver(model, GetDelegateFromSettings(&settings), input);
   ASSERT_NE(driver1, nullptr);
-  driver1->SetInputTensorBuffer(
-      "input", AllocateTfLiteAlignedTensorBuffer(buffer_size * sizeof(float)));
-  ASSERT_EQ(driver1->SetInputTensorData("input", input), kTfLiteOk);
-  ASSERT_EQ(driver1->AllocateBuffers(), kTfLiteOk);
 
   // Create the second driver without inferencing.
-  TfLiteDelegatePtr delegate2 = GetDelegateFromSettings(&settings);
-  ASSERT_NE(delegate2, nullptr);
-  auto driver2 = SyncDriver::Create(
-      std::move(delegate2), FlatBufferModel::BuildFromModel(model->GetModel()));
+  auto driver2 =
+      PrepareSyncDriver(model, GetDelegateFromSettings(&settings), input);
   ASSERT_NE(driver2, nullptr);
-  driver2->SetInputTensorBuffer(
-      "input", AllocateTfLiteAlignedTensorBuffer(buffer_size * sizeof(float)));
-  ASSERT_EQ(driver2->SetInputTensorData("input", input), kTfLiteOk);
-  ASSERT_EQ(driver2->AllocateBuffers(), kTfLiteOk);
 
   // Create a child thread to inference the first driver.
   absl::Duration time_used1;
