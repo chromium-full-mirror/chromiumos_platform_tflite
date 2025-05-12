@@ -20,9 +20,9 @@ namespace tflite::cros::tests {
 
 StableDelegateEnvironment* g_env = nullptr;
 
-class AsyncDelegateTest : public testing::TestWithParam<int> {};
+class SyncDelegateTest : public testing::TestWithParam<int> {};
 
-TEST_P(AsyncDelegateTest, Inference) {
+TEST_P(SyncDelegateTest, Inference) {
   using TensorArgs = SimpleModelBuilder::TensorArgs;
   const TensorArgs base_args = {
       .type = kTfLiteFloat32,
@@ -102,7 +102,7 @@ TEST_P(AsyncDelegateTest, Inference) {
 }
 
 INSTANTIATE_TEST_SUITE_P(DifferentIterations,
-                         AsyncDelegateTest,
+                         SyncDelegateTest,
                          testing::Values(1, 10));
 
 }  // namespace tflite::cros::tests
