@@ -6,6 +6,7 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+
 #include <vector>
 
 #include "absl/random/random.h"
@@ -84,10 +85,19 @@ TEST_P(SyncDelegateTest, Inference) {
     std::vector<float> c_data(n);
     std::vector<float> d_data(n);
     for (int i = 0; i < n; ++i) {
-      a_data[i] = absl::Uniform(gen, 0.0, 1.0);
-      b_data[i] = absl::Uniform(gen, 0.0, 1.0);
-      c_data[i] = absl::Uniform(gen, 0.0, 1.0);
-      d_data[i] = a_data[i] + b_data[i] - c_data[i];
+      // Limit the input precision to float16 since we are comparing the
+      // computation in fp16.
+      const _Float16 a = absl::Uniform(gen, 0.0, 1.0);
+      const _Float16 b = absl::Uniform(gen, 0.0, 1.0);
+      const _Float16 c = absl::Uniform(gen, 0.0, 1.0);
+      // If we do not cast back to float16 first, the result will be casted back
+      // to float16 only after the full computation.
+      const _Float16 d = static_cast<_Float16>(a + b) - c;
+
+      a_data[i] = a;
+      b_data[i] = b;
+      c_data[i] = c;
+      d_data[i] = d;
     }
     EXPECT_EQ(driver->SetInputTensorData("a", a_data), kTfLiteOk);
     EXPECT_EQ(driver->SetInputTensorData("b", b_data), kTfLiteOk);
