@@ -32,7 +32,7 @@ TfLiteRegistrationExternal* CreateDelegateKernelRegistration(
   TfLiteOperatorSetFreeWithData(
       kernel_registration,
       [](void* user_data, TfLiteOpaqueContext* context, void* buffer) -> void {
-        delete reinterpret_cast<SimpleAsyncDelegateInterface*>(buffer);
+        delete reinterpret_cast<SimpleAsyncDelegateKernelInterface*>(buffer);
       });
 
   TfLiteOperatorSetInitWithData(
