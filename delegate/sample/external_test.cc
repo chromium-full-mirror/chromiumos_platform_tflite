@@ -30,6 +30,20 @@ constexpr char kAddModelPath[] =
     "external/org_tensorflow/tensorflow/lite/testdata/add.bin";
 
 TEST(SampleDelegate, Add) {
+  // This test both directly and indirectly calls functions which
+  // `-fsanitize=function` takes issue with. The indirect calls to it are deep
+  // in tensorflow. At a glance, nothing jumps out, but there are conditional
+  // type definitions used in the definition of functions in
+  // `kSampleDelegatePath` & this binary. Seems most likely that there's
+  // a mismatched configuration.
+  //
+  // Until that's figured out, skip this on ubsan builds, so all other tests
+  // can benefit from these checks.
+#if defined(CHROMEOS_UBSAN_BUILD)
+  GTEST_SKIP()
+      << "Skipping due to KI with -fsanitize=function: b/433670501#comment20.";
+#endif
+
   // Load stable delegate.
   const TfLiteStableDelegate* stable_delegate =
       LoadDelegateFromSharedLibrary(kSampleDelegatePath);
