@@ -13,12 +13,19 @@
 
 namespace tflite::cros {
 
+// A helper to release memory allocated for native_handle_t.
+struct NativeHandleDeleter {
+  void operator()(native_handle_t* handle);
+};
+
+// A helper class to hold the native handle.
+using OwnedNativeHandle = std::unique_ptr<native_handle_t, NativeHandleDeleter>;
+
 // Creates a new native handle from the given fd.
-std::unique_ptr<native_handle_t> CreateNativeHandle(int fd);
+OwnedNativeHandle CreateNativeHandle(int fd);
 
 // Clones a native handle. The file descriptor(s) are copied without dup().
-std::unique_ptr<native_handle_t> CloneNativeHandle(
-    const native_handle_t* handle);
+OwnedNativeHandle CloneNativeHandle(const native_handle_t* handle);
 
 // TODO(shik): Add another copy helper that will dup() the file descriptors.
 

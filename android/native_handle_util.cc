@@ -6,31 +6,34 @@
 
 #include "android/native_handle_util.h"
 
-#include <memory>
+#include <cstdlib>
 
 namespace tflite::cros {
 
-std::unique_ptr<native_handle_t> CreateNativeHandle(int fd) {
+void NativeHandleDeleter::operator()(native_handle_t* handle) {
+  std::free(handle);
+}
+
+OwnedNativeHandle CreateNativeHandle(int fd) {
   size_t size = sizeof(native_handle_t) + sizeof(int);
-  auto* handle = static_cast<native_handle_t*>(operator new(size));
+  auto* handle = static_cast<native_handle_t*>(std::malloc(size));
   *handle = {
       .version = sizeof(native_handle_t),
       .numFds = 1,
       .numInts = 0,
   };
   handle->data[0] = fd;
-  return std::unique_ptr<native_handle_t>(handle);
+  return OwnedNativeHandle(handle);
 }
 
-std::unique_ptr<native_handle_t> CloneNativeHandle(
-    const native_handle_t* handle) {
+OwnedNativeHandle CloneNativeHandle(const native_handle_t* handle) {
   if (handle == nullptr) {
     return nullptr;
   }
 
   size_t size = sizeof(native_handle_t) +
                 sizeof(int) * (handle->numFds + handle->numInts);
-  auto* cloned = static_cast<native_handle_t*>(operator new(size));
+  auto* cloned = static_cast<native_handle_t*>(std::malloc(size));
 
   *cloned = {
       .version = sizeof(native_handle_t),
@@ -41,7 +44,7 @@ std::unique_ptr<native_handle_t> CloneNativeHandle(
     cloned->data[i] = handle->data[i];
   }
 
-  return std::unique_ptr<native_handle_t>(cloned);
+  return OwnedNativeHandle(cloned);
 }
 
 }  // namespace tflite::cros

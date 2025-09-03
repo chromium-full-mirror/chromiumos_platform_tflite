@@ -357,7 +357,7 @@ class Allocator {
     // The file descriptor (fd) in native_handle_t is the same one owned by
     // ScopedFd. Therefore, we don't need to close it separately when releasing
     // native_handle_t, nor do we need to duplicate it (dup) when cloning.
-    std::unique_ptr<native_handle_t> handle;
+    OwnedNativeHandle handle;
 
     // The usage mask applied when the buffer is locked. The value would be 0
     // when the buffer is not locked.
