@@ -1,0 +1,70 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: TFLite Patcher <tflite@localhost>
+Date: Thu, 8 Oct 2026 01:43:21 +0800
+Subject: [PATCH] Only query the Android SDK level in delegate_loader on
+ Android
+
+The RTLD_NODELETE decision in LoadSymbolFromSharedLibrary depends on the
+Android SDK level, which RequestAndroidInfo() only reports on Android;
+everywhere else it returns an empty AndroidInfo. Compile that query only
+for __ANDROID__ so delegate_loader.o does not reference absl::Status and
+absl::SimpleAtoi on other platforms. libdelegate_loader.a is installed as
+a standalone static library for consumers such as odml that link it
+together with the system abseil, and since TensorFlow builds against its
+bundled abseil those references cannot be resolved there.
+---
+ .../stable_delegate/delegate_loader.cc           | 16 +++++++++-------
+ 1 file changed, 9 insertions(+), 7 deletions(-)
+
+diff --git a/tensorflow/lite/delegates/utils/experimental/stable_delegate/delegate_loader.cc b/tensorflow/lite/delegates/utils/experimental/stable_delegate/delegate_loader.cc
+index 3ed11550..0de36c22 100644
+--- a/tensorflow/lite/delegates/utils/experimental/stable_delegate/delegate_loader.cc
++++ b/tensorflow/lite/delegates/utils/experimental/stable_delegate/delegate_loader.cc
+@@ -21,11 +21,14 @@ limitations under the License.
+ #include <cerrno>
+ #include <string>
+ 
+-#include "absl/strings/numbers.h"
+ #include "tensorflow/lite/acceleration/configuration/c/stable_delegate.h"
+-#include "tensorflow/lite/experimental/acceleration/compatibility/android_info.h"
+ #include "tensorflow/lite/tools/logging.h"
+ 
++#ifdef __ANDROID__
++#include "absl/strings/numbers.h"
++#include "tensorflow/lite/experimental/acceleration/compatibility/android_info.h"
++#endif  // __ANDROID__
++
+ namespace tflite {
+ namespace delegates {
+ namespace utils {
+@@ -51,9 +54,6 @@ void setLibraryPathEnvironmentVariable(const std::string& delegate_path) {
+ }
+ }  // namespace
+ 
+-using ::tflite::acceleration::AndroidInfo;
+-using ::tflite::acceleration::RequestAndroidInfo;
+-
+ const TfLiteStableDelegate* LoadDelegateFromSharedLibrary(
+     const std::string& delegate_path) {
+   void* symbol_pointer =
+@@ -73,9 +73,10 @@ void* LoadSymbolFromSharedLibrary(const std::string& delegate_path,
+   // crash later.
+   // RTLD_LOCAL: Symbols are not available to subsequent objects.
+   int dlopen_flags = RTLD_NOW | RTLD_LOCAL;
++#ifdef __ANDROID__
+   int sdk_version;
+-  AndroidInfo android_info;
+-  if (RequestAndroidInfo(&android_info).ok() &&
++  tflite::acceleration::AndroidInfo android_info;
++  if (tflite::acceleration::RequestAndroidInfo(&android_info).ok() &&
+       absl::SimpleAtoi(android_info.android_sdk_version, &sdk_version) &&
+       sdk_version >= 23) {
+     // RTLD_NODELETE: Not unload the shared object during dlclose to prevent
+@@ -84,6 +85,7 @@ void* LoadSymbolFromSharedLibrary(const std::string& delegate_path,
+     TFLITE_LOG(INFO) << "Android SDK level is " << sdk_version
+                      << ", using dlopen with RTLD_NODELETE.";
+   }
++#endif  // __ANDROID__
+   // Exports the path of the folder containing the stable delegate shared
+   // library to the TFLITE_STABLE_DELEGATE_LIBRARY_PATH environment variable.
+   setLibraryPathEnvironmentVariable(delegate_path);

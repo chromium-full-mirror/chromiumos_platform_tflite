@@ -1,0 +1,50 @@
+From 07cc87b9c5534dfd8e16b5fd5871418f4feffa9a Mon Sep 17 00:00:00 2001
+From: TFLite Patcher <tflite@localhost>
+Date: Sat, 6 Dec 2025 12:19:48 +0000
+Subject: [PATCH] Remove tf wheel setup
+
+---
+ tensorflow/core/public/BUILD | 3 +--
+ tensorflow/tf_version.bzl    | 8 --------
+ 2 files changed, 1 insertion(+), 10 deletions(-)
+
+diff --git a/tensorflow/core/public/BUILD b/tensorflow/core/public/BUILD
+index 3a4a0cc9..6e424140 100644
+--- a/tensorflow/core/public/BUILD
++++ b/tensorflow/core/public/BUILD
+@@ -4,7 +4,6 @@ load(
+     "MAJOR_VERSION",
+     "MINOR_VERSION",
+     "PATCH_VERSION",
+-    "TF_SEMANTIC_VERSION_SUFFIX",
+ )
+ load("//tensorflow/core/platform:rules_cc.bzl", "cc_library")
+ 
+@@ -55,7 +54,7 @@ cc_library(
+         "TF_MAJOR_VERSION={}".format(MAJOR_VERSION),
+         "TF_MINOR_VERSION={}".format(MINOR_VERSION),
+         "TF_PATCH_VERSION={}".format(PATCH_VERSION),
+-        'TF_VERSION_SUFFIX=\\"{}\\"'.format(TF_SEMANTIC_VERSION_SUFFIX),
++        "TF_VERSION_SUFFIX=\"\"",
+     ],
+     visibility = ["//visibility:public"],
+ )
+diff --git a/tensorflow/tf_version.bzl b/tensorflow/tf_version.bzl
+index 4c09d5f8..e92fd574 100644
+--- a/tensorflow/tf_version.bzl
++++ b/tensorflow/tf_version.bzl
+@@ -1,14 +1,6 @@
+ """Provides project and wheel version data for TensorFlow."""
+ 
+-load(
+-    "//tensorflow:tf_version.default.bzl",
+-    "SEMANTIC_VERSION_SUFFIX",
+-    "VERSION_SUFFIX",
+-)
+-
+ # These constants are used by the targets //third_party/tensorflow/core/public:release_version,
+ # //third_party/tensorflow:tensorflow_bzl and //third_party/tensorflow/tools/pip_package:setup_py.
+ TF_VERSION = "2.21.0"
+ MAJOR_VERSION, MINOR_VERSION, PATCH_VERSION = TF_VERSION.split(".")
+-TF_WHEEL_VERSION_SUFFIX = VERSION_SUFFIX
+-TF_SEMANTIC_VERSION_SUFFIX = SEMANTIC_VERSION_SUFFIX

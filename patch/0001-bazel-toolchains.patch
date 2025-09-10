@@ -1,4 +1,4 @@
-From 7526c837f5ed73e4af8589975a033b4e316038d9 Mon Sep 17 00:00:00 2001
+From 0b45737ca694d0bc6fa46d7a3b63ed6e3ae9d9e5 Mon Sep 17 00:00:00 2001
 From: TFLite Patcher <tflite@localhost>
 Date: Fri, 18 Oct 2024 17:47:24 +0800
 Subject: [PATCH] Remove unneeded repositories
@@ -9,7 +9,7 @@ PATCH_NAME=bazel-toolchains
  1 file changed, 3 deletions(-)
 
 diff --git a/tensorflow/workspace0.bzl b/tensorflow/workspace0.bzl
-index 0fdb0342..d617f7d0 100644
+index 04258fc1..99e175da 100644
 --- a/tensorflow/workspace0.bzl
 +++ b/tensorflow/workspace0.bzl
 @@ -1,6 +1,5 @@
@@ -19,7 +19,7 @@ index 0fdb0342..d617f7d0 100644
  load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
  load("@build_bazel_apple_support//lib:repositories.bzl", "apple_support_dependencies")
  load("@build_bazel_rules_apple//apple:repositories.bzl", "apple_rules_dependencies")
-@@ -105,8 +104,6 @@ def workspace():
+@@ -74,8 +73,6 @@ def workspace():
          ],
      )
  

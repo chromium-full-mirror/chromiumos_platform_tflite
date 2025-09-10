@@ -1,4 +1,4 @@
-From 3ec0573a93ac34f84698a4f59f1d23153948940c Mon Sep 17 00:00:00 2001
+From ceb7bc2db5d0f251b44876a97d990b55210e5252 Mon Sep 17 00:00:00 2001
 From: Yi Chou <yich@google.com>
 Date: Fri, 23 Aug 2024 13:13:34 +0800
 Subject: [PATCH] Add cros-mtk-pre-compile custom op
@@ -9,10 +9,10 @@ Subject: [PATCH] Add cros-mtk-pre-compile custom op
  2 files changed, 2 insertions(+)
 
 diff --git a/tensorflow/lite/tools/benchmark/benchmark_tflite_model.cc b/tensorflow/lite/tools/benchmark/benchmark_tflite_model.cc
-index 750858c2..24f237ff 100644
+index b3b14b09..ef98e959 100644
 --- a/tensorflow/lite/tools/benchmark/benchmark_tflite_model.cc
 +++ b/tensorflow/lite/tools/benchmark/benchmark_tflite_model.cc
-@@ -73,6 +73,7 @@ RegisterSelectedOps(::tflite::MutableOpResolver* resolver) {
+@@ -74,6 +74,7 @@ RegisterSelectedOps(::tflite::MutableOpResolver* resolver) {
    static TfLiteRegistration reg = { nullptr, nullptr, nullptr, nullptr };
    resolver->AddCustom("Convolution2DTransposeBias",
                        &reg);
@@ -21,10 +21,10 @@ index 750858c2..24f237ff 100644
  
  namespace tflite {
 diff --git a/tensorflow/lite/tools/evaluation/stages/tflite_inference_stage.cc b/tensorflow/lite/tools/evaluation/stages/tflite_inference_stage.cc
-index 700bf461..a0756301 100644
+index 72a10f29..1ed824b4 100644
 --- a/tensorflow/lite/tools/evaluation/stages/tflite_inference_stage.cc
 +++ b/tensorflow/lite/tools/evaluation/stages/tflite_inference_stage.cc
-@@ -148,6 +148,7 @@ TfLiteStatus TfliteInferenceStage::Init(
+@@ -150,6 +150,7 @@ TfLiteStatus TfliteInferenceStage::Init(
    }
    TfLiteRegistration reg = { nullptr, nullptr, nullptr, nullptr };
    resolver_->AddCustom("Convolution2DTransposeBias", &reg);

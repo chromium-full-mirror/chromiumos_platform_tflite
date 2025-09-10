@@ -1,0 +1,135 @@
+From 432c099e44d8f441b17344126f0bbf596b3c6036 Mon Sep 17 00:00:00 2001
+From: TFLite Patcher <tflite@localhost>
+Date: Sun, 21 Dec 2025 18:35:17 +0000
+Subject: [PATCH] Fix system grpc build
+
+---
+ tensorflow/workspace2.bzl                     | 10 ++++++++
+ .../systemlibs/grpc.bazel.cc_grpc_library.bzl |  5 ++++
+ .../systemlibs/grpc.bazel.grpc_deps.bzl       | 23 ++++++++++++++++---
+ .../systemlibs/grpc.bazel.grpc_extra_deps.bzl | 10 +++++++-
+ .../systemlibs/grpc.bazel.python_rules.bzl    | 15 ++++++++++++
+ 5 files changed, 59 insertions(+), 4 deletions(-)
+ create mode 100644 third_party/systemlibs/grpc.bazel.python_rules.bzl
+
+diff --git a/tensorflow/workspace2.bzl b/tensorflow/workspace2.bzl
+index b8a86eb3..7a0c271f 100644
+--- a/tensorflow/workspace2.bzl
++++ b/tensorflow/workspace2.bzl
+@@ -512,6 +512,16 @@ alias(name = "is_cuda_enabled_and_windows", actual = ":is_cuda_enabled")""")
+         sha256 = "dd6a2fa311ba8441bbefd2764c55b99136ff10f7ea42954be96006a2723d33fc",
+         strip_prefix = "grpc-1.74.0",
+         system_build_file = "//third_party/systemlibs:grpc.BUILD",
++        system_link_files = {
++            "//third_party/systemlibs:BUILD.bazel": "bazel/BUILD",
++            "//third_party/systemlibs:grpc.BUILD": "src/compiler/BUILD",
++            "//third_party/systemlibs:grpc.bazel.grpc_deps.bzl": "bazel/grpc_deps.bzl",
++            "//third_party/systemlibs:grpc.bazel.grpc_extra_deps.bzl": "bazel/grpc_extra_deps.bzl",
++            "//third_party/systemlibs:grpc.bazel.cc_grpc_library.bzl": "bazel/cc_grpc_library.bzl",
++            "//third_party/systemlibs:grpc.bazel.generate_cc.bzl": "bazel/generate_cc.bzl",
++            "//third_party/systemlibs:grpc.bazel.protobuf.bzl": "bazel/protobuf.bzl",
++            "//third_party/systemlibs:grpc.bazel.python_rules.bzl": "bazel/python_rules.bzl",
++        },
+         patch_file = [
+             "@xla//third_party/grpc:grpc.patch",
+         ],
+diff --git a/third_party/systemlibs/grpc.bazel.cc_grpc_library.bzl b/third_party/systemlibs/grpc.bazel.cc_grpc_library.bzl
+index 83c2382a..cdd43445 100644
+--- a/third_party/systemlibs/grpc.bazel.cc_grpc_library.bzl
++++ b/third_party/systemlibs/grpc.bazel.cc_grpc_library.bzl
+@@ -13,6 +13,7 @@ def cc_grpc_library(
+         generate_mocks = False,
+         use_external = False,
+         grpc_only = False,
++        plugin_flags = [],
+         **kwargs):
+     """Generates C++ grpc classes for services defined in a proto file.
+ 
+@@ -46,6 +47,9 @@ def cc_grpc_library(
+         grpc_only (bool): if True, generate only grpc library, expecting
+           protobuf messages library (cc_proto_library target) to be passed as
+           deps. False by default (will become True by default eventually).
++        plugin_flags (list): flags passed to the grpc C++ plugin (same
++          extension as //third_party/grpc:grpc.patch applies to the bundled
++          grpc rules).
+         **kwargs: rest of arguments, e.g., compatible_with and visibility
+     """
+     if len(srcs) > 1:
+@@ -92,6 +96,7 @@ def cc_grpc_library(
+             plugin = "@com_github_grpc_grpc//src/compiler:grpc_cpp_plugin",
+             well_known_protos = well_known_protos,
+             generate_mocks = generate_mocks,
++            flags = plugin_flags,
+             **kwargs
+         )
+         cc_library(
+diff --git a/third_party/systemlibs/grpc.bazel.grpc_deps.bzl b/third_party/systemlibs/grpc.bazel.grpc_deps.bzl
+index dd389c68..47ea2f30 100644
+--- a/third_party/systemlibs/grpc.bazel.grpc_deps.bzl
++++ b/third_party/systemlibs/grpc.bazel.grpc_deps.bzl
+@@ -1,6 +1,23 @@
+ """Load dependencies needed to compile and test the grpc library as a 3rd-party consumer."""
+ 
+-def grpc_deps():
+-    """Loads dependencies need to compile and test the grpc library."""
++load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+ 
+-    pass
++def grpc_deps():
++    """Loads dependencies need to compile and test the grpc library.
++
++    grpc itself comes from the system, but the rest of the workspace still
++    relies on the repositories the real grpc_deps() would have defined. Keep
++    those definitions in sync with @com_github_grpc_grpc//bazel:grpc_deps.bzl.
++    """
++
++    # protobuf's Starlark proto rules load @rules_java//java/common, which
++    # needs rules_java >= 8.
++    if "rules_java" not in native.existing_rules():
++        http_archive(
++            name = "rules_java",
++            sha256 = "5449ed36d61269579dd9f4b0e532cd131840f285b389b3795ae8b4d717387dd8",
++            urls = [
++                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/bazelbuild/rules_java/releases/download/8.7.0/rules_java-8.7.0.tar.gz",
++                "https://github.com/bazelbuild/rules_java/releases/download/8.7.0/rules_java-8.7.0.tar.gz",
++            ],
++        )
+diff --git a/third_party/systemlibs/grpc.bazel.grpc_extra_deps.bzl b/third_party/systemlibs/grpc.bazel.grpc_extra_deps.bzl
+index 631c93af..6989a034 100644
+--- a/third_party/systemlibs/grpc.bazel.grpc_extra_deps.bzl
++++ b/third_party/systemlibs/grpc.bazel.grpc_extra_deps.bzl
+@@ -1,4 +1,12 @@
+ """Stub version of @com_github_grpc_grpc//bazel:grpc_extra_deps.bzl necessary for TF system libs"""
+ 
++load("@com_google_protobuf//:protobuf_deps.bzl", "protobuf_deps")
++load("@rules_java//java:rules_java_deps.bzl", "rules_java_dependencies")
++
+ def grpc_extra_deps():
+-    pass
++    # The real grpc_extra_deps() is what initializes rules_java (its
++    # @compatibility_proxy repository) and protobuf's own workspace
++    # dependencies (e.g. @proto_bazel_features, which protobuf's Starlark proto
++    # rules load). Keep doing that when grpc comes from the system.
++    rules_java_dependencies()
++    protobuf_deps()
+diff --git a/third_party/systemlibs/grpc.bazel.python_rules.bzl b/third_party/systemlibs/grpc.bazel.python_rules.bzl
+new file mode 100644
+index 00000000..8b99f2c0
+--- /dev/null
++++ b/third_party/systemlibs/grpc.bazel.python_rules.bzl
+@@ -0,0 +1,15 @@
++"""Stub of gRPC's bazel/python_rules.bzl for builds using the system gRPC.
++
++The Python gRPC bindings are never built in this configuration, so
++py_grpc_library is reduced to a placeholder py_library that keeps the BUILD
++files loadable.
++"""
++
++load("@rules_python//python:defs.bzl", "py_library")
++
++def py_grpc_library(name, srcs = [], deps = [], **kwargs):  # buildifier: disable=unused-variable
++    py_library(
++        name = name,
++        deps = deps,
++        **kwargs
++    )

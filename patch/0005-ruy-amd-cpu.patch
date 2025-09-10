@@ -1,27 +1,31 @@
-From 6009dffe8c8c58cfb4109aaf82267e4211e1d3fe Mon Sep 17 00:00:00 2001
+From c26fba560aeb2a983f323acda34b9f1a80ba6a0e Mon Sep 17 00:00:00 2001
 From: TFLite Patcher <tflite@localhost>
 Date: Wed, 13 Nov 2024 06:35:01 +0000
 Subject: [PATCH] Fix cpuinfo on some AMD model
 
 PATCH_NAME=ruy-amd-cpu
 ---
- tensorflow/workspace2.bzl |  1 +
+ tensorflow/workspace2.bzl |  5 ++++-
  third_party/cpuinfo.patch | 19 +++++++++++++++++++
- 2 files changed, 20 insertions(+)
+ 2 files changed, 23 insertions(+), 1 deletion(-)
  create mode 100644 third_party/cpuinfo.patch
 
 diff --git a/tensorflow/workspace2.bzl b/tensorflow/workspace2.bzl
-index be83c971..4dda4020 100644
+index 94151996..b9203433 100644
 --- a/tensorflow/workspace2.bzl
 +++ b/tensorflow/workspace2.bzl
-@@ -181,6 +181,7 @@ def _tf_repositories():
-     tf_http_archive(
+@@ -210,7 +210,10 @@ def _tf_repositories():
          name = "cpuinfo",
-         sha256 = "2bf2b62eb86e2d2eaf862d0b9683a6c467a4d69fb2f7f1dc47c799809148608f",
-+        patch_file = ["//third_party:cpuinfo.patch"],
-         strip_prefix = "cpuinfo-fa1c679da8d19e1d87f20175ae1ec10995cd3dd3",
-         urls = tf_mirror_urls("https://github.com/pytorch/cpuinfo/archive/fa1c679da8d19e1d87f20175ae1ec10995cd3dd3.zip"),
+         sha256 = "c0254ce97f7abc778dd2df0aaca1e0506dba1cd514fdb9fe88c07849393f8ef4",
+         strip_prefix = "cpuinfo-8a9210069b5a37dd89ed118a783945502a30a4ae",
+-        patch_file = ["//third_party/cpuinfo:cpuinfo_ppc64le_support.patch"],
++        patch_file = [
++            "//third_party/cpuinfo:cpuinfo_ppc64le_support.patch",
++            "//third_party:cpuinfo.patch",
++        ],
+         urls = tf_mirror_urls("https://github.com/pytorch/cpuinfo/archive/8a9210069b5a37dd89ed118a783945502a30a4ae.zip"),
      )
+ 
 diff --git a/third_party/cpuinfo.patch b/third_party/cpuinfo.patch
 new file mode 100644
 index 00000000..c75e05d7

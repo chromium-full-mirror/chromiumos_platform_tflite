@@ -1,4 +1,4 @@
-From c4d6512d82b6399bc111ba3c67d25b8221e11c53 Mon Sep 17 00:00:00 2001
+From deccc0886abebe750e8affccec5862dd59e612fb Mon Sep 17 00:00:00 2001
 From: TFLite Patcher <tflite@localhost>
 Date: Fri, 18 Oct 2024 17:59:37 +0800
 Subject: [PATCH] Enable Gpu Delegate for ChromeOS.
@@ -15,10 +15,10 @@ PATCH_NAME=gpu-delegate
  7 files changed, 14 insertions(+), 18 deletions(-)
 
 diff --git a/tensorflow/lite/BUILD b/tensorflow/lite/BUILD
-index 5bf1aaae..1d702413 100644
+index ed2ea9af..edfb2ac3 100644
 --- a/tensorflow/lite/BUILD
 +++ b/tensorflow/lite/BUILD
-@@ -1422,6 +1422,7 @@ tflite_cc_shared_object(
+@@ -1423,6 +1423,7 @@ tflite_cc_shared_object(
          ":tflite_exported_symbols.lds",
          ":tflite_version_script.lds",
          "//tensorflow/lite/kernels:builtin_ops_all_linked",
@@ -40,10 +40,10 @@ index a45c44d8..048795ea 100644
  #endif
  
 diff --git a/tensorflow/lite/core/kernels/BUILD b/tensorflow/lite/core/kernels/BUILD
-index e253f294..8471cb9f 100644
+index daecf60e..5c8b43c9 100644
 --- a/tensorflow/lite/core/kernels/BUILD
 +++ b/tensorflow/lite/core/kernels/BUILD
-@@ -30,25 +30,14 @@ cc_test(
+@@ -33,25 +33,14 @@ cc_test(
      ],
  )
  
@@ -73,10 +73,10 @@ index e253f294..8471cb9f 100644
  
  # For internal usage by shared libraries only.
 diff --git a/tensorflow/lite/delegates/gpu/BUILD b/tensorflow/lite/delegates/gpu/BUILD
-index d66d66b5..adfff1fd 100644
+index db409272..924d547e 100644
 --- a/tensorflow/lite/delegates/gpu/BUILD
 +++ b/tensorflow/lite/delegates/gpu/BUILD
-@@ -75,6 +75,11 @@ config_setting(
+@@ -89,6 +89,11 @@ config_setting(
      },
  )
  
@@ -88,7 +88,7 @@ index d66d66b5..adfff1fd 100644
  cc_library(
      name = "gl_delegate",
      srcs = ["gl_delegate.cc"],
-@@ -264,6 +269,7 @@ selects.config_setting_group(
+@@ -278,6 +283,7 @@ selects.config_setting_group(
      name = "supports_gpu_delegate",
      match_any = [
          "//tensorflow:android",
@@ -110,10 +110,10 @@ index cdea91ae..58b8386e 100644
              # We don't need to link libGLESv3, because if it exists,
              # it is a symlink to libGLESv2.
 diff --git a/tensorflow/lite/delegates/gpu/cl/BUILD b/tensorflow/lite/delegates/gpu/cl/BUILD
-index ecc22a1f..1b315ab8 100644
+index 3a386163..76a55ee8 100644
 --- a/tensorflow/lite/delegates/gpu/cl/BUILD
 +++ b/tensorflow/lite/delegates/gpu/cl/BUILD
-@@ -411,7 +411,7 @@ cc_library(
+@@ -413,7 +413,7 @@ cc_library(
      srcs = ["gpu_api_delegate.cc"],
      hdrs = ["gpu_api_delegate.h"],
      linkopts = select({

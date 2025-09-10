@@ -1,0 +1,31 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: TFLite Patcher <tflite@localhost>
+Date: Sun, 4 Oct 2026 03:33:39 +0800
+Subject: [PATCH] Make the native float16 half(int) constructor explicit
+
+When TFLITE_ARCH_FLOAT16 is enabled (x86-64 with F16C, as on ChromeOS
+boards), tflite::half has implicit constructors from both float and int.
+A double therefore converts to half ambiguously (double -> float and
+double -> int rank the same), which breaks brace-initialized calls such
+as PopulateTensor<half>(idx, {0.1, 0.9}) in the kernel tests. The
+fp16-based fallback implementation already declares half(int) explicit;
+do the same here so both variants behave identically.
+---
+ tensorflow/lite/types/half.h | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/tensorflow/lite/types/half.h b/tensorflow/lite/types/half.h
+index 13e8662d..8088f07e 100644
+--- a/tensorflow/lite/types/half.h
++++ b/tensorflow/lite/types/half.h
+@@ -72,8 +72,8 @@ class half {
+  public:
+   half() = default;
+   constexpr half(float x) : value_(static_cast<_Float16>(x)) {}  // NOLINT
+-  constexpr half(int x)
+-      : value_(static_cast<_Float16>(static_cast<float>(x))) {}  // NOLINT
++  explicit constexpr half(int x)
++      : value_(static_cast<_Float16>(static_cast<float>(x))) {}
+ 
+   constexpr operator float() const { return value_; }  // NOLINT
+ 

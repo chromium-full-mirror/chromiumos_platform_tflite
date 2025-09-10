@@ -1,0 +1,58 @@
+From 85fb63f3501c55b028c374adacb43aa2200b78dc Mon Sep 17 00:00:00 2001
+From: TFLite Patcher <tflite@localhost>
+Date: Sun, 21 Dec 2025 18:04:24 +0000
+Subject: [PATCH] Remove CUDA support
+
+---
+ tensorflow/workspace2.bzl | 38 ++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 38 insertions(+)
+
+diff --git a/tensorflow/workspace2.bzl b/tensorflow/workspace2.bzl
+index b9203433..b8a86eb3 100644
+--- a/tensorflow/workspace2.bzl
++++ b/tensorflow/workspace2.bzl
+@@ -165,6 +165,44 @@ def _tf_toolchains():
+ def _tf_repositories():
+     """All external dependencies for TF builds."""
+ 
++    # Custom local_config_cuda support
++    def _mock_local_config_cuda_impl(repository_ctx):
++        repository_ctx.file("cuda/BUILD", "")
++        repository_ctx.file("cuda/build_defs.bzl", """
++def if_cuda(x, y=[]):
++    return y
++
++def if_cuda_exec(x, y=[]):
++    return y
++
++def if_cuda_is_configured(x, no_cuda=[]):
++    return no_cuda
++
++def if_cuda_newer_than(wanted_ver, if_true, if_false=[]):
++    return if_false
++
++def is_cuda_configured():
++    return False
++
++def cuda_library(**kwargs):
++    pass""")
++        repository_ctx.file("BUILD", """
++package(default_visibility = ["//visibility:public"])
++
++config_setting(
++    name = "is_cuda_enabled",
++    values = {"define": "is_cuda_enabled_placeholder=true"},
++)
++
++alias(name = "is_cuda_compiler_clang", actual = ":is_cuda_enabled")
++alias(name = "is_cuda_compiler_nvcc", actual = ":is_cuda_enabled")
++alias(name = "is_cuda_enabled_and_oss", actual = ":is_cuda_enabled")
++alias(name = "is_cuda_enabled_and_windows", actual = ":is_cuda_enabled")""")
++
++    _mock_local_config_cuda_repository = repository_rule(implementation = _mock_local_config_cuda_impl)
++    _mock_local_config_cuda_repository(name = "local_config_cuda")
++
++
+     # To update any of the dependencies below:
+     # a) update URL and strip_prefix to the new git commit hash
+     # b) get the sha256 hash of the commit by running:
