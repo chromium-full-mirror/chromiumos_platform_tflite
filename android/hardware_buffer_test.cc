@@ -9,6 +9,7 @@
 #include <gtest/gtest.h>
 
 #include <algorithm>
+#include <cstdlib>
 #include <fstream>
 #include <memory>
 #include <string>
@@ -16,6 +17,7 @@
 
 #include "absl/strings/numbers.h"
 #include "absl/strings/str_split.h"
+#include "android/native_handle_util.h"
 #include "common/log.h"
 
 namespace {}  // namespace
@@ -152,9 +154,8 @@ TEST(AHardwareBuffer, NativeHandleRegister) {
   AHardwareBuffer_release(original);
 
   // Construct a new handle with the fd.
-  auto handle = std::unique_ptr<native_handle_t>(
-      static_cast<native_handle_t*>(operator new(sizeof(native_handle_t) +
-                                                 sizeof(int))));
+  auto handle = tflite::cros::OwnedNativeHandle(static_cast<native_handle_t*>(
+      std::malloc(sizeof(native_handle_t) + sizeof(int))));
   *handle = {
       .version = sizeof(native_handle_t),
       .numFds = 1,
