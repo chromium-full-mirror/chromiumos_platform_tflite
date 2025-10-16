@@ -171,6 +171,7 @@ tflite_cc_shared_object(
         "-Wl,--no-undefined",
         "-Wl,--version-script,$(location @org_tensorflow//tensorflow/lite/delegates/utils/experimental/stable_delegate:version_script.lds)",
     ],
+    per_os_targets = True,
     visibility = ["//:__pkg__"],
     deps = [
         ":openvino_async_kernel",
