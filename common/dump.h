@@ -378,7 +378,7 @@ std::string Stringify(T&& value) {
   fn(a1), __VA_OPT__(DBG_MAP_AGAIN DBG_PARENS(fn, __VA_ARGS__))
 #define DBG_MAP_AGAIN() DBG_MAP_IMPL
 
-// DBG_MAP(foo) => "foo"
+// DBG_STRINGIFY(foo) => "foo"
 #define DBG_STRINGIFY(x) #x
 
 #define DUMP(...) \
