@@ -13,8 +13,6 @@ TENSORFLOW_VERSION = "2.18.0"
 
 # Use the provided tensorflow repo if it exists. Currently the ebuild will
 # download and unpack tensorflow for us.
-# TODO: b/314854484 - Move the tensorflow building logic and patch management
-# from ebuild to here.
 maybe(
     http_archive,
     name = "org_tensorflow",
