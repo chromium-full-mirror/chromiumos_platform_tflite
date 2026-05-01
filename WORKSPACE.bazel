@@ -36,6 +36,7 @@ maybe(
         "//patch:0015-mtk-preemption.patch",
         "//patch:0016-accel-config-optimization.patch",
         "//patch:0017-Add-missing-absl-strings-string_view-target.patch",
+        "//patch:0018-fix-std-abs-overload.patch",
     ],
     sha256 = "d7876f4bb0235cac60eb6316392a7c48676729860da1ab659fb440379ad5186d",
     strip_prefix = "tensorflow-{}".format(TENSORFLOW_VERSION),
