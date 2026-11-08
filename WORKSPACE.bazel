@@ -49,6 +49,7 @@ maybe(
         "//patch:0010-Fix-system-grpc-build.patch",
         "//patch:0011-half-explicit-int-ctor.patch",
         "//patch:0012-delegate-loader-android-only-sdk-level.patch",
+        "//patch:0013-xnnpack-noinline-always-inline.patch",
     ],
     sha256 = "ef3568bb4865d6c1b2564fb5689c19b6b9a5311572cd1f2ff9198636a8520921",
     strip_prefix = "tensorflow-{}".format(TENSORFLOW_VERSION),

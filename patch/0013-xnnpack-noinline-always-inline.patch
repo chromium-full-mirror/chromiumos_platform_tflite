@@ -1,0 +1,89 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: TFLite Patcher <tflite@localhost>
+Date: Tue, 25 Aug 2026 19:18:16 +0000
+Subject: [PATCH] Avoid conflicting noinline and always_inline attributes in
+ XNNPACK
+
+Backport the src/xnnpack/common.h part of upstream google/XNNPACK commit
+5e9b9d4f40553738bb87ddbbc816f1ca9a1bcccb:
+- When using ASAN, HWASAN, or TSAN, define XNN_INLINE with noinline.
+- When using MSAN or UBSAN, drop XNN_NO_INLINE_SANITIZER from
+  XNN_DISABLE_MSAN and XNN_DISABLE_UBSAN so XNN_INLINE stays
+  always_inline.
+- Otherwise, define XNN_INLINE with always_inline for performance.
+
+PATCH_NAME=xnnpack-noinline-always-inline
+---
+ tensorflow/workspace2.bzl |  1 +
+ third_party/xnnpack.patch | 50 +++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 51 insertions(+)
+ create mode 100644 third_party/xnnpack.patch
+
+diff --git a/tensorflow/workspace2.bzl b/tensorflow/workspace2.bzl
+index 7a0c271..580dcca 100644
+--- a/tensorflow/workspace2.bzl
++++ b/tensorflow/workspace2.bzl
+@@ -216,6 +216,7 @@ alias(name = "is_cuda_enabled_and_windows", actual = ":is_cuda_enabled")""")
+         name = "XNNPACK",
+         sha256 = "44bf8a258cfd0d7b500b6058a2bb5c7387c8cebba295cfca985a68d16513f7c8",
+         strip_prefix = "XNNPACK-25b42dfddb0ee22170d73ff0d4b333ea1e6edfeb",
++        patch_file = ["//third_party:xnnpack.patch"],
+         urls = tf_mirror_urls("https://github.com/google/XNNPACK/archive/25b42dfddb0ee22170d73ff0d4b333ea1e6edfeb.zip"),
+     )
+     # LINT.ThenChange(//tensorflow/lite/tools/cmake/modules/xnnpack.cmake)
+diff --git a/third_party/xnnpack.patch b/third_party/xnnpack.patch
+new file mode 100644
+index 0000000..c341381
+--- /dev/null
++++ b/third_party/xnnpack.patch
+@@ -0,0 +1,50 @@
++diff --git a/src/xnnpack/common.h b/src/xnnpack/common.h
++index 2af5054..a17c50e 100644
++--- a/src/xnnpack/common.h
+++++ b/src/xnnpack/common.h
++@@ -267,7 +267,6 @@
++ #if defined(__clang__)
++ // Clang ignores sanitizer attributes on functions that get inlined. Also:
++ // - GCC does not allow this attribute to be specified after a function
++-// - It takes precedence over always_inline, so we can specify both.
++ #define XNN_NO_INLINE_SANITIZER __attribute__((__noinline__))
++ #else
++ #define XNN_NO_INLINE_SANITIZER
++@@ -281,8 +280,7 @@
++ #endif
++ 
++ #if XNN_COMPILER_HAS_FEATURE(memory_sanitizer)
++-#define XNN_DISABLE_MSAN \
++-  __attribute__((__no_sanitize__("memory"))) XNN_NO_INLINE_SANITIZER
+++#define XNN_DISABLE_MSAN __attribute__((__no_sanitize__("memory")))
++ #else
++ #define XNN_DISABLE_MSAN
++ #endif
++@@ -302,8 +300,7 @@
++ #endif
++ 
++ #if XNN_COMPILER_HAS_FEATURE(undefined_behavior_sanitizer)
++-#define XNN_DISABLE_UBSAN \
++-  __attribute__((__no_sanitize__("undefined"))) XNN_NO_INLINE_SANITIZER
+++#define XNN_DISABLE_UBSAN __attribute__((__no_sanitize__("undefined")))
++ #else
++ #define XNN_DISABLE_UBSAN
++ #endif
++@@ -327,7 +324,17 @@
++ #define XNN_INTRINSIC inline
++ #endif
++ 
+++#if XNN_COMPILER_HAS_FEATURE(address_sanitizer) || \
+++    XNN_COMPILER_HAS_FEATURE(hwaddress_sanitizer) || \
+++    XNN_COMPILER_HAS_FEATURE(thread_sanitizer)
++ #if defined(__GNUC__)
+++#define XNN_INLINE inline __attribute__((__noinline__))
+++#elif defined(_MSC_VER)
+++#define XNN_INLINE __declspec(noinline) inline
+++#else
+++#define XNN_INLINE inline
+++#endif
+++#elif defined(__GNUC__)
++ #define XNN_INLINE inline __attribute__((__always_inline__))
++ #elif defined(_MSC_VER)
++ #define XNN_INLINE __forceinline
